@@ -1,0 +1,323 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+public sealed class AppConfig
+{
+    public bool SmartSwitch { get; set; }
+    public CredentialsConfig? Credentials { get; set; } // legacy, migrated on load
+    public List<ConnectionProfile> Connections { get; set; } = [];
+    public long TotalDownloadBytes { get; set; }
+    public long TotalUploadBytes { get; set; }
+
+    // --- New in step 11.6 ---
+    public string Theme { get; set; } = "dark"; // dark | light | system (پیش‌فرض: تم سیستم)
+	public string SplitTunnelMode { get; set; } = "off"; // off | deny | allow
+	public List<string> SplitTunnelList { get; set; } = [];
+    public string BaseOvpn { get; set; } = "";    // base.ovpn content kept inside config (self-healing)
+    public int PackageVersion { get; set; }       // version of last imported official package
+    public bool MinimizeToTray { get; set; }
+    public bool KillSwitchEnabled { get; set; } // Kill Switch (WFP) — وضعیت توگل بین اجراهای برنامه حفظ می‌شود
+
+    // آخرین کانکشنی که واقعاً وصل شده — بعد از بستن/باز کردن برنامه همین انتخاب‌شده نمایش داده می‌شود
+    public string? LastConnectedName { get; set; }
+    // آیا لیست کانکشن‌ها (دکمه «نمایش بیشتر») باز مانده — رفتار آخرین باری که کاربر انتخاب کرده حفظ می‌شود
+    public bool ConnListExpanded { get; set; }
+
+    // --- New: custom DNS (برای قابلیت DNS دلخواه در تنظیمات) ---
+    public string DnsMode { get; set; } = "auto";      // auto | cloudflare | google | custom
+    public string DnsPrimary { get; set; } = "";
+    public string DnsSecondary { get; set; } = "";
+
+    // آدرس کانال تلگرام — از config.json قابل تغییر است، بدون نیاز به بیلد مجدد
+    public string TelegramUrl { get; set; } = "https://t.me/netfastvip";
+
+    // لینک پنل کاربری/اکانتینگ برای بررسی اشتراک (دکمه در پنجره درباره)
+    public string PanelUrl { get; set; } = "http://panel.netfast.vip/portal/login";
+
+    // لینک پشتیبانی تلگرام (دکمه Support در پنجره درباره)
+    public string SupportUrl { get; set; } = "https://t.me/nfv_sup";
+
+    // آدرس فایل version.json روی هاست برای بررسی نسخه جدید — خالی یعنی بررسی خاموش (UpdateChecker.cs)
+    public string UpdateUrl { get; set; } = "https://dl.netfast.vip/version.json";
+
+    // آدرس فایل connections.json روی هاست برای دریافت خودکار سرورها/base.ovpn/گواهی CA — خالی یعنی بررسی خاموش (ConnectionsUpdateChecker.cs)
+    public string ConnectionsUpdateUrl { get; set; } = "https://dl.netfast.vip/connections.json";
+
+    // محتوای گواهی CA به‌صورت Base64 — داخل کانفیگ نگه داشته می‌شود (self-healing مثل BaseOvpn)
+    public string Ca { get; set; } = "";
+
+    // آدرس پایه پورتال جدید NETFASTVIP برای استعلام وضعیت اشتراک/ترافیک — خالی یعنی دکمه «وضعیت اشتراک من» پیام راهنما می‌دهد (SubscriptionDialog / PortalApiClient). ورود با یوزر/پس همان کانکشن رسمی انجام می‌شود؛ نیازی به توکن مشترک نیست.
+    public string PortalApiUrl { get; set; } = "http://panel.netfast.vip/";
+
+    // قطع خودکار پس از این تعداد دقیقه بی‌استفادگی — ۰ یعنی همیشه متصل
+    public int IdleDisconnectMinutes { get; set; }
+
+    // --- برندینگ (وایت‌لیبل) — از config.json بدون بیلد مجدد قابل تغییر ---
+    // نام نمایشی برنامه: عنوان پنجره‌ها، آیکون تری، دیالوگ‌ها و میان‌بر دسکتاپ
+    public string AppName { get; set; } = "NETFASTVIP";
+
+    // نسخه نمایشی در پنجره «درباره» — خالی یعنی خودکار از نسخه خود EXE
+    public string AppVersion { get; set; } = "";
+
+    // دسترسی سریع برای پنجره‌هایی که config را لود نمی‌کنند (یک بار خوانده و کش می‌شود)
+    private static string? _brandName;
+    private static string? _brandVersion;
+    public static string BrandName { get { EnsureBrand(); return _brandName!; } }
+    public static string BrandVersion { get { EnsureBrand(); return _brandVersion!; } }
+    private static void EnsureBrand()
+    {
+        if (_brandName is not null) return;
+        string name = "NETFASTVIP", ver = "";
+        try
+        {
+            var cfg = Load();
+            if (!string.IsNullOrWhiteSpace(cfg.AppName)) name = cfg.AppName.Trim();
+            ver = cfg.AppVersion.Trim();
+        }
+        catch { }
+        if (ver.Length == 0)
+        {
+            var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            ver = v is null ? "—" : $"{v.Major}.{v.Minor}.{v.Build}";
+        }
+        _brandName = name;
+        _brandVersion = ver;
+    }
+
+    public static string DefaultPath =>
+        Path.Combine(AppContext.BaseDirectory, "Data", "config.json");
+
+    public static AppConfig Load(string? path = null)
+    {
+        path ??= DefaultPath;
+        AppConfig cfg;
+        if (!File.Exists(path))
+        {
+            cfg = new AppConfig();
+        }
+        else
+        {
+            var opts = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                ReadCommentHandling = JsonCommentHandling.Skip,
+            };
+            cfg = JsonSerializer.Deserialize<AppConfig>(File.ReadAllText(path), opts)
+                  ?? new AppConfig();
+        }
+
+        // Migration 1: old global credentials -> per-connection (from step 10.8)
+        if (cfg.Credentials is { } legacy)
+        {
+            foreach (var c in cfg.Connections)
+            {
+                if (c.Username.Length == 0 && legacy.Username.Length > 0)
+                {
+                    c.Username = legacy.Username;
+                    c.Password = legacy.Password;
+                }
+                if (c.Type == "l2tp" && c.Psk.Length == 0 && legacy.L2tpPsk.Length > 0)
+                    c.Psk = legacy.L2tpPsk;
+            }
+            cfg.Credentials = null;
+        }
+
+        // Migration 2: profiles saved before Source existed -> custom
+        foreach (var c in cfg.Connections)
+            if (string.IsNullOrWhiteSpace(c.Source))
+                c.Source = "custom";
+
+        return cfg;
+    }
+
+    public void Save(string? path = null)
+    {
+        var opts = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        };
+        Directory.CreateDirectory(Path.Combine(AppContext.BaseDirectory, "Data"));
+        File.WriteAllText(path ?? DefaultPath, JsonSerializer.Serialize(this, opts));
+    }
+
+    // Merge an official package: add/update official connections by name,
+    // keep user credentials, never touch custom profiles.
+    // هر سرور رسمی (Source == "official") که دیگر داخل پکیج جدید نیست هم حذف می‌شود —
+    // قبلاً اگر از روی هاست یک سرور حذف می‌شد، اینجا همیشه توی لیست کانکشن‌های کاربر می‌ماند (باگ).
+    // پروفایل سفارشی (Source == "custom") هرگز دست نمی‌خورند.
+    public void ApplyOfficialPackage(PackageFile pkg)
+    {
+        foreach (var incoming in pkg.Connections)
+        {
+            incoming.Source = "official";
+            var existing = Connections.FirstOrDefault(c => c.Name == incoming.Name);
+            if (existing is null)
+            {
+                Connections.Add(incoming);
+                continue;
+            }
+            existing.Source = "official";
+            existing.Type = incoming.Type;
+            existing.Server = incoming.Server;
+            existing.Port = incoming.Port;
+            existing.Proto = incoming.Proto;
+            if (incoming.Psk.Length > 0) existing.Psk = incoming.Psk;
+            // existing.Username / existing.Password stay untouched
+        }
+
+        // حذف سرورهای رسمی قدیمی که دیگر توی پکیج جدید نیستند (یعنی از هاست حذف شده‌اند)
+        var incomingNames = new HashSet<string>(pkg.Connections.Select(c => c.Name));
+        Connections.RemoveAll(c => c.Source == "official" && !incomingNames.Contains(c.Name));
+
+        if (pkg.BaseOvpn.Trim().Length > 0) BaseOvpn = pkg.BaseOvpn;
+        if (pkg.Ca.Trim().Length > 0) Ca = pkg.Ca;
+        if (pkg.PackageVersion > PackageVersion) PackageVersion = pkg.PackageVersion;
+    }
+
+    // Make sure base.ovpn exists on disk; rebuild it from config when missing.
+    // Also adopts an existing file into config the first time (anti-loss).
+    public bool EnsureBaseOvpnFile()
+    {
+        Directory.CreateDirectory(Path.Combine(AppContext.BaseDirectory, "Data"));
+        var path = Path.Combine(AppContext.BaseDirectory, "Data", "base.ovpn");
+        if (File.Exists(path))
+        {
+            if (BaseOvpn.Trim().Length == 0)
+                BaseOvpn = File.ReadAllText(path);
+            return true;
+        }
+        if (BaseOvpn.Trim().Length == 0) return false;
+        File.WriteAllText(path, BaseOvpn);
+        return true;
+    }
+
+    // مطمئن می‌شود ca.crt کنار exe وجود دارد و آخرین نسخه‌ی دریافتی از هاست را دارد.
+    // مثل EnsureBaseOvpnFile: اگر Ca خالی باشد ولی فایل روی دیسک باشد، همان فایل پذیرفته می‌شود (anti-loss).
+    // نصب واقعی در Trusted Root همچنان فقط توسط CaInstaller و با اجازه‌ی کاربر هنگام اتصال SSTP/IKEv2 انجام می‌شود؛
+    // این متد فقط فایل روی دیسک را به‌روز نگه می‌دارد تا CaInstaller.IsInstalled() تشخیص اختلاف بدهد.
+    public bool EnsureCaFile()
+    {
+        var path = CaInstaller.CaPath;
+        if (Ca.Trim().Length == 0)
+        {
+            if (File.Exists(path))
+            {
+                try { Ca = Convert.ToBase64String(File.ReadAllBytes(path)); } catch { }
+            }
+            return File.Exists(path);
+        }
+        try
+        {
+            var bytes = Convert.FromBase64String(Ca.Trim());
+            if (File.Exists(path))
+            {
+                var existing = File.ReadAllBytes(path);
+                if (existing.Length == bytes.Length && existing.SequenceEqual(bytes))
+                    return true; // بدون تغییر — نیازی به نصب مجدد نیست
+            }
+            File.WriteAllBytes(path, bytes);
+            return true;
+        }
+        catch { return false; }
+    }
+}
+
+public sealed class ConnectionProfile
+{
+    public string Name { get; set; } = "";
+    public string Type { get; set; } = "openvpn"; // openvpn | l2tp | pptp | sstp | ikev2
+    public string Server { get; set; } = "";
+    public int? Port { get; set; }
+    public string Proto { get; set; } = "udp";    // openvpn only: udp | tcp
+    public string Psk { get; set; } = "";         // l2tp only
+    public string Username { get; set; } = "";
+    public string Password { get; set; } = "";
+
+    // --- New in step 11.6 ---
+    public string Source { get; set; } = "custom"; // official | custom
+    public string OvpnInline { get; set; } = "";   // personal .ovpn content (custom openvpn only)
+
+    // Server Override — در صورت تنظیم، اتصال حتماً به این آدرس انجام می‌شود (مثل OpenVPN Connect)
+    public string ServerOverride { get; set; } = "";
+
+    [JsonIgnore]
+    public string EffectiveServer =>
+        string.IsNullOrWhiteSpace(ServerOverride) ? Server : ServerOverride.Trim();
+
+    [JsonIgnore] public bool IsOfficial => Source == "official";
+    [JsonIgnore] public bool HasInlineOvpn => OvpnInline.Trim().Length > 0;
+
+    // Cert-only personal profiles (no auth-user-pass) must not trigger the credentials popup.
+    [JsonIgnore]
+    public bool NeedsCredentials =>
+        Type != "openvpn" || !HasInlineOvpn || OvpnInline.Contains("auth-user-pass");
+
+    [JsonIgnore]
+    public string Subtitle
+    {
+        get
+        {
+            // نمایش زیر نام کانکشن: آدرس + پورت (بدون پروتکل — نام کانکشن خودش گویاست)
+            var server = Server.Length > 0 ? Server : "-";
+            var port = Port is int p ? $"   Port: {p}" : "";
+            return $"{server}{port}";
+        }
+    }
+
+    // فقط آدرس سرور بدون پورت — برای کارت اینفوی بالا (پورت به کادر Protocol منتقل شد تا خلوت‌تر باشد)
+    [JsonIgnore]
+    public string ServerLine => Server.Length > 0 ? Server : "-";
+
+    public ConnectionProfile CloneWithCreds(string username, string password) => new()
+    {
+        Name = Name,
+        Type = Type,
+        Server = Server,
+        Port = Port,
+        Proto = Proto,
+        Psk = Psk,
+        Username = username,
+        Password = password,
+        Source = Source,
+        OvpnInline = OvpnInline,
+    };
+}
+
+public sealed class CredentialsConfig
+{
+    public string Username { get; set; } = "";
+    public string Password { get; set; } = "";
+    public string L2tpPsk { get; set; } = "";
+}
+
+public sealed class ProtocolConfig
+{
+    public string Type { get; set; } = "";
+    public string Kind { get; set; } = "vpn";
+    public bool Enabled { get; set; }
+    public int? Port { get; set; }
+    public string? Proto { get; set; }
+    public string? Core { get; set; }
+    public bool Warn { get; set; }
+}
+
+public sealed class OpenVpnEndpoint
+{
+    public string Address { get; set; } = "";
+    public int Port { get; set; }
+    public string Proto { get; set; } = "tcp"; // tcp | udp
+}
+
+public sealed class PackageFile
+{
+    public int PackageVersion { get; set; } = 1;
+    public string Name { get; set; } = "SmartVPN";
+    public List<ConnectionProfile> Connections { get; set; } = [];
+    public string BaseOvpn { get; set; } = "";
+    public string Ca { get; set; } = ""; // گواهی CA به‌صورت Base64 — اختیاری (فقط برای SSTP/IKEv2)
+}

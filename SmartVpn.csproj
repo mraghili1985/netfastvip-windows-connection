@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <!-- اجرای همیشه‌ادمین — لازم برای نصب CA، درایور OpenVPN و فرمان‌های شبکه -->
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>NETFASTVIP</AssemblyName>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <Company>NETFASTVIP</Company>
+    <Product>NETFASTVIP VPN Client</Product>
+    <Copyright>© 2026 NETFASTVIP</Copyright>
+    <AssemblyVersion>2.0.0</AssemblyVersion>
+    <FileVersion>2.0.0</FileVersion>
+    <InformationalVersion>2.0.0</InformationalVersion>
+    <!-- قبلاً اینجا PublishSingleFile/IncludeNativeLibrariesForSelfExtract فعال بود: همه‌چی در یک NETFASTVIP.exe تکی جمع می‌شد. این exe تکی در واقع یک
+         bootstrapper بومی بود که هنگام اجرا دهها DLL داخلی را در یک پوشه‌ی موقت (%TEMP%) اکسترکت
+         می‌کرد — همین رفتار دروپرماننده باعث false-positive آنتی‌ویروسی/Defender می‌شد. تاکیدشده: برنامه
+         همچنان self-contained منتشر می‌شود (نیازی به .NET روی دستگاه کاربر نیست)، فقط دیگر تک‌فایلی نیست
+         و خروجی شامل exe + انبوهی DLL می‌شود. pack.bat همه این‌ها را داخل یک پوشه‌ی App\ جمع
+         می‌کند و یک شورتکات کنارش می‌سازد تا کاربر با انبوهی فایل روبرو نشود. -->
+    <SelfContained>true</SelfContained>
+    <SatelliteResourceLanguages>fa</SatelliteResourceLanguages>
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- config.json و base.ovpn دیگر کنار exe نمی‌ریزند؛ داخل پوشه‌ی Data قرار می‌گیرند -->
+    <None Update="config.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <TargetPath>Data\config.json</TargetPath>
+    </None>
+    <None Update="base.ovpn">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <TargetPath>Data\base.ovpn</TargetPath>
+    </None>
+    <!-- ca.crt و README.txt عمدا کنار exe می‌مانند: README باید بلافاصله دیده شود -->
+    <None Update="ca.crt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="README.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,359 @@
+﻿[1405-06-06 12:51:07] split-tunnel: local gateway = 192.168.1.1
+[1405-06-06 12:51:07] [l2tp] probing...
+[1405-06-06 12:51:07] [l2tp] connecting...
+[1405-06-06 12:51:32] split-tunnel: local gateway = 192.168.1.1
+[1405-06-06 12:51:32] [l2tp] probing...
+[1405-06-06 12:51:32] [l2tp] connecting...
+[1405-06-06 12:51:33] [l2tp] entry create failed: Add-VpnConnection :  This VPN connection has already been created. Specify a different VPN profile name. : Cannot | create a file when that file already exists. | At line:1 char:182 | + ... lyContinue; Add-VpnConnection -Name 'SmartVpn-l2tp' -ServerAddress 'w ... | +                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ | + CategoryInfo          : ResourceExists: (SmartVpn-l2tp:root/Microsoft/...S_VpnConnection) [Add-VpnConnection], C | imException | + FullyQualifiedErrorId : WIN32 183,Add-VpnConnection
+[1405-06-06 12:51:33] [l2tp] failed - next
+[1405-06-06 12:51:33] no connection succeeded - retrying in 15s...
+[1405-06-06 12:51:48] [l2tp] probing...
+[1405-06-06 12:51:48] [l2tp] connecting...
+[1405-06-06 12:51:55] split-tunnel: local gateway = 192.168.1.1
+[1405-06-06 12:51:55] [openvpn-udp-1111] probing...
+[1405-06-06 12:51:55] [openvpn-udp-1111] connecting...
+[1405-06-06 12:51:55] [openvpn-udp-1111] 2026-08-28 12:51:55 DEPRECATED OPTION: --persist-key option ignored. Keys are now always persisted across restarts. 
+[1405-06-06 12:51:55] [openvpn-udp-1111] 2026-08-28 12:51:55 OpenVPN 2.7.6 [git:v2.7.6/327a33de2aa21883] Windows [SSL (OpenSSL)] [LZO] [LZ4] [PKCS11] [AEAD] [DCO] built on Aug  5 2026
+[1405-06-06 12:51:55] [openvpn-udp-1111] 2026-08-28 12:51:55 Windows version: 10.0.26200,amd64
+[1405-06-06 12:51:55] [openvpn-udp-1111] 2026-08-28 12:51:55 library versions: OpenSSL 3.6.3 9 Jun 2026, LZO 2.10
+[1405-06-06 12:51:55] [openvpn-udp-1111] 2026-08-28 12:51:55 DCO version: 2.8.4
+[1405-06-06 12:51:55] [openvpn-udp-1111] 2026-08-28 12:51:55 TCP/UDP: Preserving recently used remote address: [AF_INET]5.10.249.9:1111
+[1405-06-06 12:51:55] [openvpn-udp-1111] 2026-08-28 12:51:55 UDP link local: (not bound)
+[1405-06-06 12:51:55] [openvpn-udp-1111] 2026-08-28 12:51:55 UDP link remote: [AF_INET]5.10.249.9:1111
+[1405-06-06 12:51:55] [openvpn-udp-1111] 2026-08-28 12:51:55 TLS: Initial packet from [AF_INET]5.10.249.9:1111, sid=ef2cc6a9 b8c4c9f7
+[1405-06-06 12:51:55] [openvpn-udp-1111] 2026-08-28 12:51:55 WARNING: this configuration may cache passwords in memory -- use the auth-nocache option to prevent this
+[1405-06-06 12:51:55] [openvpn-udp-1111] 2026-08-28 12:51:55 VERIFY OK: depth=1, CN=ov8.fastvip.xyz
+[1405-06-06 12:51:55] [openvpn-udp-1111] 2026-08-28 12:51:55 VERIFY KU OK
+[1405-06-06 12:51:55] [openvpn-udp-1111] 2026-08-28 12:51:55 Validating certificate extended key usage
+[1405-06-06 12:51:55] [openvpn-udp-1111] 2026-08-28 12:51:55 ++ Certificate has EKU (str) TLS Web Server Authentication, expects TLS Web Server Authentication
+[1405-06-06 12:51:55] [openvpn-udp-1111] 2026-08-28 12:51:55 VERIFY EKU OK
+[1405-06-06 12:51:55] [openvpn-udp-1111] 2026-08-28 12:51:55 VERIFY OK: depth=0, CN=*.ov8.fastvip.xyz
+[1405-06-06 12:51:55] [openvpn-udp-1111] 2026-08-28 12:51:55 Control Channel: TLSv1.2, cipher TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384, peer certificate: 1024 bits RSA, signature: RSA-SHA256, peer temporary key: 253 bits X25519, peer signing digest/type: rsa_pkcs1_sha256 RSA, key agreement: x25519
+[1405-06-06 12:51:55] [openvpn-udp-1111] 2026-08-28 12:51:55 [*.ov8.fastvip.xyz] Peer Connection Initiated with [AF_INET]5.10.249.9:1111
+[1405-06-06 12:51:55] [openvpn-udp-1111] 2026-08-28 12:51:55 TLS: move_session: dest=TM_ACTIVE src=TM_INITIAL reinit_src=1
+[1405-06-06 12:51:55] [openvpn-udp-1111] 2026-08-28 12:51:55 TLS: tls_multi_process: initial untrusted session promoted to trusted
+[1405-06-06 12:51:57] [openvpn-udp-1111] 2026-08-28 12:51:56 SENT CONTROL [*.ov8.fastvip.xyz]: 'PUSH_REQUEST' (status=1)
+[1405-06-06 12:51:57] [openvpn-udp-1111] 2026-08-28 12:51:56 PUSH: Received control message: 'PUSH_REPLY,dhcp-option DNS 8.8.8.8,dhcp-option DNS 1.1.1.1,ping 20,ping-restart 60,topology subnet,route-gateway 61.1.1.1,ifconfig 61.1.1.31 255.255.255.0,redirect-gateway def1,peer-id 18'
+[1405-06-06 12:51:57] [openvpn-udp-1111] 2026-08-28 12:51:56 WARNING: You have specified redirect-gateway and redirect-private at the same time (or the same option multiple times). This is not well supported and may lead to unexpected results
+[1405-06-06 12:51:57] [openvpn-udp-1111] 2026-08-28 12:51:56 OPTIONS IMPORT: --ifconfig/up options modified
+[1405-06-06 12:51:57] [openvpn-udp-1111] 2026-08-28 12:51:56 OPTIONS IMPORT: route options modified
+[1405-06-06 12:51:57] [openvpn-udp-1111] 2026-08-28 12:51:56 OPTIONS IMPORT: route-related options modified
+[1405-06-06 12:51:57] [openvpn-udp-1111] 2026-08-28 12:51:56 OPTIONS IMPORT: --ip-win32 and/or --dhcp-option options modified
+[1405-06-06 12:51:57] [openvpn-udp-1111] 2026-08-28 12:51:56 Using peer cipher 'AES-128-GCM'
+[1405-06-06 12:51:57] [openvpn-udp-1111] 2026-08-28 12:51:56 interactive service msg_channel=0
+[1405-06-06 12:51:57] [openvpn-udp-1111] 2026-08-28 12:51:56 ovpn-dco device [OpenVPN Connect DCO Adapter] opened
+[1405-06-06 12:51:57] [openvpn-udp-1111] 2026-08-28 12:51:56 NETSH: C:\WINDOWS\system32\netsh.exe interface ip set address 18 static 61.1.1.31 255.255.255.0 store=active
+[1405-06-06 12:51:57] [openvpn-udp-1111] 2026-08-28 12:51:57 NETSH: C:\WINDOWS\system32\netsh.exe interface ip delete dns 18 all
+[1405-06-06 12:51:57] [openvpn-udp-1111] 2026-08-28 12:51:57 NETSH: C:\WINDOWS\system32\netsh.exe interface ip set dns 18 static 8.8.8.8 validate=no
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:57 NETSH: C:\WINDOWS\system32\netsh.exe interface ip add dns 18 1.1.1.1 validate=no
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:57 NETSH: C:\WINDOWS\system32\netsh.exe interface ip delete wins 18 all
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 IPv4 MTU set to 1400 on interface 18 using SetIpInterfaceEntry()
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 NETSH: C:\WINDOWS\system32\netsh.exe interface ipv6 set address 18 fd15:53b6:dead::2/128 store=active
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 add_route_ipv6(fd15:53b6:dead::/64 -> fd15:53b6:dead::2 metric 0) IF 18
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 IPv6 route added using ipapi
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 NETSH: C:\WINDOWS\system32\netsh.exe interface ipv6 delete dns 18 all
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 IPv6 MTU set to 1400 on interface 18 using SetIpInterfaceEntry()
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 WFP Block: WFP engine opened
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 WFP Block: Using existing sublayer
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 WFP Block: Added permit filters for exe_path
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 WFP Block: Added block filters for all interfaces
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 WFP Block: Added permit filters for VPN interface
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 WFP Block: Added block filters for DNS traffic to loopback
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 C:\WINDOWS\system32\route.exe ADD 5.10.249.9 MASK 255.255.255.255 192.168.1.1
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 ROUTE: CreateIpForwardEntry succeeded with dwForwardMetric1=25 and dwForwardType=4
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 Route addition via ipapi [adaptive] succeeded
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 C:\WINDOWS\system32\route.exe ADD 0.0.0.0 MASK 128.0.0.0 61.1.1.1
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 ROUTE: CreateIpForwardEntry succeeded with dwForwardMetric1=3 and dwForwardType=4
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 Route addition via ipapi [adaptive] succeeded
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 C:\WINDOWS\system32\route.exe ADD 128.0.0.0 MASK 128.0.0.0 61.1.1.1
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 ROUTE: CreateIpForwardEntry succeeded with dwForwardMetric1=3 and dwForwardType=4
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 Route addition via ipapi [adaptive] succeeded
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 Initialization Sequence Completed
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 Data Channel: cipher 'AES-128-GCM', peer-id: 18
+[1405-06-06 12:51:58] [openvpn-udp-1111] 2026-08-28 12:51:58 Timers: ping 20, ping-restart 60
+[1405-06-06 12:52:01] connected via openvpn-udp-1111 - monitoring every 5s
+[1405-06-06 12:52:01] TASK CRASH: System.AggregateException: A Task's exception(s) were not observed either by Waiting on the Task or accessing its Exception property. As a result, the unobserved exception was rethrown by the finalizer thread. (Unable to read data from the transport connection: The I/O operation has been aborted because of either a thread exit or an application request..)
+ ---> System.IO.IOException: Unable to read data from the transport connection: The I/O operation has been aborted because of either a thread exit or an application request..
+ ---> System.Net.Sockets.SocketException (995): The I/O operation has been aborted because of either a thread exit or an application request.
+   --- End of inner exception stack trace ---
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource<System.Int32>.GetResult(Int16 token)
+   at System.IO.StreamReader.ReadBufferAsync(CancellationToken cancellationToken)
+   at System.IO.StreamReader.ReadLineAsyncInternal(CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+[1405-06-06 12:52:02] [stats] traffic source: OpenVPN Data Channel Offload (61.1.1.31)
+[1405-06-06 12:52:10] TASK CRASH: System.AggregateException: A Task's exception(s) were not observed either by Waiting on the Task or accessing its Exception property. As a result, the unobserved exception was rethrown by the finalizer thread. (Unable to read data from the transport connection: The I/O operation has been aborted because of either a thread exit or an application request..)
+ ---> System.IO.IOException: Unable to read data from the transport connection: The I/O operation has been aborted because of either a thread exit or an application request..
+ ---> System.Net.Sockets.SocketException (995): The I/O operation has been aborted because of either a thread exit or an application request.
+   --- End of inner exception stack trace ---
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource<System.Int32>.GetResult(Int16 token)
+   at System.IO.StreamReader.ReadBufferAsync(CancellationToken cancellationToken)
+   at System.IO.StreamReader.ReadLineAsyncInternal(CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+[1405-06-06 12:53:01] --- تست نشتی DNS ---
+[1405-06-06 12:53:01] DNS 51.195.227.249 -> 🇬🇧 United Kingdom (OVH SAS)
+[1405-06-06 12:56:33] [openvpn-udp-1111] 2026-08-28 12:56:33 C:\WINDOWS\system32\route.exe DELETE 5.10.249.9 MASK 255.255.255.255 192.168.1.1
+[1405-06-06 12:56:33] [openvpn-udp-1111] 2026-08-28 12:56:33 Route deletion via IPAPI succeeded [adaptive]
+[1405-06-06 12:56:33] [openvpn-udp-1111] 2026-08-28 12:56:33 C:\WINDOWS\system32\route.exe DELETE 0.0.0.0 MASK 128.0.0.0 61.1.1.1
+[1405-06-06 12:56:33] [openvpn-udp-1111] 2026-08-28 12:56:33 Route deletion via IPAPI succeeded [adaptive]
+[1405-06-06 12:56:33] [openvpn-udp-1111] 2026-08-28 12:56:33 C:\WINDOWS\system32\route.exe DELETE 128.0.0.0 MASK 128.0.0.0 61.1.1.1
+[1405-06-06 12:56:33] [openvpn-udp-1111] 2026-08-28 12:56:33 Route deletion via IPAPI succeeded [adaptive]
+[1405-06-06 12:56:33] [openvpn-udp-1111] 2026-08-28 12:56:33 Closing ovpn-dco interface
+[1405-06-06 12:56:33] [openvpn-udp-1111] 2026-08-28 12:56:33 delete_route_ipv6(fd15:53b6:dead::/64)
+[1405-06-06 12:56:33] [openvpn-udp-1111] 2026-08-28 12:56:33 IPv6 route deleted using ipapi
+[1405-06-06 12:56:33] [openvpn-udp-1111] 2026-08-28 12:56:33 NETSH: C:\WINDOWS\system32\netsh.exe interface ipv6 delete address 18 fd15:53b6:dead::2 store=active
+[1405-06-06 12:56:33] [openvpn-udp-1111] 2026-08-28 12:56:33 NETSH: C:\WINDOWS\system32\netsh.exe interface ipv4 delete dns 18 all
+[1405-06-06 12:56:34] [openvpn-udp-1111] 2026-08-28 12:56:33 NETSH: C:\WINDOWS\system32\netsh.exe interface ipv4 delete address 18 61.1.1.31 store=active
+[1405-06-06 12:56:34] [openvpn-udp-1111] 2026-08-28 12:56:34 SIGTERM[hard,] received, process exiting
+[1405-06-06 12:56:34] [openvpn-udp-1111] خاموشی تمیز انجام شد ✓
+[1405-06-06 12:57:20] split-tunnel: local gateway = 192.168.1.1
+[1405-06-06 12:57:20] [openvpn-udp-1111] probing...
+[1405-06-06 12:57:20] [openvpn-udp-1111] connecting...
+[1405-06-06 12:57:20] [openvpn-udp-1111] در انتظار آزاد شدن کامل آداپتور اتصال قبلی…
+[1405-06-06 12:57:24] [openvpn-udp-1111] 2026-08-28 12:57:24 DEPRECATED OPTION: --persist-key option ignored. Keys are now always persisted across restarts. 
+[1405-06-06 12:57:24] [openvpn-udp-1111] 2026-08-28 12:57:24 OpenVPN 2.7.6 [git:v2.7.6/327a33de2aa21883] Windows [SSL (OpenSSL)] [LZO] [LZ4] [PKCS11] [AEAD] [DCO] built on Aug  5 2026
+[1405-06-06 12:57:24] [openvpn-udp-1111] 2026-08-28 12:57:24 Windows version: 10.0.26200,amd64
+[1405-06-06 12:57:24] [openvpn-udp-1111] 2026-08-28 12:57:24 library versions: OpenSSL 3.6.3 9 Jun 2026, LZO 2.10
+[1405-06-06 12:57:24] [openvpn-udp-1111] 2026-08-28 12:57:24 DCO version: 2.8.4
+[1405-06-06 12:57:24] [openvpn-udp-1111] 2026-08-28 12:57:24 TCP/UDP: Preserving recently used remote address: [AF_INET]91.223.116.164:1111
+[1405-06-06 12:57:24] [openvpn-udp-1111] 2026-08-28 12:57:24 UDP link local: (not bound)
+[1405-06-06 12:57:24] [openvpn-udp-1111] 2026-08-28 12:57:24 UDP link remote: [AF_INET]91.223.116.164:1111
+[1405-06-06 12:57:24] [openvpn-udp-1111] 2026-08-28 12:57:24 TLS: Initial packet from [AF_INET]91.223.116.164:1111, sid=10dacbb7 04f01034
+[1405-06-06 12:57:24] [openvpn-udp-1111] 2026-08-28 12:57:24 WARNING: this configuration may cache passwords in memory -- use the auth-nocache option to prevent this
+[1405-06-06 12:57:24] [openvpn-udp-1111] 2026-08-28 12:57:25 VERIFY OK: depth=1, CN=ov8.fastvip.xyz
+[1405-06-06 12:57:24] [openvpn-udp-1111] 2026-08-28 12:57:25 VERIFY KU OK
+[1405-06-06 12:57:24] [openvpn-udp-1111] 2026-08-28 12:57:25 Validating certificate extended key usage
+[1405-06-06 12:57:24] [openvpn-udp-1111] 2026-08-28 12:57:25 ++ Certificate has EKU (str) TLS Web Server Authentication, expects TLS Web Server Authentication
+[1405-06-06 12:57:24] [openvpn-udp-1111] 2026-08-28 12:57:25 VERIFY EKU OK
+[1405-06-06 12:57:24] [openvpn-udp-1111] 2026-08-28 12:57:25 VERIFY OK: depth=0, CN=*.ov8.fastvip.xyz
+[1405-06-06 12:57:24] [openvpn-udp-1111] 2026-08-28 12:57:25 Control Channel: TLSv1.2, cipher TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384, peer certificate: 1024 bits RSA, signature: RSA-SHA256, peer temporary key: 253 bits X25519, peer signing digest/type: rsa_pkcs1_sha256 RSA, key agreement: x25519
+[1405-06-06 12:57:24] [openvpn-udp-1111] 2026-08-28 12:57:25 [*.ov8.fastvip.xyz] Peer Connection Initiated with [AF_INET]91.223.116.164:1111
+[1405-06-06 12:57:24] [openvpn-udp-1111] 2026-08-28 12:57:25 TLS: move_session: dest=TM_ACTIVE src=TM_INITIAL reinit_src=1
+[1405-06-06 12:57:24] [openvpn-udp-1111] 2026-08-28 12:57:25 TLS: tls_multi_process: initial untrusted session promoted to trusted
+[1405-06-06 12:57:24] [openvpn-udp-1111] timeout — وصل نشد
+[1405-06-06 12:57:25] [openvpn-udp-1111] 2026-08-28 12:57:26 SENT CONTROL [*.ov8.fastvip.xyz]: 'PUSH_REQUEST' (status=1)
+[1405-06-06 12:57:25] [openvpn-udp-1111] 2026-08-28 12:57:26 PUSH: Received control message: 'PUSH_REPLY,dhcp-option DNS 8.8.8.8,dhcp-option DNS 1.1.1.1,ping 20,ping-restart 60,topology subnet,route-gateway 90.1.1.1,ifconfig 90.1.1.222 255.255.255.0,redirect-gateway def1,peer-id 79'
+[1405-06-06 12:57:25] [openvpn-udp-1111] 2026-08-28 12:57:26 WARNING: You have specified redirect-gateway and redirect-private at the same time (or the same option multiple times). This is not well supported and may lead to unexpected results
+[1405-06-06 12:57:25] [openvpn-udp-1111] 2026-08-28 12:57:26 OPTIONS IMPORT: --ifconfig/up options modified
+[1405-06-06 12:57:25] [openvpn-udp-1111] 2026-08-28 12:57:26 OPTIONS IMPORT: route options modified
+[1405-06-06 12:57:25] [openvpn-udp-1111] 2026-08-28 12:57:26 OPTIONS IMPORT: route-related options modified
+[1405-06-06 12:57:25] [openvpn-udp-1111] 2026-08-28 12:57:26 OPTIONS IMPORT: --ip-win32 and/or --dhcp-option options modified
+[1405-06-06 12:57:25] [openvpn-udp-1111] 2026-08-28 12:57:26 Using peer cipher 'AES-128-GCM'
+[1405-06-06 12:57:25] [openvpn-udp-1111] 2026-08-28 12:57:26 interactive service msg_channel=0
+[1405-06-06 12:57:25] [openvpn-udp-1111] 2026-08-28 12:57:26 ovpn-dco device [OpenVPN Connect DCO Adapter] opened
+[1405-06-06 12:57:25] [openvpn-udp-1111] 2026-08-28 12:57:26 NETSH: C:\WINDOWS\system32\netsh.exe interface ip set address 18 static 90.1.1.222 255.255.255.0 store=active
+[1405-06-06 12:57:26] [openvpn-udp-1111] 2026-08-28 12:57:26 NETSH: C:\WINDOWS\system32\netsh.exe interface ip delete dns 18 all
+[1405-06-06 12:57:26] [openvpn-udp-1111] 2026-08-28 12:57:27 NETSH: C:\WINDOWS\system32\netsh.exe interface ip set dns 18 static 8.8.8.8 validate=no
+[1405-06-06 12:57:26] [openvpn-udp-1111] 2026-08-28 12:57:27 NETSH: C:\WINDOWS\system32\netsh.exe interface ip add dns 18 1.1.1.1 validate=no
+[1405-06-06 12:57:26] [openvpn-udp-1111] 2026-08-28 12:57:27 NETSH: C:\WINDOWS\system32\netsh.exe interface ip delete wins 18 all
+[1405-06-06 12:57:26] [openvpn-udp-1111] 2026-08-28 12:57:27 IPv4 MTU set to 1400 on interface 18 using SetIpInterfaceEntry()
+[1405-06-06 12:57:26] [openvpn-udp-1111] 2026-08-28 12:57:27 NETSH: C:\WINDOWS\system32\netsh.exe interface ipv6 set address 18 fd15:53b6:dead::2/128 store=active
+[1405-06-06 12:57:27] split-tunnel: local gateway = 192.168.1.1
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:27 add_route_ipv6(fd15:53b6:dead::/64 -> fd15:53b6:dead::2 metric 0) IF 18
+[1405-06-06 12:57:27] [openvpn-udp-1198] probing...
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:27 IPv6 route added using ipapi
+[1405-06-06 12:57:27] [openvpn-udp-1198] connecting...
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:27 NETSH: C:\WINDOWS\system32\netsh.exe interface ipv6 delete dns 18 all
+[1405-06-06 12:57:27] [openvpn-udp-1198] در انتظار آزاد شدن کامل آداپتور اتصال قبلی…
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:27 IPv6 MTU set to 1400 on interface 18 using SetIpInterfaceEntry()
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:27 WFP Block: WFP engine opened
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:27 WFP Block: Using existing sublayer
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:27 WFP Block: Added permit filters for exe_path
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:27 WFP Block: Added block filters for all interfaces
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:27 WFP Block: Added permit filters for VPN interface
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:27 WFP Block: Added block filters for DNS traffic to loopback
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:27 C:\WINDOWS\system32\route.exe ADD 91.223.116.164 MASK 255.255.255.255 192.168.1.1
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:28 ROUTE: CreateIpForwardEntry succeeded with dwForwardMetric1=25 and dwForwardType=4
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:28 Route addition via ipapi [adaptive] succeeded
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:28 C:\WINDOWS\system32\route.exe ADD 0.0.0.0 MASK 128.0.0.0 90.1.1.1
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:28 ROUTE: CreateIpForwardEntry succeeded with dwForwardMetric1=3 and dwForwardType=4
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:28 Route addition via ipapi [adaptive] succeeded
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:28 C:\WINDOWS\system32\route.exe ADD 128.0.0.0 MASK 128.0.0.0 90.1.1.1
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:28 ROUTE: CreateIpForwardEntry succeeded with dwForwardMetric1=3 and dwForwardType=4
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:28 Route addition via ipapi [adaptive] succeeded
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:28 Initialization Sequence Completed
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:28 Data Channel: cipher 'AES-128-GCM', peer-id: 79
+[1405-06-06 12:57:27] [openvpn-udp-1111] 2026-08-28 12:57:28 Timers: ping 20, ping-restart 60
+[1405-06-06 12:57:30] [openvpn-udp-1198] 2026-08-28 12:57:30 DEPRECATED OPTION: --persist-key option ignored. Keys are now always persisted across restarts. 
+[1405-06-06 12:57:30] [openvpn-udp-1198] 2026-08-28 12:57:30 OpenVPN 2.7.6 [git:v2.7.6/327a33de2aa21883] Windows [SSL (OpenSSL)] [LZO] [LZ4] [PKCS11] [AEAD] [DCO] built on Aug  5 2026
+[1405-06-06 12:57:30] [openvpn-udp-1198] 2026-08-28 12:57:30 Windows version: 10.0.26200,amd64
+[1405-06-06 12:57:30] [openvpn-udp-1198] 2026-08-28 12:57:30 library versions: OpenSSL 3.6.3 9 Jun 2026, LZO 2.10
+[1405-06-06 12:57:31] [openvpn-udp-1198] 2026-08-28 12:57:30 DCO version: 2.8.4
+[1405-06-06 12:57:31] [openvpn-udp-1198] 2026-08-28 12:57:30 TCP/UDP: Preserving recently used remote address: [AF_INET]5.10.249.9:1198
+[1405-06-06 12:57:31] [openvpn-udp-1198] 2026-08-28 12:57:30 CreateFile failed on ovpn-dco device: \\?\ROOT#NET#0001#{cac88484-7515-4c03-82e6-71a87abac361}\ovpn-dco: Access is denied.   (errno=5)
+[1405-06-06 12:57:31] [openvpn-udp-1198] 2026-08-28 12:57:30 UDP link local: (not bound)
+[1405-06-06 12:57:31] [openvpn-udp-1198] 2026-08-28 12:57:30 UDP link remote: [AF_INET]5.10.249.9:1198
+[1405-06-06 12:57:31] [openvpn-udp-1198] 2026-08-28 12:57:31 TLS: Initial packet from [AF_INET]5.10.249.9:1198, sid=3f605de1 14b7e8af
+[1405-06-06 12:57:31] [openvpn-udp-1198] 2026-08-28 12:57:31 WARNING: this configuration may cache passwords in memory -- use the auth-nocache option to prevent this
+[1405-06-06 12:57:31] [openvpn-udp-1198] 2026-08-28 12:57:31 VERIFY OK: depth=1, CN=ov8.fastvip.xyz
+[1405-06-06 12:57:31] [openvpn-udp-1198] 2026-08-28 12:57:31 VERIFY KU OK
+[1405-06-06 12:57:31] [openvpn-udp-1198] 2026-08-28 12:57:31 Validating certificate extended key usage
+[1405-06-06 12:57:31] [openvpn-udp-1198] 2026-08-28 12:57:31 ++ Certificate has EKU (str) TLS Web Server Authentication, expects TLS Web Server Authentication
+[1405-06-06 12:57:31] [openvpn-udp-1198] 2026-08-28 12:57:31 VERIFY EKU OK
+[1405-06-06 12:57:31] [openvpn-udp-1198] 2026-08-28 12:57:31 VERIFY OK: depth=0, CN=*.ov8.fastvip.xyz
+[1405-06-06 12:57:43] [openvpn-udp-1198] timeout — وصل نشد
+[1405-06-06 12:58:30] [openvpn-udp-1198] 2026-08-28 12:58:30 TLS Error: TLS key negotiation failed to occur within 60 seconds (check your network connectivity)
+[1405-06-06 12:58:30] [openvpn-udp-1198] 2026-08-28 12:58:30 TLS Error: TLS handshake failed
+[1405-06-06 12:58:30] [openvpn-udp-1198] 2026-08-28 12:58:30 Closing ovpn-dco interface
+[1405-06-06 12:58:30] [openvpn-udp-1198] 2026-08-28 12:58:30 SIGUSR1[soft,tls-error] received, process restarting
+[1405-06-06 12:58:30] [openvpn-udp-1198] 2026-08-28 12:58:30 Restart pause, 2 second(s)
+[1405-06-06 12:58:32] [openvpn-udp-1198] 2026-08-28 12:58:32 TCP/UDP: Preserving recently used remote address: [AF_INET]91.199.30.93:1198
+[1405-06-06 12:58:32] [openvpn-udp-1198] 2026-08-28 12:58:32 CreateFile failed on ovpn-dco device: \\?\ROOT#NET#0001#{cac88484-7515-4c03-82e6-71a87abac361}\ovpn-dco: Access is denied.   (errno=5)
+[1405-06-06 12:58:32] [openvpn-udp-1198] 2026-08-28 12:58:32 UDP link local: (not bound)
+[1405-06-06 12:58:32] [openvpn-udp-1198] 2026-08-28 12:58:32 UDP link remote: [AF_INET]91.199.30.93:1198
+[1405-06-06 12:58:38] [openvpn-udp-1198] 2026-08-28 12:58:37 TLS: Initial packet from [AF_INET]91.199.30.93:1198, sid=67330a9b 2875f3e0
+[1405-06-06 12:59:32] [openvpn-udp-1198] 2026-08-28 12:59:32 TLS Error: TLS key negotiation failed to occur within 60 seconds (check your network connectivity)
+[1405-06-06 12:59:32] [openvpn-udp-1198] 2026-08-28 12:59:32 TLS Error: TLS handshake failed
+[1405-06-06 12:59:32] [openvpn-udp-1198] 2026-08-28 12:59:32 Closing ovpn-dco interface
+[1405-06-06 12:59:32] [openvpn-udp-1198] 2026-08-28 12:59:32 SIGUSR1[soft,tls-error] received, process restarting
+[1405-06-06 12:59:32] [openvpn-udp-1198] 2026-08-28 12:59:32 Restart pause, 2 second(s)
+[1405-06-06 12:59:34] [openvpn-udp-1198] 2026-08-28 12:59:34 TCP/UDP: Preserving recently used remote address: [AF_INET]46.62.148.77:1198
+[1405-06-06 12:59:34] [openvpn-udp-1198] 2026-08-28 12:59:34 CreateFile failed on ovpn-dco device: \\?\ROOT#NET#0001#{cac88484-7515-4c03-82e6-71a87abac361}\ovpn-dco: Access is denied.   (errno=5)
+[1405-06-06 12:59:34] [openvpn-udp-1198] 2026-08-28 12:59:34 UDP link local: (not bound)
+[1405-06-06 12:59:34] [openvpn-udp-1198] 2026-08-28 12:59:34 UDP link remote: [AF_INET]46.62.148.77:1198
+[1405-06-06 12:59:34] [openvpn-udp-1198] 2026-08-28 12:59:34 TLS: Initial packet from [AF_INET]46.62.148.77:1198, sid=78ed49f8 b21164da
+[1405-06-06 12:59:35] [openvpn-udp-1198] 2026-08-28 12:59:34 VERIFY OK: depth=1, CN=ov8.fastvip.xyz
+[1405-06-06 12:59:35] [openvpn-udp-1198] 2026-08-28 12:59:34 VERIFY KU OK
+[1405-06-06 12:59:35] [openvpn-udp-1198] 2026-08-28 12:59:34 Validating certificate extended key usage
+[1405-06-06 12:59:35] [openvpn-udp-1198] 2026-08-28 12:59:34 ++ Certificate has EKU (str) TLS Web Server Authentication, expects TLS Web Server Authentication
+[1405-06-06 12:59:35] [openvpn-udp-1198] 2026-08-28 12:59:34 VERIFY EKU OK
+[1405-06-06 12:59:35] [openvpn-udp-1198] 2026-08-28 12:59:34 VERIFY OK: depth=0, CN=*.ov8.fastvip.xyz
+[1405-06-06 12:59:35] [openvpn-udp-1198] 2026-08-28 12:59:35 Control Channel: TLSv1.2, cipher TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384, peer certificate: 1024 bits RSA, signature: RSA-SHA256, peer temporary key: 253 bits X25519, peer signing digest/type: rsa_pkcs1_sha256 RSA, key agreement: x25519
+[1405-06-06 12:59:35] [openvpn-udp-1198] 2026-08-28 12:59:35 [*.ov8.fastvip.xyz] Peer Connection Initiated with [AF_INET]46.62.148.77:1198
+[1405-06-06 12:59:35] [openvpn-udp-1198] 2026-08-28 12:59:35 TLS: move_session: dest=TM_ACTIVE src=TM_INITIAL reinit_src=1
+[1405-06-06 12:59:35] [openvpn-udp-1198] 2026-08-28 12:59:35 TLS: tls_multi_process: initial untrusted session promoted to trusted
+[1405-06-06 12:59:36] [openvpn-udp-1198] 2026-08-28 12:59:36 SENT CONTROL [*.ov8.fastvip.xyz]: 'PUSH_REQUEST' (status=1)
+[1405-06-06 12:59:36] [openvpn-udp-1198] 2026-08-28 12:59:36 PUSH: Received control message: 'PUSH_REPLY,dhcp-option DNS 8.8.8.8,ping 20,ping-restart 60,topology subnet,route-gateway 20.1.1.1,ifconfig 20.1.1.17 255.255.255.0,redirect-gateway def1,peer-id 16'
+[1405-06-06 12:59:36] [openvpn-udp-1198] 2026-08-28 12:59:36 WARNING: You have specified redirect-gateway and redirect-private at the same time (or the same option multiple times). This is not well supported and may lead to unexpected results
+[1405-06-06 12:59:36] [openvpn-udp-1198] 2026-08-28 12:59:36 OPTIONS IMPORT: --ifconfig/up options modified
+[1405-06-06 12:59:36] [openvpn-udp-1198] 2026-08-28 12:59:36 OPTIONS IMPORT: route options modified
+[1405-06-06 12:59:36] [openvpn-udp-1198] 2026-08-28 12:59:36 OPTIONS IMPORT: route-related options modified
+[1405-06-06 12:59:36] [openvpn-udp-1198] 2026-08-28 12:59:36 OPTIONS IMPORT: --ip-win32 and/or --dhcp-option options modified
+[1405-06-06 12:59:36] [openvpn-udp-1198] 2026-08-28 12:59:36 Using peer cipher 'AES-128-GCM'
+[1405-06-06 12:59:36] [openvpn-udp-1198] 2026-08-28 12:59:36 interactive service msg_channel=0
+[1405-06-06 12:59:36] [openvpn-udp-1198] 2026-08-28 12:59:36 ovpn-dco device [OpenVPN Data Channel Offload] opened
+[1405-06-06 12:59:36] [openvpn-udp-1198] 2026-08-28 12:59:36 NETSH: C:\WINDOWS\system32\netsh.exe interface ip set address 19 static 20.1.1.17 255.255.255.0 store=active
+[1405-06-06 12:59:37] [openvpn-udp-1198] 2026-08-28 12:59:36 NETSH: C:\WINDOWS\system32\netsh.exe interface ip delete dns 19 all
+[1405-06-06 12:59:37] [openvpn-udp-1198] 2026-08-28 12:59:36 NETSH: C:\WINDOWS\system32\netsh.exe interface ip set dns 19 static 8.8.8.8 validate=no
+[1405-06-06 12:59:37] [openvpn-udp-1198] 2026-08-28 12:59:37 NETSH: C:\WINDOWS\system32\netsh.exe interface ip delete wins 19 all
+[1405-06-06 12:59:37] [openvpn-udp-1198] 2026-08-28 12:59:37 IPv4 MTU set to 1400 on interface 19 using SetIpInterfaceEntry()
+[1405-06-06 12:59:37] [openvpn-udp-1198] 2026-08-28 12:59:37 NETSH: C:\WINDOWS\system32\netsh.exe interface ipv6 set address 19 fd15:53b6:dead::2/128 store=active
+[1405-06-06 12:59:37] [openvpn-udp-1198] 2026-08-28 12:59:37 ERROR: command failed: returned error code 1
+[1405-06-06 12:59:41] [openvpn-udp-1198] 2026-08-28 12:59:41 NETSH: C:\WINDOWS\system32\netsh.exe interface ipv6 set address 19 fd15:53b6:dead::2/128 store=active
+[1405-06-06 12:59:42] [openvpn-udp-1198] 2026-08-28 12:59:41 ERROR: command failed: returned error code 1
+[1405-06-06 12:59:46] [openvpn-udp-1198] 2026-08-28 12:59:45 NETSH: C:\WINDOWS\system32\netsh.exe interface ipv6 set address 19 fd15:53b6:dead::2/128 store=active
+[1405-06-06 12:59:46] [openvpn-udp-1198] 2026-08-28 12:59:45 ERROR: command failed: returned error code 1
+[1405-06-06 12:59:50] [openvpn-udp-1198] 2026-08-28 12:59:49 NETSH: C:\WINDOWS\system32\netsh.exe interface ipv6 set address 19 fd15:53b6:dead::2/128 store=active
+[1405-06-06 12:59:50] [openvpn-udp-1198] 2026-08-28 12:59:50 ERROR: command failed: returned error code 1
+[1405-06-06 12:59:54] [openvpn-udp-1198] 2026-08-28 12:59:54 NETSH: command failed
+[1405-06-06 12:59:54] [openvpn-udp-1198] 2026-08-28 12:59:54 Exiting due to fatal error
+[1405-06-06 13:01:51] split-tunnel: local gateway = 192.168.1.1
+[1405-06-06 13:01:51] [openvpn-udp-1180] probing...
+[1405-06-06 13:01:51] [openvpn-udp-1180] connecting...
+[1405-06-06 13:01:51] [openvpn-udp-1180] در انتظار آزاد شدن کامل آداپتور اتصال قبلی…
+[1405-06-06 13:01:56] [openvpn-udp-1180] 2026-08-28 13:01:56 DEPRECATED OPTION: --persist-key option ignored. Keys are now always persisted across restarts. 
+[1405-06-06 13:01:56] [openvpn-udp-1180] 2026-08-28 13:01:56 OpenVPN 2.7.6 [git:v2.7.6/327a33de2aa21883] Windows [SSL (OpenSSL)] [LZO] [LZ4] [PKCS11] [AEAD] [DCO] built on Aug  5 2026
+[1405-06-06 13:01:56] [openvpn-udp-1180] 2026-08-28 13:01:56 Windows version: 10.0.26200,amd64
+[1405-06-06 13:01:56] [openvpn-udp-1180] 2026-08-28 13:01:56 library versions: OpenSSL 3.6.3 9 Jun 2026, LZO 2.10
+[1405-06-06 13:01:56] [openvpn-udp-1180] 2026-08-28 13:01:56 DCO version: 2.8.4
+[1405-06-06 13:01:56] [openvpn-udp-1180] 2026-08-28 13:01:56 TCP/UDP: Preserving recently used remote address: [AF_INET]91.223.116.173:1180
+[1405-06-06 13:01:56] [openvpn-udp-1180] 2026-08-28 13:01:56 CreateFile failed on ovpn-dco device: \\?\ROOT#NET#0001#{cac88484-7515-4c03-82e6-71a87abac361}\ovpn-dco: Access is denied.   (errno=5)
+[1405-06-06 13:01:56] [openvpn-udp-1180] 2026-08-28 13:01:56 UDP link local: (not bound)
+[1405-06-06 13:01:56] [openvpn-udp-1180] 2026-08-28 13:01:56 UDP link remote: [AF_INET]91.223.116.173:1180
+[1405-06-06 13:01:56] [openvpn-udp-1180] 2026-08-28 13:01:56 TLS: Initial packet from [AF_INET]91.223.116.173:1180, sid=ca6e066e cb65975e
+[1405-06-06 13:01:56] [openvpn-udp-1180] 2026-08-28 13:01:56 WARNING: this configuration may cache passwords in memory -- use the auth-nocache option to prevent this
+[1405-06-06 13:01:57] [openvpn-udp-1180] 2026-08-28 13:01:56 VERIFY OK: depth=1, CN=ov8.fastvip.xyz
+[1405-06-06 13:01:57] [openvpn-udp-1180] 2026-08-28 13:01:56 VERIFY KU OK
+[1405-06-06 13:01:57] [openvpn-udp-1180] 2026-08-28 13:01:56 Validating certificate extended key usage
+[1405-06-06 13:01:57] [openvpn-udp-1180] 2026-08-28 13:01:56 ++ Certificate has EKU (str) TLS Web Server Authentication, expects TLS Web Server Authentication
+[1405-06-06 13:01:57] [openvpn-udp-1180] 2026-08-28 13:01:56 VERIFY EKU OK
+[1405-06-06 13:01:57] [openvpn-udp-1180] 2026-08-28 13:01:56 VERIFY OK: depth=0, CN=*.ov8.fastvip.xyz
+[1405-06-06 13:02:02] [openvpn-udp-1180] timeout — وصل نشد
+[1405-06-06 13:02:04] > taskkill /F /IM openvpn.exe
+[1405-06-06 13:02:05] SUCCESS: The process "openvpn.exe" with PID 15664 has been terminated.
+[1405-06-06 13:02:05] SUCCESS: The process "openvpn.exe" with PID 6156 has been terminated.
+[1405-06-06 13:02:10] split-tunnel: local gateway = 192.168.1.1
+[1405-06-06 13:02:10] [openvpn-udp-1180] probing...
+[1405-06-06 13:02:10] [openvpn-udp-1180] connecting...
+[1405-06-06 13:02:10] [openvpn-udp-1180] در انتظار آزاد شدن کامل آداپتور اتصال قبلی…
+[1405-06-06 13:02:16] split-tunnel: local gateway = 192.168.1.1
+[1405-06-06 13:02:16] [openvpn-udp-1180] probing...
+[1405-06-06 13:02:16] [openvpn-udp-1180] connecting...
+[1405-06-06 13:02:16] [openvpn-udp-1180] در انتظار آزاد شدن کامل آداپتور اتصال قبلی…
+[1405-06-06 13:02:21] [openvpn-udp-1180] 2026-08-28 13:02:21 DEPRECATED OPTION: --persist-key option ignored. Keys are now always persisted across restarts. 
+[1405-06-06 13:02:21] [openvpn-udp-1180] 2026-08-28 13:02:21 OpenVPN 2.7.6 [git:v2.7.6/327a33de2aa21883] Windows [SSL (OpenSSL)] [LZO] [LZ4] [PKCS11] [AEAD] [DCO] built on Aug  5 2026
+[1405-06-06 13:02:21] [openvpn-udp-1180] 2026-08-28 13:02:21 Windows version: 10.0.26200,amd64
+[1405-06-06 13:02:21] [openvpn-udp-1180] 2026-08-28 13:02:21 library versions: OpenSSL 3.6.3 9 Jun 2026, LZO 2.10
+[1405-06-06 13:02:21] [openvpn-udp-1180] 2026-08-28 13:02:21 DCO version: 2.8.4
+[1405-06-06 13:02:21] [openvpn-udp-1180] 2026-08-28 13:02:21 TCP/UDP: Preserving recently used remote address: [AF_INET]91.223.116.173:1180
+[1405-06-06 13:02:21] [openvpn-udp-1180] 2026-08-28 13:02:21 UDP link local: (not bound)
+[1405-06-06 13:02:21] [openvpn-udp-1180] 2026-08-28 13:02:21 UDP link remote: [AF_INET]91.223.116.173:1180
+[1405-06-06 13:02:21] [openvpn-udp-1180] 2026-08-28 13:02:21 TLS: Initial packet from [AF_INET]91.223.116.173:1180, sid=a6d39b35 51bd6f55
+[1405-06-06 13:02:21] [openvpn-udp-1180] 2026-08-28 13:02:21 WARNING: this configuration may cache passwords in memory -- use the auth-nocache option to prevent this
+[1405-06-06 13:02:21] [openvpn-udp-1180] 2026-08-28 13:02:22 VERIFY OK: depth=1, CN=ov8.fastvip.xyz
+[1405-06-06 13:02:21] [openvpn-udp-1180] 2026-08-28 13:02:22 VERIFY KU OK
+[1405-06-06 13:02:21] [openvpn-udp-1180] 2026-08-28 13:02:22 Validating certificate extended key usage
+[1405-06-06 13:02:21] [openvpn-udp-1180] 2026-08-28 13:02:22 ++ Certificate has EKU (str) TLS Web Server Authentication, expects TLS Web Server Authentication
+[1405-06-06 13:02:21] [openvpn-udp-1180] 2026-08-28 13:02:22 VERIFY EKU OK
+[1405-06-06 13:02:21] [openvpn-udp-1180] 2026-08-28 13:02:22 VERIFY OK: depth=0, CN=*.ov8.fastvip.xyz
+[1405-06-06 13:02:21] [openvpn-udp-1180] 2026-08-28 13:02:22 Control Channel: TLSv1.2, cipher TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384, peer certificate: 1024 bits RSA, signature: RSA-SHA256, peer temporary key: 253 bits X25519, peer signing digest/type: rsa_pkcs1_sha256 RSA, key agreement: x25519
+[1405-06-06 13:02:21] [openvpn-udp-1180] 2026-08-28 13:02:22 [*.ov8.fastvip.xyz] Peer Connection Initiated with [AF_INET]91.223.116.173:1180
+[1405-06-06 13:02:21] [openvpn-udp-1180] 2026-08-28 13:02:22 TLS: move_session: dest=TM_ACTIVE src=TM_INITIAL reinit_src=1
+[1405-06-06 13:02:21] [openvpn-udp-1180] 2026-08-28 13:02:22 TLS: tls_multi_process: initial untrusted session promoted to trusted
+[1405-06-06 13:02:22] [openvpn-udp-1180] 2026-08-28 13:02:23 SENT CONTROL [*.ov8.fastvip.xyz]: 'PUSH_REQUEST' (status=1)
+[1405-06-06 13:02:22] [openvpn-udp-1180] 2026-08-28 13:02:23 PUSH: Received control message: 'PUSH_REPLY,dhcp-option DNS 8.8.8.8,dhcp-option DNS 1.1.1.1,ping 20,ping-restart 60,topology subnet,route-gateway 50.1.1.1,ifconfig 50.1.1.141 255.255.255.0,redirect-gateway def1,peer-id 22'
+[1405-06-06 13:02:22] [openvpn-udp-1180] 2026-08-28 13:02:23 WARNING: You have specified redirect-gateway and redirect-private at the same time (or the same option multiple times). This is not well supported and may lead to unexpected results
+[1405-06-06 13:02:22] [openvpn-udp-1180] 2026-08-28 13:02:23 OPTIONS IMPORT: --ifconfig/up options modified
+[1405-06-06 13:02:22] [openvpn-udp-1180] 2026-08-28 13:02:23 OPTIONS IMPORT: route options modified
+[1405-06-06 13:02:22] [openvpn-udp-1180] 2026-08-28 13:02:23 OPTIONS IMPORT: route-related options modified
+[1405-06-06 13:02:22] [openvpn-udp-1180] 2026-08-28 13:02:23 OPTIONS IMPORT: --ip-win32 and/or --dhcp-option options modified
+[1405-06-06 13:02:22] [openvpn-udp-1180] 2026-08-28 13:02:23 Using peer cipher 'AES-128-GCM'
+[1405-06-06 13:02:22] [openvpn-udp-1180] 2026-08-28 13:02:23 interactive service msg_channel=0
+[1405-06-06 13:02:22] [openvpn-udp-1180] 2026-08-28 13:02:23 ovpn-dco device [OpenVPN Connect DCO Adapter] opened
+[1405-06-06 13:02:22] [openvpn-udp-1180] 2026-08-28 13:02:23 NETSH: C:\WINDOWS\system32\netsh.exe interface ip set address 18 static 50.1.1.141 255.255.255.0 store=active
+[1405-06-06 13:02:23] [openvpn-udp-1180] 2026-08-28 13:02:23 NETSH: C:\WINDOWS\system32\netsh.exe interface ip delete dns 18 all
+[1405-06-06 13:02:23] [openvpn-udp-1180] 2026-08-28 13:02:24 NETSH: C:\WINDOWS\system32\netsh.exe interface ip set dns 18 static 8.8.8.8 validate=no
+[1405-06-06 13:02:23] [openvpn-udp-1180] 2026-08-28 13:02:24 NETSH: C:\WINDOWS\system32\netsh.exe interface ip add dns 18 1.1.1.1 validate=no
+[1405-06-06 13:02:23] [openvpn-udp-1180] 2026-08-28 13:02:24 NETSH: C:\WINDOWS\system32\netsh.exe interface ip delete wins 18 all
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 IPv4 MTU set to 1400 on interface 18 using SetIpInterfaceEntry()
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 NETSH: C:\WINDOWS\system32\netsh.exe interface ipv6 set address 18 fd15:53b6:dead::2/128 store=active
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 add_route_ipv6(fd15:53b6:dead::/64 -> fd15:53b6:dead::2 metric 0) IF 18
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 IPv6 route addition using ipapi failed because route exists
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 NETSH: C:\WINDOWS\system32\netsh.exe interface ipv6 delete dns 18 all
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 IPv6 MTU set to 1400 on interface 18 using SetIpInterfaceEntry()
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 WFP Block: WFP engine opened
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 WFP Block: Using existing sublayer
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 WFP Block: Added permit filters for exe_path
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 WFP Block: Added block filters for all interfaces
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 WFP Block: Added permit filters for VPN interface
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 WFP Block: Added block filters for DNS traffic to loopback
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 C:\WINDOWS\system32\route.exe ADD 91.223.116.173 MASK 255.255.255.255 192.168.1.1
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 ROUTE: CreateIpForwardEntry succeeded with dwForwardMetric1=25 and dwForwardType=4
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 Route addition via ipapi [adaptive] succeeded
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 C:\WINDOWS\system32\route.exe ADD 0.0.0.0 MASK 128.0.0.0 50.1.1.1
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 ROUTE: CreateIpForwardEntry succeeded with dwForwardMetric1=3 and dwForwardType=4
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 Route addition via ipapi [adaptive] succeeded
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 C:\WINDOWS\system32\route.exe ADD 128.0.0.0 MASK 128.0.0.0 50.1.1.1
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 ROUTE: CreateIpForwardEntry succeeded with dwForwardMetric1=3 and dwForwardType=4
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 Route addition via ipapi [adaptive] succeeded
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 Initialization Sequence Completed
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 Data Channel: cipher 'AES-128-GCM', peer-id: 22
+[1405-06-06 13:02:24] [openvpn-udp-1180] 2026-08-28 13:02:24 Timers: ping 20, ping-restart 60
+[1405-06-06 13:02:24] [openvpn-udp-1180] state: link remote: [AF_INET]91.223.116.173:1180
+[1405-06-06 13:02:24] connected via openvpn-udp-1180 - monitoring every 5s
+[1405-06-06 13:02:25] [stats] traffic source: OpenVPN Data Channel Offload (50.1.1.141)
+[1405-06-06 13:25:24] [openvpn-udp-1180] 2026-08-28 13:25:25 C:\WINDOWS\system32\route.exe DELETE 91.223.116.173 MASK 255.255.255.255 192.168.1.1
+[1405-06-06 13:25:24] [openvpn-udp-1180] 2026-08-28 13:25:25 Route deletion via IPAPI succeeded [adaptive]
+[1405-06-06 13:25:24] [openvpn-udp-1180] 2026-08-28 13:25:25 C:\WINDOWS\system32\route.exe DELETE 0.0.0.0 MASK 128.0.0.0 50.1.1.1
+[1405-06-06 13:25:24] [openvpn-udp-1180] 2026-08-28 13:25:25 Route deletion via IPAPI succeeded [adaptive]
+[1405-06-06 13:25:24] [openvpn-udp-1180] 2026-08-28 13:25:25 C:\WINDOWS\system32\route.exe DELETE 128.0.0.0 MASK 128.0.0.0 50.1.1.1
+[1405-06-06 13:25:24] [openvpn-udp-1180] 2026-08-28 13:25:25 Route deletion via IPAPI succeeded [adaptive]
+[1405-06-06 13:25:24] [openvpn-udp-1180] 2026-08-28 13:25:25 Closing ovpn-dco interface
+[1405-06-06 13:25:24] [openvpn-udp-1180] 2026-08-28 13:25:25 delete_route_ipv6(fd15:53b6:dead::/64)
+[1405-06-06 13:25:24] [openvpn-udp-1180] 2026-08-28 13:25:25 IPv6 route deleted using ipapi
+[1405-06-06 13:25:24] [openvpn-udp-1180] 2026-08-28 13:25:25 NETSH: C:\WINDOWS\system32\netsh.exe interface ipv6 delete address 18 fd15:53b6:dead::2 store=active
+[1405-06-06 13:25:25] [openvpn-udp-1180] 2026-08-28 13:25:25 NETSH: C:\WINDOWS\system32\netsh.exe interface ipv4 delete dns 18 all
+[1405-06-06 13:25:25] [openvpn-udp-1180] 2026-08-28 13:25:25 NETSH: C:\WINDOWS\system32\netsh.exe interface ipv4 delete address 18 50.1.1.141 store=active
+[1405-06-06 13:25:25] [openvpn-udp-1180] 2026-08-28 13:25:26 SIGTERM[hard,] received, process exiting
+[1405-06-06 13:25:25] [openvpn-udp-1180] خاموشی تمیز انجام شد ✓

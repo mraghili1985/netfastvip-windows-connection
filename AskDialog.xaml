@@ -1,0 +1,79 @@
+<Window x:Class="SmartVpn.AskDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="NETFASTVIP"
+        MinWidth="320" MaxWidth="460" SizeToContent="WidthAndHeight"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize" ShowInTaskbar="False"
+        FlowDirection="RightToLeft"
+        FontFamily="./Fonts/#Vazirmatn, Segoe UI, Tahoma" FontSize="12.5"
+        Background="{DynamicResource BgBrush}">
+
+    <Window.Resources>
+        <!-- رنگ‌ها از براش‌های تم برنامه — در تاریک/روشن درست دیده می‌شود -->
+        <Style x:Key="DlgBtn" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource FieldBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}"/>
+            <Setter Property="Padding" Value="12,7"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="DlgBtnPrimary" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Padding" Value="12,7"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <!-- هاور دکمه اصلی: آبی تیره‌تر — متن سفید در هر دو تم خوانا می‌ماند -->
+                                <Setter TargetName="Bd" Property="Background" Value="#1D4ED8"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#1D4ED8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <StackPanel Margin="16,14,16,14">
+        <TextBlock x:Name="MsgText" TextWrapping="Wrap" FontSize="13" LineHeight="21"
+                   Foreground="{DynamicResource TextBrush}"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
+            <Button x:Name="Btn0" MinWidth="92" Margin="0,0,4,0" IsDefault="True"
+                    Click="Btn0_Click" Style="{StaticResource DlgBtnPrimary}"/>
+            <Button x:Name="Btn1" MinWidth="92" Margin="4,0" Visibility="Collapsed"
+                    Click="Btn1_Click" Style="{StaticResource DlgBtn}"/>
+            <Button x:Name="Btn2" MinWidth="92" Margin="4,0,0,0" Visibility="Collapsed" IsCancel="True"
+                    Click="Btn2_Click" Style="{StaticResource DlgBtn}"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

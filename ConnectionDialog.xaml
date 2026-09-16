@@ -1,0 +1,164 @@
+<Window x:Class="SmartVpn.ConnectionDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="کانکشن" Width="380" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        FlowDirection="RightToLeft" FontFamily="Segoe UI"
+        Background="{DynamicResource BgBrush}">
+
+    <Window.Resources>
+        <Style x:Key="Lbl" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="2,8,2,4"/>
+            <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
+        </Style>
+        <Style x:Key="Input" TargetType="TextBox">
+            <Setter Property="Background" Value="{DynamicResource FieldBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+        <Style x:Key="Pwd" TargetType="PasswordBox">
+            <Setter Property="Background" Value="{DynamicResource FieldBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+        <!-- کمبوباکس تیره — هماهنگ با تم (حذف کادر سفید پیش‌فرض ویندوز) -->
+        <Style x:Key="ComboItem" TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="Bd" Background="Transparent" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#333B82F6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="Combo" TargetType="ComboBox">
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="ItemContainerStyle" Value="{StaticResource ComboItem}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton Focusable="False" ClickMode="Press"
+                                          IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border x:Name="Bd" Background="{DynamicResource FieldBrush}"
+                                                BorderBrush="{DynamicResource LineBrush}"
+                                                BorderThickness="1" CornerRadius="4">
+                                            <Path HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,1,0,0"
+                                                  Data="M 0 0 L 4 4 L 8 0 Z" Fill="{DynamicResource SubTextBrush}"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <ContentPresenter Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              Margin="10,6" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                            <Popup IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom"
+                                   AllowsTransparency="True" StaysOpen="False" PopupAnimation="Fade">
+                                <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource LineBrush}"
+                                        BorderThickness="1" CornerRadius="6" Margin="0,3,0,0"
+                                        MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <ScrollViewer MaxHeight="220">
+                                        <ItemsPresenter/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <StackPanel Margin="16,10,16,16">
+        <TextBlock Text="نام" Style="{StaticResource Lbl}"/>
+        <TextBox x:Name="NameBox" Style="{StaticResource Input}"/>
+
+        <TextBlock Text="نوع" Style="{StaticResource Lbl}"/>
+        <ComboBox x:Name="TypeCombo" Style="{StaticResource Combo}" SelectionChanged="Type_Changed">
+            <ComboBoxItem Content="OpenVPN" Tag="openvpn"/>
+            <ComboBoxItem Content="L2TP/IPsec" Tag="l2tp"/>
+            <ComboBoxItem Content="SSTP" Tag="sstp"/>
+            <ComboBoxItem Content="IKEv2" Tag="ikev2"/>
+            <ComboBoxItem Content="PPTP" Tag="pptp"/>
+        </ComboBox>
+
+        <TextBlock Text="آدرس سرور" Style="{StaticResource Lbl}"/>
+        <TextBox x:Name="ServerBox" Style="{StaticResource Input}" FlowDirection="LeftToRight"/>
+
+        <TextBlock Text="پورت (اختیاری)" Style="{StaticResource Lbl}"/>
+        <TextBox x:Name="PortBox" Style="{StaticResource Input}" FlowDirection="LeftToRight"/>
+
+        <!-- OpenVPN-only area: proto + embedded .ovpn import -->
+        <StackPanel x:Name="OvpnPanel">
+            <TextBlock Text="پروتکل" Style="{StaticResource Lbl}"/>
+            <ComboBox x:Name="ProtoCombo" Style="{StaticResource Combo}" SelectedIndex="0">
+                <ComboBoxItem Content="UDP" Tag="udp"/>
+                <ComboBoxItem Content="TCP" Tag="tcp"/>
+            </ComboBox>
+
+            <TextBlock Text="Server Override (اختیاری — اتصال حتماً به این آدرس)" Style="{StaticResource Lbl}"/>
+            <TextBox x:Name="OverrideBox" Style="{StaticResource Input}" FlowDirection="LeftToRight"/>
+            <Button x:Name="ImportOvpnBtn" Content="📂 انتخاب فایل .ovpn (پروفایل شخصی)"
+                    Margin="0,8,0,0" Padding="8,7" FontSize="12" Cursor="Hand"
+                    Background="{DynamicResource FieldBrush}"
+                    Foreground="{DynamicResource TextBrush}"
+                    BorderBrush="{DynamicResource LineBrush}"
+                    Click="ImportOvpn_Click"/>
+            <TextBlock x:Name="OvpnStatusText" Text="" FontSize="10.5" Margin="2,4,2,0"
+                       FlowDirection="LeftToRight" HorizontalAlignment="Right"
+                       Foreground="{DynamicResource AccentBrush}"/>
+        </StackPanel>
+
+        <TextBlock Text="نام کاربری" Style="{StaticResource Lbl}"/>
+        <TextBox x:Name="UserBox" Style="{StaticResource Input}" FlowDirection="LeftToRight"/>
+
+        <TextBlock Text="رمز عبور" Style="{StaticResource Lbl}"/>
+        <PasswordBox x:Name="PassBox" Style="{StaticResource Pwd}" FlowDirection="LeftToRight"/>
+
+        <StackPanel x:Name="PskPanel">
+            <TextBlock Text="کلید مشترک (PSK)" Style="{StaticResource Lbl}"/>
+            <PasswordBox x:Name="PskBox" Style="{StaticResource Pwd}" FlowDirection="LeftToRight"/>
+        </StackPanel>
+
+        <Grid Margin="0,16,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0" Content="تأیید" Margin="0,0,4,0" Padding="0,8" FontSize="12"
+                    Background="{DynamicResource AccentBrush}" Foreground="White"
+                    BorderThickness="0" Cursor="Hand" Click="Ok_Click"/>
+            <Button Grid.Column="1" Content="انصراف" Margin="4,0,0,0" Padding="0,8" FontSize="12"
+                    Background="{DynamicResource FieldBrush}"
+                    Foreground="{DynamicResource TextBrush}"
+                    BorderThickness="0" Cursor="Hand" Click="Cancel_Click"/>
+        </Grid>
+    </StackPanel>
+</Window>

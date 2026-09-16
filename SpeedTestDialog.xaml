@@ -1,0 +1,207 @@
+<Window x:Class="SmartVpn.SpeedTestDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="تست سرعت — NETFASTVIP"
+        Width="400" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize" ShowInTaskbar="False"
+        FlowDirection="RightToLeft"
+        FontFamily="./Fonts/#Vazirmatn, Vazirmatn, Segoe UI, Tahoma" FontSize="12.5"
+        Background="{DynamicResource BgBrush}">
+
+    <Window.Resources>
+        <!-- همان استایل دکمه‌های AskDialog — هماهنگ با تم تیره/روشن -->
+        <Style x:Key="DlgBtn" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource FieldBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="DlgBtnPrimary" TargetType="Button" BasedOn="{StaticResource DlgBtn}">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#1D4ED8"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <StackPanel Margin="14,12,14,12">
+
+        <!-- از طریق کدام اتصال؟ -->
+        <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource LineBrush}"
+                BorderThickness="1" CornerRadius="8" Padding="10,7" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal">
+                <Ellipse x:Name="ViaDot" Width="8" Height="8" Fill="#64748B" VerticalAlignment="Center" Margin="0,1,7,0"/>
+                <TextBlock x:Name="ViaText" Text="" FontSize="11.5" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- موتور تست سرعت -->
+        <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource LineBrush}"
+                BorderThickness="1" CornerRadius="8" Padding="10,7" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="موتور تست:" FontSize="11.5" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <ComboBox x:Name="EngineCombo" FlowDirection="LeftToRight" MinWidth="150" FontSize="11.5" VerticalAlignment="Center">
+                    <ComboBoxItem Content="Cloudflare"/>
+                    <ComboBoxItem Content="M-Lab (NDT7)"/>
+                </ComboBox>
+            </StackPanel>
+        </Border>
+
+        <!-- گیج عقربه‌ای (وکتوری — مثل آیکون پاور، در هر مقیاسی تیز می‌ماند) -->
+        <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource LineBrush}"
+                BorderThickness="1" CornerRadius="12" Padding="8,12,8,10" Margin="0,0,0,10">
+            <StackPanel>
+                <Viewbox Width="236" FlowDirection="LeftToRight" HorizontalAlignment="Center">
+                    <Canvas Width="200" Height="116">
+                        <!-- قوس زمینه -->
+                        <Path Data="M 20,100 A 80,80 0 0 1 180,100" Stroke="{DynamicResource LineBrush}"
+                              StrokeThickness="10" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                        <!-- قوس مقدار — StrokeDashArray از کد تنظیم می‌شود -->
+                        <Path x:Name="GaugeValueArc" Data="M 20,100 A 80,80 0 0 1 180,100" Stroke="{DynamicResource AccentBrush}"
+                              StrokeThickness="10" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              StrokeDashArray="0 1000"/>
+                        <!-- برچسب مدرج -->
+                        <TextBlock Canvas.Left="10" Canvas.Top="103" Text="0" FontSize="8" Foreground="#64748B"/>
+                        <TextBlock Canvas.Left="29" Canvas.Top="42" Text="12" FontSize="8" Foreground="#64748B"/>
+                        <TextBlock Canvas.Left="94" Canvas.Top="7" Text="25" FontSize="8" Foreground="#64748B"/>
+                        <TextBlock Canvas.Left="160" Canvas.Top="42" Text="38" FontSize="8" Foreground="#64748B"/>
+                        <TextBlock Canvas.Left="177" Canvas.Top="103" Text="50+" FontSize="8" Foreground="#64748B"/>
+                        <!-- عقربه -->
+                        <Line x:Name="Needle" X1="100" Y1="100" X2="100" Y2="36"
+                              Stroke="#F8FAFC" StrokeThickness="3"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round">
+                            <Line.RenderTransform>
+                                <RotateTransform x:Name="NeedleRotate" CenterX="100" CenterY="100" Angle="-90"/>
+                            </Line.RenderTransform>
+                        </Line>
+                        <Ellipse Canvas.Left="93" Canvas.Top="93" Width="14" Height="14" Fill="{DynamicResource AccentBrush}"/>
+                    </Canvas>
+                </Viewbox>
+                <StackPanel Orientation="Horizontal" FlowDirection="LeftToRight" HorizontalAlignment="Center" Margin="0,4,0,0">
+                    <!-- فلش جهت فاز: ⬇ آبی دانلود / ⬆ صورتی آپلود — از کد ست می‌شود -->
+                    <TextBlock x:Name="GaugeArrow" Text="" FontSize="17" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,8,2" Visibility="Collapsed"/>
+                    <TextBlock x:Name="GaugeNumText" Text="0.0" FontSize="26" FontWeight="Bold"
+                               Foreground="{DynamicResource TextBrush}"/>
+                    <TextBlock Text="Mbps" FontSize="11" Foreground="{DynamicResource SubTextBrush}"
+                               VerticalAlignment="Bottom" Margin="6,0,0,5"/>
+                </StackPanel>
+                <TextBlock x:Name="PhaseText" Text="" FontSize="12" FontWeight="Bold"
+                           Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" Margin="0,2,0,2"/>
+            </StackPanel>
+        </Border>
+
+        <!-- چهار کارت نتیجه -->
+        <UniformGrid Columns="4">
+            <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="9" Padding="4,7" Margin="2">
+                <StackPanel>
+                    <TextBlock Text="پینگ" FontSize="10" Foreground="{DynamicResource SubTextBrush}" HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="PingVal" Text="—" FontSize="12.5" FontWeight="Bold" FlowDirection="LeftToRight"
+                               Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Center" Margin="0,2,0,3"/>
+                    <Border x:Name="PingChip" CornerRadius="8" Padding="7,1" HorizontalAlignment="Center" Visibility="Collapsed" Background="#2622C55E">
+                        <TextBlock x:Name="PingChipText" Text="" FontSize="9.5" FontWeight="Bold" Foreground="#22C55E"/>
+                    </Border>
+                </StackPanel>
+            </Border>
+            <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="9" Padding="4,7" Margin="2">
+                <StackPanel>
+                    <TextBlock Text="جیتر" FontSize="10" Foreground="{DynamicResource SubTextBrush}" HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="JitterVal" Text="—" FontSize="12.5" FontWeight="Bold" FlowDirection="LeftToRight"
+                               Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Center" Margin="0,2,0,3"/>
+                    <Border x:Name="JitterChip" CornerRadius="8" Padding="7,1" HorizontalAlignment="Center" Visibility="Collapsed" Background="#2622C55E">
+                        <TextBlock x:Name="JitterChipText" Text="" FontSize="9.5" FontWeight="Bold" Foreground="#22C55E"/>
+                    </Border>
+                </StackPanel>
+            </Border>
+            <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="9" Padding="4,7" Margin="2">
+                <StackPanel>
+                    <TextBlock Text="دانلود" FontSize="10" Foreground="{DynamicResource SubTextBrush}" HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="DlVal" Text="—" FontSize="12.5" FontWeight="Bold" FlowDirection="LeftToRight"
+                               Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Center" Margin="0,2,0,3"/>
+                    <Border x:Name="DlChip" CornerRadius="8" Padding="7,1" HorizontalAlignment="Center" Visibility="Collapsed" Background="#2622C55E">
+                        <TextBlock x:Name="DlChipText" Text="" FontSize="9.5" FontWeight="Bold" Foreground="#22C55E"/>
+                    </Border>
+                </StackPanel>
+            </Border>
+            <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="9" Padding="4,7" Margin="2">
+                <StackPanel>
+                    <TextBlock Text="آپلود" FontSize="10" Foreground="{DynamicResource SubTextBrush}" HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="UlVal" Text="—" FontSize="12.5" FontWeight="Bold" FlowDirection="LeftToRight"
+                               Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Center" Margin="0,2,0,3"/>
+                    <Border x:Name="UlChip" CornerRadius="8" Padding="7,1" HorizontalAlignment="Center" Visibility="Collapsed" Background="#2622C55E">
+                        <TextBlock x:Name="UlChipText" Text="" FontSize="9.5" FontWeight="Bold" Foreground="#22C55E"/>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </UniformGrid>
+
+        <!-- نوار پیشرفت -->
+        <Border x:Name="ProgressTrack" Height="6" CornerRadius="3" Background="{DynamicResource FieldBrush}" Margin="2,12,2,10">
+            <Border x:Name="ProgressFill" Width="0" HorizontalAlignment="Left" CornerRadius="3"
+                    Background="{DynamicResource AccentBrush}"/>
+        </Border>
+
+        <!-- دکمه‌ها: تست کامل / فقط دانلود / فقط آپلود -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0" x:Name="BtnAll" Style="{StaticResource DlgBtnPrimary}" Click="All_Click"/>
+            <Button Grid.Column="2" x:Name="BtnDl" Style="{StaticResource DlgBtn}" Click="Dl_Click"/>
+            <Button Grid.Column="4" x:Name="BtnUl" Style="{StaticResource DlgBtn}" Click="Ul_Click"/>
+            <Button Grid.Column="6" x:Name="BtnCloseCancel" Style="{StaticResource DlgBtn}" MinWidth="64" Click="CloseCancel_Click"/>
+        </Grid>
+
+        <!-- هشدار مصرف حجم -->
+        <TextBlock x:Name="WarnText" Text="" FontSize="10" Foreground="{DynamicResource SubTextBrush}"
+                   HorizontalAlignment="Center" Margin="0,9,0,0" TextWrapping="Wrap" TextAlignment="Center"/>
+    </StackPanel>
+</Window>
