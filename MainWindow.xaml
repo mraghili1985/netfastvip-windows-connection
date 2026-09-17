@@ -352,7 +352,7 @@
                                 </Border>
                                 <Border Background="{DynamicResource FieldBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="7" Padding="9,7" Margin="0,5,5,0">
                                     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="User" FontSize="10" Foreground="{DynamicResource SubTextBrush}"/>
+                                        <TextBlock Grid.Column="0" x:Name="YouLbl" Text="User" FontSize="10" Foreground="{DynamicResource SubTextBrush}"/>
                                         <TextBlock Grid.Column="1" x:Name="YouText" Text="—" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" FlowDirection="LeftToRight"/>
                                     </Grid>
                                 </Border>
@@ -457,7 +457,7 @@
                                                    HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                         <TextBlock x:Name="SubTimeLeftText" Text="—" FontSize="11.5" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextBrush}" Margin="0,2,0,0"
-                                                   HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                   FlowDirection="LeftToRight" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Text="📦 حجم باقی‌مانده" FontSize="9"
@@ -465,7 +465,7 @@
                                                    HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                         <TextBlock x:Name="SubDataLeftText" Text="—" FontSize="11.5" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextBrush}" Margin="0,2,0,0"
-                                                   HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                   FlowDirection="LeftToRight" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                     </StackPanel>
                                 </Grid>
 

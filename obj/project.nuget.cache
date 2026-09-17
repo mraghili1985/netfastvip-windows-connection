@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "K6yFvA9vIkg=",
+  "dgSpecHash": "0JEVmgmXQlU=",
   "success": true,
-  "projectFilePath": "E:\\projects\\SmartVpn-final\\SmartVpn.csproj",
+  "projectFilePath": "C:\\Users\\MrA-Desktop\\SmartVpn-final\\SmartVpn.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\MrA-Desktop\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\10.0.5\\microsoft.netcore.app.runtime.win-x64.10.0.5.nupkg.sha512",
     "C:\\Users\\MrA-Desktop\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\10.0.5\\microsoft.windowsdesktop.app.runtime.win-x64.10.0.5.nupkg.sha512",

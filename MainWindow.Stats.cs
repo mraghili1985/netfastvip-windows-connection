@@ -161,6 +161,14 @@ namespace SmartVpn
             SessionTrafficText.Text = Fmt(Math.Max(0, totalNow - _sessionStartTotalBytes));
             DurationText.Text = (DateTime.Now - _connectStart).ToString(@"hh\:mm\:ss");
 
+            // هندشیک WireGuard/AmneziaWG هر ۵ ثانیه به‌روز شود
+            if (_activeIsWg && _pingTick % 5 == 0)
+            {
+                var hs = WireGuardProvider.LastHandshake;
+                if (hs != null)
+                    YouText.Text = hs;
+            }
+
             // پینگ زنده هر ۲ ثانیه — قبلاً هر ۳۰ ثانیه بود که برای کاربر «لایو» حس نمی‌شد
             _pingTick++;
             if (_pingTick % 2 == 0 && !_pingInFlight)

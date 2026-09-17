@@ -48,6 +48,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- WireGuard/AmneziaWG - copy to Data\wireguard\ on build -->
+    <!-- wireguard folder in source: wireguard.exe, amneziawg.exe, wintun.dll -->
+    <None Include="wireguard\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>Data\wireguard\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Remove="System.Windows.Forms" />
     <Using Remove="System.Drawing" />
   </ItemGroup>

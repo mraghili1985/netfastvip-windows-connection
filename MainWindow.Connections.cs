@@ -264,6 +264,8 @@ namespace SmartVpn
                 case "pptp": return "PPTP";
                 case "sstp": return "SSTP";
                 case "ikev2": return "IKEv2";
+                case "wireguard": return "WireGuard";
+                case "amneziawg": return "AmneziaWG";
                 default: return (type ?? "").ToUpperInvariant();
             }
         }
@@ -289,6 +291,16 @@ namespace SmartVpn
                     return light
                         ? (Color.FromRgb(0xE2, 0xE8, 0xF0), Color.FromRgb(0xCB, 0xD5, 0xE1), Color.FromRgb(0x33, 0x41, 0x55))
                         : (Color.FromArgb(0x26, 0x94, 0xA3, 0xB8), Color.FromArgb(0x48, 0x94, 0xA3, 0xB8), Color.FromRgb(0xCB, 0xD5, 0xE1));
+                case "wireguard":
+                    // سبز — رنگ رسمی WireGuard
+                    return light
+                        ? (Color.FromRgb(0xDC, 0xFC, 0xE7), Color.FromRgb(0x86, 0xEF, 0xAC), Color.FromRgb(0x16, 0x6D, 0x3B))
+                        : (Color.FromArgb(0x26, 0x22, 0xC5, 0x5E), Color.FromArgb(0x48, 0x22, 0xC5, 0x5E), Color.FromRgb(0x86, 0xEF, 0xAC));
+                case "amneziawg":
+                    // بنفش-آبی — برند AmneziaWG
+                    return light
+                        ? (Color.FromRgb(0xEE, 0xE6, 0xFF), Color.FromRgb(0xC4, 0xB5, 0xFD), Color.FromRgb(0x5B, 0x21, 0xB6))
+                        : (Color.FromArgb(0x26, 0x7C, 0x3A, 0xED), Color.FromArgb(0x48, 0x7C, 0x3A, 0xED), Color.FromRgb(0xC4, 0xB5, 0xFD));
                 default:
                     return light
                         ? (Color.FromRgb(0xDB, 0xEA, 0xFE), Color.FromRgb(0x93, 0xC5, 0xFD), Color.FromRgb(0x1D, 0x4E, 0xD8))

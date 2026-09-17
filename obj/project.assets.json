@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\projects\\SmartVpn-final\\SmartVpn.csproj",
+      "projectUniqueName": "C:\\Users\\MrA-Desktop\\SmartVpn-final\\SmartVpn.csproj",
       "projectName": "NETFASTVIP",
-      "projectPath": "E:\\projects\\SmartVpn-final\\SmartVpn.csproj",
+      "projectPath": "C:\\Users\\MrA-Desktop\\SmartVpn-final\\SmartVpn.csproj",
       "packagesPath": "C:\\Users\\MrA-Desktop\\.nuget\\packages\\",
-      "outputPath": "E:\\projects\\SmartVpn-final\\obj\\",
+      "outputPath": "C:\\Users\\MrA-Desktop\\SmartVpn-final\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\MrA-Desktop\\AppData\\Roaming\\NuGet\\NuGet.Config"

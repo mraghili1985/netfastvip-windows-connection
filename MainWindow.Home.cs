@@ -122,9 +122,13 @@ namespace SmartVpn
                 "pptp" => "TCP",
                 "ikev2" => "UDP",
                 "l2tp" => "UDP",
+                "wireguard" => "WireGuard",
+                "amneziawg" => "AmneziaWG",
                 _ => "—",
             };
             // پورت به همین کادر منتقل شد تا اینفوی بالا خلوت‌تر باشد (قبلاً زیر نام سرور جدا نشان داده می‌شد)
+            // WireGuard/AmneziaWG: پورت داخل .conf هست، دیگر نمایش جدا لازم نیست
+            if (profile.Type == "wireguard" || profile.Type == "amneziawg") return proto;
             return profile.Port is int p ? $"{proto} {p}" : proto;
         }
 
@@ -222,6 +226,8 @@ namespace SmartVpn
             foreach (var p in list)
             {
                 if (!p.NeedsCredentials || p.Username.Length > 0) { run.Add(p); continue; }
+                // WireGuard / AmneziaWG — کلیدها داخل .conf هستند، یوزر/پس ندارند
+                if (p.Type == "wireguard" || p.Type == "amneziawg") { run.Add(p); continue; }
 
                 var dlg = new CredentialsDialog(p.Name + " — " + CredPromptSuffix) { Owner = this };
                 if (dlg.ShowDialog() != true) return null;
@@ -267,7 +273,20 @@ namespace SmartVpn
                 ServerSubText.Text = profile.ServerLine;
                 PrivateIpText.Text = string.IsNullOrEmpty(localIp) ? "—" : localIp;
                 ServerIpText.Text = _tunnelPeerIp ?? "—"; // sniff لاگ openvpn از قبل IP را گرفته — پاک نشود
-                YouText.Text = string.IsNullOrEmpty(profile.Username) ? "—" : profile.Username;
+                // WireGuard/AmneziaWG: به‌جای User، هندشیک نشان داده می‌شود
+                bool isWg = profile.Type == "wireguard" || profile.Type == "amneziawg";
+                _activeIsWg = isWg;
+                if (isWg)
+                {
+                    WireGuardProvider.LastHandshake = null;
+                    YouText.Text = "—";
+                    YouLbl.Text = "Last Handshake";
+                }
+                else
+                {
+                    YouText.Text = string.IsNullOrEmpty(profile.Username) ? "—" : profile.Username;
+                    YouLbl.Text = "User";
+                }
                 ProtocolText.Text = GetProtocolLabel(profile);
 
                 _connectStart = DateTime.Now;
@@ -282,7 +301,7 @@ namespace SmartVpn
 
                 // مهم: FetchGeoIp/ResolveServerIpAsync باید قبل از تعویض DNS اجرا شود.
                 // این دو متود خودشان از Dns.GetHostAddressesAsync استفاده می‌کنند؛ اگر بعد از
-                // تعویض DNS به سمت DNS تونل اجرا شوند، برای اتصال‌های نیتیو (sstp/l2tp)
+                // تعویض DNS به سمت DNS تونل اجرا شوند، برای اتصال‌های نیت��و (sstp/l2tp)
                 // که هنوز IP از لاگ سنیف نشده، resolve می‌تواند فیل شود/هنگ کند و Server IP "—" بماند.
                 _geoGen++;
                 _ = FetchGeoIp();
@@ -355,6 +374,8 @@ namespace SmartVpn
                 GeoIpText.Text = "—";
                 GeoFlagImg.Source = null;
                 YouText.Text = "—";
+                YouLbl.Text = "User"; // reset label برای اتصال بعدی
+                _activeIsWg = false;
                 _dlHistory.Clear();
                 _ulHistory.Clear();
                 RedrawGraph();

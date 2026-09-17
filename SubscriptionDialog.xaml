@@ -2,15 +2,13 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="وضعیت اشتراک"
-        Width="340" SizeToContent="Height"
+        Width="360" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize" ShowInTaskbar="False"
-        FlowDirection="RightToLeft"
         FontFamily="./Fonts/#Vazirmatn, Vazirmatn, Segoe UI, Tahoma" FontSize="12.5"
         Background="{DynamicResource BgBrush}">
 
     <Window.Resources>
-        <!-- استایل‌های محلی — همه رنگ‌ها از براش‌های تمِ برنامه می‌آیند تا در تاریک/روشن درست دیده شوند -->
         <Style x:Key="DlgLabel" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
             <Setter Property="FontSize" Value="12"/>
@@ -31,8 +29,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd"
-                                Background="{TemplateBinding Background}"
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="1" CornerRadius="6">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -50,94 +47,156 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style x:Key="RowKey" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
-            <Setter Property="FontSize" Value="11.5"/>
-            <Setter Property="Margin" Value="0,0,0,8"/>
+        <!-- کارت اطلاعات -->
+        <Style x:Key="InfoCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="10,8"/>
         </Style>
-        <Style x:Key="RowVal" TargetType="TextBlock">
+        <Style x:Key="CardLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="CardValue" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
-            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="TextAlignment" Value="Center"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,3,0,0"/>
         </Style>
     </Window.Resources>
 
-    <StackPanel Margin="16,12,16,14">
-        <TextBlock Text="استعلام زنده وضعیت اشتراک از سرور" FontWeight="Bold" FontSize="13.5"
-                   TextWrapping="Wrap" Foreground="{DynamicResource TextBrush}"/>
+    <StackPanel Margin="14,12,14,14">
+        <!-- عنوان -->
+        <TextBlock Text="استعلام زنده وضعیت اشتراک از سرور" FontWeight="Bold" FontSize="13"
+                   TextWrapping="Wrap" Foreground="{DynamicResource TextBrush}"
+                   FlowDirection="RightToLeft" Margin="0,0,0,10"/>
 
-        <TextBlock Text="نام کاربری" Style="{StaticResource DlgLabel}"/>
-        <TextBox x:Name="UserBox" Style="{StaticResource DlgBox}"/>
-        <TextBlock Text="پسورد" Style="{StaticResource DlgLabel}"/>
+        <!-- ورود -->
+        <TextBlock Text="نام کاربری" Style="{StaticResource DlgLabel}" FlowDirection="RightToLeft"/>
+        <TextBox x:Name="UserBox" Style="{StaticResource DlgBox}" FlowDirection="LeftToRight"/>
+        <TextBlock Text="پسورد" Style="{StaticResource DlgLabel}" FlowDirection="RightToLeft"/>
         <PasswordBox x:Name="PassBox"
-                     Background="{DynamicResource FieldBrush}"
-                     Foreground="{DynamicResource TextBrush}"
-                     BorderBrush="{DynamicResource LineBrush}"
-                     CaretBrush="{DynamicResource TextBrush}"
-                     Padding="6,5"/>
+                     Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}"
+                     BorderBrush="{DynamicResource LineBrush}" CaretBrush="{DynamicResource TextBrush}"
+                     Padding="6,5" FlowDirection="LeftToRight"/>
 
         <Button x:Name="CheckBtn" Content="📊 استعلام وضعیت" IsDefault="True" Click="Check_Click"
-                Style="{StaticResource DlgBtn}" Margin="0,14,0,0"/>
+                Style="{StaticResource DlgBtn}" Margin="0,12,0,0"
+                FlowDirection="RightToLeft"/>
 
-        <!-- بعد از استعلامِ موفق، یوزر/پس روی همه کانکشن‌های رسمی ذخیره می‌شود -->
-        <CheckBox x:Name="SaveCheck" Content="ذخیره این یوزر/پس برای همه کانکشن‌های رسمی"
-                  FontSize="11.5" Margin="2,10,0,0"
+        <CheckBox x:Name="SaveCheck" Content="ذخیره یوزر/پس برای همه کانکشن‌های رسمی"
+                  FontSize="11" Margin="2,8,0,0" FlowDirection="RightToLeft"
                   Foreground="{DynamicResource SubTextBrush}"/>
 
-        <TextBlock x:Name="StatusText" Margin="0,10,0,0" FontSize="11.5" TextWrapping="Wrap"
-                   Foreground="{DynamicResource SubTextBrush}" Visibility="Collapsed"/>
+        <TextBlock x:Name="StatusText" Margin="0,8,0,0" FontSize="11.5" TextWrapping="Wrap"
+                   Foreground="{DynamicResource SubTextBrush}" Visibility="Collapsed"
+                   FlowDirection="RightToLeft"/>
 
-        <Border x:Name="ResultPanel" Visibility="Collapsed" Margin="0,12,0,0"
-                Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource LineBrush}"
-                BorderThickness="1" CornerRadius="8" Padding="12,10,12,2">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="12"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+        <!-- ===== نتیجه استعلام ===== -->
+        <StackPanel x:Name="ResultPanel" Visibility="Collapsed" Margin="0,10,0,0">
 
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="وضعیت اشتراک" Style="{StaticResource RowKey}"/>
-                <TextBlock Grid.Row="0" Grid.Column="2" x:Name="StatusValue" Style="{StaticResource RowVal}"/>
+            <!-- ردیف اول: چهار کارت افقی -->
+            <UniformGrid Columns="4" Rows="1" Margin="0,0,0,6">
+                <!-- وضعیت -->
+                <Border Style="{StaticResource InfoCard}" Margin="0,0,4,0">
+                    <StackPanel>
+                        <TextBlock Text="وضعیت" Style="{StaticResource CardLabel}" FlowDirection="RightToLeft"/>
+                        <TextBlock x:Name="StatusValue" Style="{StaticResource CardValue}"/>
+                    </StackPanel>
+                </Border>
+                <!-- سرویس -->
+                <Border Style="{StaticResource InfoCard}" Margin="2,0,2,0">
+                    <StackPanel>
+                        <TextBlock Text="سرویس" Style="{StaticResource CardLabel}" FlowDirection="RightToLeft"/>
+                        <TextBlock x:Name="GroupValue" Style="{StaticResource CardValue}"/>
+                    </StackPanel>
+                </Border>
+                <!-- انقضا -->
+                <Border Style="{StaticResource InfoCard}" Margin="2,0,2,0">
+                    <StackPanel>
+                        <TextBlock Text="انقضا" Style="{StaticResource CardLabel}" FlowDirection="RightToLeft"/>
+                        <TextBlock x:Name="ExpireValue" Style="{StaticResource CardValue}"/>
+                    </StackPanel>
+                </Border>
+                <!-- زمان باقی -->
+                <Border Style="{StaticResource InfoCard}" Margin="4,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="زمان باقی" Style="{StaticResource CardLabel}" FlowDirection="RightToLeft"/>
+                        <TextBlock x:Name="RemainValue" Style="{StaticResource CardValue}"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="سرویس" Style="{StaticResource RowKey}"/>
-                <TextBlock Grid.Row="1" Grid.Column="2" x:Name="GroupValue" Style="{StaticResource RowVal}"/>
+            <!-- بخش ترافیک -->
+            <Border Style="{StaticResource InfoCard}" Margin="0,0,0,6">
+                <StackPanel>
+                    <!-- سربرگ حجم -->
+                    <Grid Margin="0,0,0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="ترافیک" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}" FlowDirection="RightToLeft"/>
+                        <TextBlock Grid.Column="1" x:Name="TrafficSummaryText"
+                                   FontSize="10.5" Foreground="{DynamicResource SubTextBrush}"
+                                   FlowDirection="LeftToRight"/>
+                    </Grid>
+                    <!-- Progress Bar -->
+                    <Border CornerRadius="4" Background="{DynamicResource FieldBrush}" Height="8" Margin="0,0,0,5">
+                        <Border x:Name="TrafficBar" CornerRadius="4" HorizontalAlignment="Left"
+                                Height="8" Width="0" Background="#22C55E"/>
+                    </Border>
+                    <!-- زیر بار -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" x:Name="UsageText" FontSize="10.5"
+                                   Foreground="{DynamicResource SubTextBrush}" FlowDirection="RightToLeft"/>
+                        <TextBlock Grid.Column="1" x:Name="RemainTrafficText" FontSize="10.5"
+                                   Foreground="#22C55E" FlowDirection="LeftToRight"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="تاریخ انقضا" Style="{StaticResource RowKey}"/>
-                <TextBlock Grid.Row="2" Grid.Column="2" x:Name="ExpireValue" Style="{StaticResource RowVal}"/>
+            <!-- ردیف دوم: اطلاعات حساب -->
+            <Border Style="{StaticResource InfoCard}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <!-- نام کاربری -->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="نام کاربری" Style="{StaticResource CardLabel}" FlowDirection="RightToLeft"/>
+                        <TextBlock x:Name="UsernameValue" Style="{StaticResource CardValue}" FontSize="11"/>
+                    </StackPanel>
+                    <!-- اولین ورود -->
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="اولین ورود" Style="{StaticResource CardLabel}" FlowDirection="RightToLeft"/>
+                        <TextBlock x:Name="FirstLoginValue" Style="{StaticResource CardValue}" FontSize="11"/>
+                    </StackPanel>
+                    <!-- وضعیت اتصال -->
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="وضعیت اتصال" Style="{StaticResource CardLabel}" FlowDirection="RightToLeft"/>
+                        <TextBlock x:Name="OnlineValue" Style="{StaticResource CardValue}" FontSize="11"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
 
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="زمان باقی‌مانده" Style="{StaticResource RowKey}"/>
-                <TextBlock Grid.Row="3" Grid.Column="2" x:Name="RemainValue" Style="{StaticResource RowVal}"/>
+        </StackPanel>
 
-                <TextBlock Grid.Row="4" Grid.Column="0" Text="وضعیت اتصال" Style="{StaticResource RowKey}"/>
-                <TextBlock Grid.Row="4" Grid.Column="2" x:Name="OnlineValue" Style="{StaticResource RowVal}"/>
-
-                <TextBlock Grid.Row="5" Grid.Column="0" Text="حجم کل دوره" Style="{StaticResource RowKey}"/>
-                <TextBlock Grid.Row="5" Grid.Column="2" x:Name="TotalValue" Style="{StaticResource RowVal}"/>
-
-                <TextBlock Grid.Row="6" Grid.Column="0" Text="مصرف دوره" Style="{StaticResource RowKey}"/>
-                <TextBlock Grid.Row="6" Grid.Column="2" x:Name="UsageValue" Style="{StaticResource RowVal}"/>
-
-                <TextBlock Grid.Row="7" Grid.Column="0" Text="حجم باقی‌مانده" Style="{StaticResource RowKey}"/>
-                <TextBlock Grid.Row="7" Grid.Column="2" x:Name="LeftValue" Style="{StaticResource RowVal}"/>
-            </Grid>
-        </Border>
-
-        <!-- لینک خرید/تمدید — همان PanelUrl از config.json -->
-        <TextBlock HorizontalAlignment="Center" Margin="0,12,0,0" FontSize="11.5"
-                   Foreground="{DynamicResource SubTextBrush}">
+        <!-- لینک خرید/تمدید -->
+        <TextBlock HorizontalAlignment="Center" Margin="0,10,0,0" FontSize="11"
+                   Foreground="{DynamicResource SubTextBrush}" FlowDirection="RightToLeft">
             <Run Text="نیاز به تمدید دارید؟"/>
             <Hyperlink Click="Panel_Click" Foreground="#3B82F6" TextDecorations="{x:Null}">
                 <Run Text="خرید / تمدید اشتراک"/>

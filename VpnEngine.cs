@@ -1,4 +1,5 @@
 using System.IO;
+using SmartVpn; // WireGuardProvider
 
 public sealed class VpnEngine
 {
@@ -113,6 +114,10 @@ public sealed class VpnEngine
             };
             return new OpenVpnProvider(ep, ResolveBaseProfile(p), creds);
         }
+
+        // WireGuard و AmneziaWG — محتوای .conf در پروفایل ذخیره شده
+        if (p.Type == "wireguard" || p.Type == "amneziawg")
+            return new WireGuardProvider(p.WireGuardConf);
 
         var cfg = new ProtocolConfig
         {

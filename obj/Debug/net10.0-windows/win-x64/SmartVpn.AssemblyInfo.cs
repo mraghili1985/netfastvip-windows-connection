@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyCopyrightAttribute("© 2026 NETFASTVIP")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("2.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("2.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("2.0.0+f5d4807fd12b862939457eec0acde585bbb16e17")]
 [assembly: System.Reflection.AssemblyProductAttribute("NETFASTVIP VPN Client")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NETFASTVIP")]
 [assembly: System.Reflection.AssemblyVersionAttribute("2.0.0")]

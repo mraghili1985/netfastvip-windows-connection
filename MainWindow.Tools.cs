@@ -166,7 +166,12 @@ namespace SmartVpn
 
                 var expired = string.Equals(dashboard.Account.Status, "expired", StringComparison.OrdinalIgnoreCase)
                               || dashboard.Account.RemainingDays <= 0;
-                double? remaining = expired ? 0 : dashboard.Account.RemainingDays * 86400.0;
+                double? remaining;
+                if (expired) remaining = 0;
+                else if (dashboard.Account.ExpireAt.HasValue)
+                    remaining = Math.Max(0, (dashboard.Account.ExpireAt.Value.ToLocalTime() - DateTime.Now).TotalSeconds);
+                else
+                    remaining = dashboard.Account.RemainingDays * 86400.0;
                 var quotaGb = dashboard.Traffic.TotalMb / 1024.0;
                 double? leftGb = quotaGb > 0 ? dashboard.Traffic.RemainingMb / 1024.0 : (double?)null;
                 var checkedAt = DateTime.Now;

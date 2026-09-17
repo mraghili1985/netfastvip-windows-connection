@@ -22,4 +22,29 @@ public static class AppPaths
     }
 
     public static string In(string relativePath) => Path.Combine(Root, relativePath);
+
+    // ======== WireGuard / AmneziaWG ========
+    // مسیر پیش‌فرض نصب WireGuard for Windows
+    public static string WireGuardExe =>
+        FindExe(
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "WireGuard", "wireguard.exe"),
+            Path.Combine(AppContext.BaseDirectory, "wireguard", "wireguard.exe"),  // نسخه portable
+            "wireguard.exe"
+        );
+
+    // مسیر پیش‌فرض نصب AmneziaWG for Windows
+    public static string AmneziaWgExe =>
+        FindExe(
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "AmneziaWG", "AmneziaWG.exe"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Amnezia", "AmneziaWG.exe"),
+            Path.Combine(AppContext.BaseDirectory, "amneziawg", "AmneziaWG.exe"),  // نسخه portable
+            "AmneziaWG.exe"
+        );
+
+    private static string FindExe(params string[] candidates)
+    {
+        foreach (var p in candidates)
+            if (File.Exists(p)) return p;
+        return candidates[0]; // fallback به اولین مسیر
+    }
 }

@@ -245,12 +245,17 @@ public sealed class ConnectionProfile
     // Server Override — در صورت تنظیم، اتصال حتماً به این آدرس انجام می‌شود (مثل OpenVPN Connect)
     public string ServerOverride { get; set; } = "";
 
+    // ===== WireGuard / AmneziaWG =====
+    // محتوای فایل .conf — برای type=wireguard و type=amneziawg
+    public string WireGuardConf { get; set; } = "";
+
     [JsonIgnore]
     public string EffectiveServer =>
         string.IsNullOrWhiteSpace(ServerOverride) ? Server : ServerOverride.Trim();
 
     [JsonIgnore] public bool IsOfficial => Source == "official";
     [JsonIgnore] public bool HasInlineOvpn => OvpnInline.Trim().Length > 0;
+    [JsonIgnore] public bool HasWireGuardConf => WireGuardConf.Trim().Length > 0;
 
     // Cert-only personal profiles (no auth-user-pass) must not trigger the credentials popup.
     [JsonIgnore]
@@ -285,6 +290,7 @@ public sealed class ConnectionProfile
         Password = password,
         Source = Source,
         OvpnInline = OvpnInline,
+        WireGuardConf = WireGuardConf,
     };
 }
 

@@ -1,16 +1,22 @@
 <Window x:Class="SmartVpn.ConnectionDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="کانکشن" Width="380" SizeToContent="Height"
+        Title="کانکشن" Width="400" SizeToContent="Height"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
         FlowDirection="RightToLeft" FontFamily="Segoe UI"
         Background="{DynamicResource BgBrush}">
 
     <Window.Resources>
         <Style x:Key="Lbl" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Margin" Value="2,8,2,4"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Margin" Value="2,7,2,3"/>
             <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
+        </Style>
+        <Style x:Key="LblSection" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="2,12,2,4"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
         </Style>
         <Style x:Key="Input" TargetType="TextBox">
             <Setter Property="Background" Value="{DynamicResource FieldBrush}"/>
@@ -20,6 +26,15 @@
             <Setter Property="Padding" Value="8,6"/>
             <Setter Property="FontSize" Value="12"/>
         </Style>
+        <Style x:Key="InputMono" TargetType="TextBox" BasedOn="{StaticResource Input}">
+            <Setter Property="FlowDirection" Value="LeftToRight"/>
+            <Setter Property="FontFamily" Value="Consolas"/>
+            <Setter Property="FontSize" Value="11"/>
+        </Style>
+        <Style x:Key="InputSmall" TargetType="TextBox" BasedOn="{StaticResource Input}">
+            <Setter Property="FlowDirection" Value="LeftToRight"/>
+            <Setter Property="FontSize" Value="11"/>
+        </Style>
         <Style x:Key="Pwd" TargetType="PasswordBox">
             <Setter Property="Background" Value="{DynamicResource FieldBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
@@ -28,7 +43,6 @@
             <Setter Property="Padding" Value="8,6"/>
             <Setter Property="FontSize" Value="12"/>
         </Style>
-        <!-- کمبوباکس تیره — هماهنگ با تم (حذف کادر سفید پیش‌فرض ویندوز) -->
         <Style x:Key="ComboItem" TargetType="ComboBoxItem">
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
             <Setter Property="Padding" Value="10,6"/>
@@ -96,57 +110,224 @@
         </Style>
     </Window.Resources>
 
+    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="700">
     <StackPanel Margin="16,10,16,16">
+
+        <!-- نام -->
         <TextBlock Text="نام" Style="{StaticResource Lbl}"/>
         <TextBox x:Name="NameBox" Style="{StaticResource Input}"/>
 
+        <!-- نوع -->
         <TextBlock Text="نوع" Style="{StaticResource Lbl}"/>
         <ComboBox x:Name="TypeCombo" Style="{StaticResource Combo}" SelectionChanged="Type_Changed">
-            <ComboBoxItem Content="OpenVPN" Tag="openvpn"/>
-            <ComboBoxItem Content="L2TP/IPsec" Tag="l2tp"/>
-            <ComboBoxItem Content="SSTP" Tag="sstp"/>
-            <ComboBoxItem Content="IKEv2" Tag="ikev2"/>
-            <ComboBoxItem Content="PPTP" Tag="pptp"/>
+            <ComboBoxItem Content="OpenVPN"               Tag="openvpn"/>
+            <ComboBoxItem Content="L2TP/IPsec"            Tag="l2tp"/>
+            <ComboBoxItem Content="SSTP"                  Tag="sstp"/>
+            <ComboBoxItem Content="IKEv2"                 Tag="ikev2"/>
+            <ComboBoxItem Content="PPTP"                  Tag="pptp"/>
+            <ComboBoxItem Content="WireGuard / AmneziaWG" Tag="wireguard"/>
         </ComboBox>
 
-        <TextBlock Text="آدرس سرور" Style="{StaticResource Lbl}"/>
-        <TextBox x:Name="ServerBox" Style="{StaticResource Input}" FlowDirection="LeftToRight"/>
+        <!-- ========================================================
+             StandardPanel — OpenVPN / L2TP / SSTP / IKEv2 / PPTP
+             ======================================================== -->
+        <StackPanel x:Name="StandardPanel">
 
-        <TextBlock Text="پورت (اختیاری)" Style="{StaticResource Lbl}"/>
-        <TextBox x:Name="PortBox" Style="{StaticResource Input}" FlowDirection="LeftToRight"/>
+            <TextBlock Text="آدرس سرور" Style="{StaticResource Lbl}"/>
+            <TextBox x:Name="ServerBox" Style="{StaticResource Input}" FlowDirection="LeftToRight"/>
 
-        <!-- OpenVPN-only area: proto + embedded .ovpn import -->
-        <StackPanel x:Name="OvpnPanel">
-            <TextBlock Text="پروتکل" Style="{StaticResource Lbl}"/>
-            <ComboBox x:Name="ProtoCombo" Style="{StaticResource Combo}" SelectedIndex="0">
-                <ComboBoxItem Content="UDP" Tag="udp"/>
-                <ComboBoxItem Content="TCP" Tag="tcp"/>
-            </ComboBox>
+            <TextBlock Text="پورت (اختیاری)" Style="{StaticResource Lbl}"/>
+            <TextBox x:Name="PortBox" Style="{StaticResource Input}" FlowDirection="LeftToRight"/>
 
-            <TextBlock Text="Server Override (اختیاری — اتصال حتماً به این آدرس)" Style="{StaticResource Lbl}"/>
-            <TextBox x:Name="OverrideBox" Style="{StaticResource Input}" FlowDirection="LeftToRight"/>
-            <Button x:Name="ImportOvpnBtn" Content="📂 انتخاب فایل .ovpn (پروفایل شخصی)"
-                    Margin="0,8,0,0" Padding="8,7" FontSize="12" Cursor="Hand"
-                    Background="{DynamicResource FieldBrush}"
-                    Foreground="{DynamicResource TextBrush}"
-                    BorderBrush="{DynamicResource LineBrush}"
-                    Click="ImportOvpn_Click"/>
-            <TextBlock x:Name="OvpnStatusText" Text="" FontSize="10.5" Margin="2,4,2,0"
-                       FlowDirection="LeftToRight" HorizontalAlignment="Right"
-                       Foreground="{DynamicResource AccentBrush}"/>
+            <!-- OpenVPN extras -->
+            <StackPanel x:Name="OvpnPanel">
+                <TextBlock Text="پروتکل" Style="{StaticResource Lbl}"/>
+                <ComboBox x:Name="ProtoCombo" Style="{StaticResource Combo}" SelectedIndex="0">
+                    <ComboBoxItem Content="UDP" Tag="udp"/>
+                    <ComboBoxItem Content="TCP" Tag="tcp"/>
+                </ComboBox>
+                <TextBlock Text="Server Override (اختیاری)" Style="{StaticResource Lbl}"/>
+                <TextBox x:Name="OverrideBox" Style="{StaticResource Input}" FlowDirection="LeftToRight"/>
+                <Button x:Name="ImportOvpnBtn" Content="📂 انتخاب فایل .ovpn"
+                        Margin="0,8,0,0" Padding="8,7" FontSize="12" Cursor="Hand"
+                        Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}"
+                        BorderBrush="{DynamicResource LineBrush}" Click="ImportOvpn_Click"/>
+                <TextBlock x:Name="OvpnStatusText" Text="" FontSize="10.5" Margin="2,4,2,0"
+                           FlowDirection="LeftToRight" HorizontalAlignment="Right"
+                           Foreground="{DynamicResource AccentBrush}"/>
+            </StackPanel>
+
+            <TextBlock Text="نام کاربری" Style="{StaticResource Lbl}"/>
+            <TextBox x:Name="UserBox" Style="{StaticResource Input}" FlowDirection="LeftToRight"/>
+            <TextBlock Text="رمز عبور" Style="{StaticResource Lbl}"/>
+            <PasswordBox x:Name="PassBox" Style="{StaticResource Pwd}" FlowDirection="LeftToRight"/>
+
+            <StackPanel x:Name="PskPanel">
+                <TextBlock Text="کلید مشترک (PSK)" Style="{StaticResource Lbl}"/>
+                <PasswordBox x:Name="PskBox" Style="{StaticResource Pwd}" FlowDirection="LeftToRight"/>
+            </StackPanel>
+
         </StackPanel>
 
-        <TextBlock Text="نام کاربری" Style="{StaticResource Lbl}"/>
-        <TextBox x:Name="UserBox" Style="{StaticResource Input}" FlowDirection="LeftToRight"/>
+        <!-- ========================================================
+             WgPanel — WireGuard / AmneziaWG
+             فرم دستی — ایمپورت .conf اختیاری است
+             ======================================================== -->
+        <StackPanel x:Name="WgPanel" Visibility="Collapsed" Margin="0,4,0,0">
 
-        <TextBlock Text="رمز عبور" Style="{StaticResource Lbl}"/>
-        <PasswordBox x:Name="PassBox" Style="{StaticResource Pwd}" FlowDirection="LeftToRight"/>
+            <!-- دکمه import — اختیاری: فرم را از .conf پر می‌کند -->
+            <Button x:Name="ImportWgBtn" Content="📂 ایمپورت از فایل .conf (اختیاری)"
+                    Padding="8,7" FontSize="12" Cursor="Hand"
+                    Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}"
+                    BorderBrush="{DynamicResource LineBrush}" Click="ImportWgConf_Click"/>
+            <TextBlock x:Name="WgStatusText" Text="یا فیلدها را دستی پر کنید"
+                       FontSize="10.5" Margin="2,4,2,8" HorizontalAlignment="Right"
+                       Foreground="{DynamicResource SubTextBrush}"/>
 
-        <StackPanel x:Name="PskPanel">
-            <TextBlock Text="کلید مشترک (PSK)" Style="{StaticResource Lbl}"/>
-            <PasswordBox x:Name="PskBox" Style="{StaticResource Pwd}" FlowDirection="LeftToRight"/>
+            <!-- فرم دستی — همیشه نمایان است -->
+            <StackPanel x:Name="WgFieldsPanel">
+
+                <!-- [Interface] -->
+                <TextBlock Text="───  Interface  ───" Style="{StaticResource LblSection}"
+                           HorizontalAlignment="Center" Margin="0,4,0,4"/>
+
+                <TextBlock Text="Private Key  *" Style="{StaticResource Lbl}"/>
+                <TextBox x:Name="WgPrivateKeyBox" Style="{StaticResource InputMono}"
+                         TextWrapping="Wrap"/>
+
+                <TextBlock Text="Address  *  (e.g. 10.0.0.2/32)" Style="{StaticResource Lbl}"/>
+                <TextBox x:Name="WgAddressBox" Style="{StaticResource InputSmall}"/>
+
+                <TextBlock Text="DNS  (اختیاری)" Style="{StaticResource Lbl}"/>
+                <TextBox x:Name="WgDnsBox" Style="{StaticResource InputSmall}"/>
+
+                <TextBlock Text="MTU  (اختیاری)" Style="{StaticResource Lbl}"/>
+                <TextBox x:Name="WgMtuBox" Style="{StaticResource InputSmall}"/>
+
+                <!-- [Peer] -->
+                <TextBlock Text="───  Peer  ───" Style="{StaticResource LblSection}"
+                           HorizontalAlignment="Center" Margin="0,10,0,4"/>
+
+                <TextBlock Text="Public Key  *" Style="{StaticResource Lbl}"/>
+                <TextBox x:Name="WgPublicKeyBox" Style="{StaticResource InputMono}"
+                         TextWrapping="Wrap"/>
+
+                <TextBlock Text="Endpoint  *  (host:port)" Style="{StaticResource Lbl}"/>
+                <TextBox x:Name="WgEndpointBox" Style="{StaticResource InputSmall}"/>
+
+                <TextBlock Text="Allowed IPs" Style="{StaticResource Lbl}"/>
+                <TextBox x:Name="WgAllowedIPsBox" Style="{StaticResource InputSmall}"
+                         Text="0.0.0.0/0, ::/0"/>
+
+                <TextBlock x:Name="WgKeepaliveLbl" Text="Keepalive (ثانیه — اختیاری)" Style="{StaticResource Lbl}"/>
+                <TextBox x:Name="WgKeepaliveBox" Style="{StaticResource InputSmall}"/>
+
+                <!-- AmneziaWG چک‌باکس -->
+                <Border Margin="0,14,0,0" Padding="10,8" CornerRadius="6"
+                        Background="{DynamicResource FieldBrush}"
+                        BorderBrush="{DynamicResource LineBrush}" BorderThickness="1">
+                    <CheckBox x:Name="AwgCheckBox"
+                              Foreground="{DynamicResource TextBrush}" FontSize="12"
+                              Checked="AwgCheckBox_Changed" Unchecked="AwgCheckBox_Changed">
+                        <TextBlock>
+                            <Run Text="AmneziaWG" FontWeight="SemiBold"/>
+                            <Run Text="  — افزودن فیلدهای obfuscation" FontSize="10.5"
+                                 Foreground="{DynamicResource SubTextBrush}"/>
+                        </TextBlock>
+                    </CheckBox>
+                </Border>
+
+                <!-- AmneziaWG — فیلدهای obfuscation -->
+                <StackPanel x:Name="AwgPanel" Visibility="Collapsed" Margin="0,4,0,0">
+
+                    <TextBlock Text="───  AmneziaWG Obfuscation  ───" Style="{StaticResource LblSection}"
+                               HorizontalAlignment="Center" Margin="0,6,0,4"/>
+
+                    <!-- Jc / Jmin / Jmax -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                            <TextBlock Text="Jc" Style="{StaticResource Lbl}"/>
+                            <TextBox x:Name="AwgJcBox" Style="{StaticResource InputSmall}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="4,0">
+                            <TextBlock Text="Jmin" Style="{StaticResource Lbl}"/>
+                            <TextBox x:Name="AwgJminBox" Style="{StaticResource InputSmall}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Margin="4,0,0,0">
+                            <TextBlock Text="Jmax" Style="{StaticResource Lbl}"/>
+                            <TextBox x:Name="AwgJmaxBox" Style="{StaticResource InputSmall}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- S1 / S2 -->
+                    <Grid Margin="0,0,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,3,0">
+                            <TextBlock Text="S1" Style="{StaticResource Lbl}"/>
+                            <TextBox x:Name="AwgS1Box" Style="{StaticResource InputSmall}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="3,0">
+                            <TextBlock Text="S2" Style="{StaticResource Lbl}"/>
+                            <TextBox x:Name="AwgS2Box" Style="{StaticResource InputSmall}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Margin="3,0">
+                            <TextBlock Text="S3" Style="{StaticResource Lbl}"/>
+                            <TextBox x:Name="AwgS3Box" Style="{StaticResource InputSmall}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="3" Margin="3,0,0,0">
+                            <TextBlock Text="S4" Style="{StaticResource Lbl}"/>
+                            <TextBox x:Name="AwgS4Box" Style="{StaticResource InputSmall}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- H1 / H2 / H3 / H4 -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,3,0">
+                            <TextBlock Text="H1" Style="{StaticResource Lbl}"/>
+                            <TextBox x:Name="AwgH1Box" Style="{StaticResource InputSmall}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="3,0">
+                            <TextBlock Text="H2" Style="{StaticResource Lbl}"/>
+                            <TextBox x:Name="AwgH2Box" Style="{StaticResource InputSmall}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Margin="3,0">
+                            <TextBlock Text="H3" Style="{StaticResource Lbl}"/>
+                            <TextBox x:Name="AwgH3Box" Style="{StaticResource InputSmall}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="3" Margin="3,0,0,0">
+                            <TextBlock Text="H4" Style="{StaticResource Lbl}"/>
+                            <TextBox x:Name="AwgH4Box" Style="{StaticResource InputSmall}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Extra params -->
+                    <TextBlock Text="پارامترهای اضافی (اختیاری)" Style="{StaticResource Lbl}"/>
+                    <TextBox x:Name="AwgExtraBox" Style="{StaticResource InputSmall}"
+                             TextWrapping="Wrap" AcceptsReturn="True" MinHeight="50"
+                             ToolTip="کلید = مقدار — هر پارامتر در یک خط جداگانه"/>
+
+                </StackPanel>
+
+            </StackPanel>
         </StackPanel>
 
+        <!-- دکمه‌ها -->
         <Grid Margin="0,16,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -156,9 +337,10 @@
                     Background="{DynamicResource AccentBrush}" Foreground="White"
                     BorderThickness="0" Cursor="Hand" Click="Ok_Click"/>
             <Button Grid.Column="1" Content="انصراف" Margin="4,0,0,0" Padding="0,8" FontSize="12"
-                    Background="{DynamicResource FieldBrush}"
-                    Foreground="{DynamicResource TextBrush}"
+                    Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}"
                     BorderThickness="0" Cursor="Hand" Click="Cancel_Click"/>
         </Grid>
+
     </StackPanel>
+    </ScrollViewer>
 </Window>

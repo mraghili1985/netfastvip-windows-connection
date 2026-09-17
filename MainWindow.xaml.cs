@@ -113,6 +113,7 @@ namespace SmartVpn
         private int _idleTick;         // شمارنده ثانیه برای پنجره یک‌دقیقه‌ای بی‌استفادگی
         private long _idleWindowBytes; // ترافیک ردوبدل‌شده در دقیقه جاری
         private int _idleMinutes;      // دقیقه‌های پیاپی بی‌استفادگی
+        private bool _activeIsWg;      // پروتکل فعلی WireGuard یا AmneziaWG است — برای نمایش هندشیک
         private bool _reallyExit;      // خروج واقعی از منوی تری (به‌جای مخفی‌شدن)
         private bool _trayHintShown;   // اعلان راهنمای تری فقط یک بار
 
