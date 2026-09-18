@@ -391,5 +391,102 @@ namespace SmartVpn
             LogBox.Clear();
         }
 
+
+        // ================= WiFi Hotspot =================
+        private readonly HotspotService _hotspot = new();
+        private System.Windows.Threading.DispatcherTimer? _hotspotStatusTimer;
+
+        private async void HotspotToggle_Click(object sender, RoutedEventArgs e)
+        {
+            if (_hotspot.IsRunning)
+            {
+                HotspotToggleBtn.IsEnabled = false;
+                await _hotspot.StopAsync();
+                _hotspotStatusTimer?.Stop();
+                SetHotspotUiOff();
+                return;
+            }
+
+            var ssid = HotspotSsidBox.Text.Trim();
+            var pass = HotspotPassBox.Text.Trim();
+            if (ssid.Length == 0) { AppendLog("[Hotspot] نام شبکه را وارد کنید."); return; }
+            if (pass.Length < 8)  { AppendLog("[Hotspot] رمز عبور حداقل ۸ کاراکتر باشد."); return; }
+
+            // بررسی پشتیبانی درایور
+            HotspotToggleBtn.IsEnabled = false;
+            HotspotToggleBtn.Content = "در حال بررسی...";
+            AppendLog("> netsh wlan show drivers");
+            var driversOut = await RunToolOutputAsync("netsh", "wlan show drivers");
+            bool supported = driversOut.Contains("Hosted network supported  : Yes",
+                StringComparison.OrdinalIgnoreCase);
+            if (!supported)
+            {
+                AppendLog("[Hotspot] وایرلس لن سیستم شما این متد را پشتیبانی نمی‌کند.");
+                SetHotspotUiOff();
+                return;
+            }
+
+            HotspotToggleBtn.Content = "در حال راه‌اندازی...";
+            HotspotService.Log += msg => Dispatcher.Invoke(() => AppendLog(msg));
+            var (ok, err) = await _hotspot.StartAsync(ssid, pass);
+            if (!ok) { AppendLog("[Hotspot] خطا: " + err); SetHotspotUiOff(); return; }
+
+            SetHotspotUiOn(ssid, pass);
+            _hotspotStatusTimer = new System.Windows.Threading.DispatcherTimer
+                { Interval = TimeSpan.FromSeconds(5) };
+            _hotspotStatusTimer.Tick += async (_, _) =>
+            {
+                var c = await HotspotService.GetConnectedDevicesCountAsync();
+                HotspotDevicesText.Text = c == 0 ? "" : $"{c} دستگاه متصل";
+            };
+            _hotspotStatusTimer.Start();
+        }
+
+        // خروجی RunToolAsync با خروجی string — برای خواندن نتیجه دستور
+        private async Task<string> RunToolOutputAsync(string exe, string args)
+        {
+            try
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo(exe, args)
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                };
+                using var proc = System.Diagnostics.Process.Start(psi)!;
+                var stdout = await proc.StandardOutput.ReadToEndAsync();
+                var stderr = await proc.StandardError.ReadToEndAsync();
+                await proc.WaitForExitAsync();
+                return stdout + stderr;
+            }
+            catch (Exception ex) { return ex.Message; }
+        }
+
+        private void SetHotspotUiOn(string ssid, string pass)
+        {
+            HotspotToggleBtn.IsEnabled  = true;
+            HotspotToggleBtn.Content    = "⏹ خاموش‌کردن Hotspot";
+            HotspotStatusText.Text      = "✅ فعال";
+            HotspotStatusText.Foreground = new SolidColorBrush(
+                (Color)ColorConverter.ConvertFromString("#22C55E"));
+            HotspotSsidBox.IsEnabled    = false;
+            HotspotPassBox.IsEnabled    = false;
+            HotspotDevicesText.Text     = "";
+            AppendLog($"[Hotspot] فعال — {ssid} / {pass}");
+        }
+
+        private void SetHotspotUiOff()
+        {
+            HotspotToggleBtn.IsEnabled  = true;
+            HotspotToggleBtn.Content    = "📶 روشن‌کردن Hotspot";
+            HotspotStatusText.Text      = "غیرفعال";
+            HotspotStatusText.Foreground = new SolidColorBrush(
+                (Color)ColorConverter.ConvertFromString("#9CA3AF"));
+            HotspotSsidBox.IsEnabled    = true;
+            HotspotPassBox.IsEnabled    = true;
+            HotspotDevicesText.Text     = "";
+        }
+
     }
 }

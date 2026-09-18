@@ -546,6 +546,55 @@
                         </Button>
                     </UniformGrid>
 
+                    <!-- ===== WiFi Hotspot ===== -->
+                    <TextBlock DockPanel.Dock="Top" Text="&#x1F4F6; WiFi Hotspot"
+                               Style="{StaticResource SectionTitle}"/>
+                    <Border DockPanel.Dock="Top" Background="{DynamicResource CardBrush}"
+                            BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
+                            CornerRadius="6" Padding="10,8" Margin="0,0,0,8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid Grid.Row="0" Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="70"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="70"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="نام شبکه" Grid.Column="0"
+                                           Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" FontSize="11"/>
+                                <TextBox x:Name="HotspotSsidBox" Grid.Column="1" Text="NetFast-VPN"
+                                         Height="26" VerticalContentAlignment="Center" Padding="6,0"
+                                         Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}"
+                                         BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
+                                         FontFamily="Consolas" FontSize="12"/>
+                                <TextBlock Text="رمز" Grid.Column="3"
+                                           Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" FontSize="11"/>
+                                <TextBox x:Name="HotspotPassBox" Grid.Column="4" Text="smartvpn1"
+                                         Height="26" VerticalContentAlignment="Center" Padding="6,0"
+                                         Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}"
+                                         BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
+                                         FontFamily="Consolas" FontSize="12"
+                                         ToolTip="حداقل ۸ کاراکتر"/>
+                            </Grid>
+                            <StackPanel Grid.Row="2" Orientation="Horizontal">
+                                <Button x:Name="HotspotToggleBtn"
+                                        Content="&#x1F4F6; روشن‌کردن Hotspot"
+                                        Style="{StaticResource ActionBtn}" Padding="10,5"
+                                        Click="HotspotToggle_Click" Margin="0,0,8,0"/>
+                                <TextBlock x:Name="HotspotStatusText" Text="غیرفعال"
+                                           Foreground="#9CA3AF" VerticalAlignment="Center" FontSize="11" Margin="0,0,8,0"/>
+                                <TextBlock x:Name="HotspotDevicesText" Text=""
+                                           Foreground="#60A5FA" VerticalAlignment="Center" FontSize="11"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
                     <TextBlock DockPanel.Dock="Top" Text="🏓 پینگ / Traceroute" Style="{StaticResource SectionTitle}"/>
                     <TextBox DockPanel.Dock="Top" x:Name="ToolTargetBox" Height="30" Margin="0,0,0,6"
                              FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="12"
