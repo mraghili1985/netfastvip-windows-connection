@@ -93,7 +93,10 @@ public class RasProvider : IConnectionProvider
         }
 
         // شماره‌گیری با rasdial
-        var dial = await RunAsync("rasdial", $"\"{_entryName}\" \"{_creds.Username}\" \"{_creds.Password}\"", ct);
+        // IKEv2+EAP: باید showWindow=true باشه تا EAP بتونه credential بگیره (بدون error 703)
+        var dial = _cfg.Type == "ikev2"
+            ? await RunAsync("rasdial", $"\"{_entryName}\" \"{_creds.Username}\" \"{_creds.Password}\"", ct, showWindow: true)
+            : await RunAsync("rasdial", $"\"{_entryName}\" \"{_creds.Username}\" \"{_creds.Password}\"", ct);
 
         if (dial.ExitCode != 0)
         {
@@ -180,7 +183,7 @@ public class RasProvider : IConnectionProvider
         return res.Output.Contains(_entryName);
     }
 
-    private static async Task<(int ExitCode, string Output)> RunAsync(string file, string args, CancellationToken ct)
+    private static async Task<(int ExitCode, string Output)> RunAsync(string file, string args, CancellationToken ct, bool showWindow = false)
     {
         var psi = new ProcessStartInfo
         {
@@ -189,7 +192,7 @@ public class RasProvider : IConnectionProvider
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
-            CreateNoWindow = true,
+            CreateNoWindow = !showWindow,
         };
         using var proc = Process.Start(psi)!;
         var stdout = await proc.StandardOutput.ReadToEndAsync(ct);

@@ -76,6 +76,18 @@ namespace SmartVpn
                 RefreshList();
                 TryAutoCheckSubscriptionSummaryOnce();
             };
+
+            // سینک کانکشن‌ها از پورتال بعد از هر لاگین موفق (بدون توجه به تیک ذخیره)
+            dlg.OnSyncConnections = async (portalClient, u, p) =>
+            {
+                var result = await PortalSyncService.SyncFromPortalAsync(portalClient, _config, u, p);
+                _config.Save();
+                Dispatcher.Invoke(() =>
+                {
+                    RefreshList();
+
+                });
+            };
             dlg.ShowDialog();
         }
 
