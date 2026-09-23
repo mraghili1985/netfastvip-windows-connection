@@ -100,6 +100,7 @@ public partial class SpeedTestDialog : Window
     public SpeedTestDialog(bool vpnConnected, string connectionName)
     {
         InitializeComponent();
+        Loaded += (_, _) => Localization.Watch(this);
         Title = string.Format(TitleFmt, AppConfig.BrandName); // نام برند از config.json
         ViaText.Text = vpnConnected ? string.Format(ViaConnectedFmt, connectionName) : ViaDirect;
         ViaDot.Fill = new SolidColorBrush(vpnConnected ? Green : Color.FromRgb(0x64, 0x74, 0x8B));

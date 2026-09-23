@@ -5,8 +5,10 @@
         Title="NETFASTVIP" Width="420" Height="790"
         FlowDirection="RightToLeft"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="CanMinimize"
-        Background="{DynamicResource BgBrush}"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        AllowsTransparency="True"
+        Background="Transparent"
         FontFamily="./Fonts/#Vazirmatn, Vazirmatn, Segoe UI, Tahoma"
         TextOptions.TextFormattingMode="Display"
         AllowDrop="True" DragOver="Window_DragOver" Drop="Window_Drop"
@@ -74,7 +76,6 @@
             <Setter Property="Margin" Value="0,4,0,4"/>
         </Style>
 
-        <!-- Toolbox tile style -->
         <Style x:Key="ToolTile" TargetType="Button">
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -102,7 +103,6 @@
             </Setter>
         </Style>
 
-        <!-- Area-chart gradient fills -->
         <LinearGradientBrush x:Key="DlAreaBrush" StartPoint="0,0" EndPoint="0,1">
             <GradientStop Color="#553B82F6" Offset="0"/>
             <GradientStop Color="#003B82F6" Offset="1"/>
@@ -112,7 +112,6 @@
             <GradientStop Color="#0022C55E" Offset="1"/>
         </LinearGradientBrush>
 
-        <!-- Power button animations -->
         <Storyboard x:Key="PulseStoryboard" RepeatBehavior="Forever" AutoReverse="True">
             <DoubleAnimation Storyboard.TargetName="PowerScale" Storyboard.TargetProperty="ScaleX"
                               From="1" To="1.08" Duration="0:0:0.9"/>
@@ -129,7 +128,75 @@
         </Storyboard>
     </Window.Resources>
 
-    <Grid>
+    <Border x:Name="WindowSurface" Margin="3"
+            Background="{DynamicResource BgBrush}"
+            BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
+            CornerRadius="14" ClipToBounds="True">
+        <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition x:Name="TitleBarRow" Height="31"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- نوار عنوان داخلی؛ چون بعضی نسخه‌های ویندوز رنگ Native TitleBar را نادیده می‌گیرند،
+             کنترل بستن و کمینه‌سازی را خود برنامه در اختیار می‌گیرد. -->
+        <Border x:Name="AppTitleBar" Grid.Row="0" Height="31"
+                CornerRadius="11,11,0,0" ClipToBounds="True"
+                Background="{DynamicResource BgBrush}"
+                BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1"
+                MouseLeftButtonDown="AppTitleBar_MouseLeftButtonDown">
+            <Grid FlowDirection="LeftToRight">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                            VerticalAlignment="Center" Margin="0,0,9,0" FlowDirection="LeftToRight">
+                    <TextBlock Text="NETFASTVIP" FontSize="11" FontWeight="SemiBold"
+                               Foreground="{DynamicResource SubTextBrush}"
+                               VerticalAlignment="Center"/>
+                    <Image Source="/app.ico" Width="16" Height="16" Margin="7,0,0,0"
+                           Stretch="Uniform" VerticalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Stretch">
+                    <Button x:Name="TitleCloseButton" Width="38" Height="31"
+                            Content="×" FontSize="16" Padding="0"
+                            Background="Transparent" Foreground="{DynamicResource SubTextBrush}"
+                            BorderThickness="0" Cursor="Hand" ToolTip="بستن"
+                            Click="TitleCloseButton_Click">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="Bd" Background="{TemplateBinding Background}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Bd" Property="Background" Value="#C42B1C"/>
+                                        <Setter Property="Foreground" Value="#FFFFFF"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <Button x:Name="TitleMinimizeButton" Width="38" Height="31"
+                            Content="—" FontSize="14" Padding="0"
+                            Background="Transparent" Foreground="{DynamicResource SubTextBrush}"
+                            BorderThickness="0" Cursor="Hand" ToolTip="کمینه‌سازی"
+                            Click="TitleMinimizeButton_Click">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="Bd" Background="{TemplateBinding Background}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1">
         <Grid.LayoutTransform>
             <ScaleTransform x:Name="RootScale"/>
         </Grid.LayoutTransform>
@@ -175,7 +242,7 @@
                     <StackPanel x:Name="HeaderPagePanel" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
                         <Button x:Name="BackBtn" Width="28" Height="26" Margin="0,0,8,0"
                                 Style="{StaticResource ActionBtn}" Padding="0"
-                                Content="→" ToolTip="بازگشت" Click="BackBtn_Click"/>
+                                Content="→" ToolTip="بازگشت" Click="HotspotNavHome_Click"/>
                         <TextBlock x:Name="HeaderTitleText" Text="" FontSize="14.5" FontWeight="Bold"
                                    Foreground="{DynamicResource TextBrush}"/>
                     </StackPanel>
@@ -190,13 +257,20 @@
                         </Button>
                         <Button x:Name="HeaderLogBtn" Width="32" Height="26" Margin="0,0,6,0"
                                 Style="{StaticResource ActionBtn}" Padding="0"
-                                Content="📜" ToolTip="گزارش کانکشن‌ها" Click="HeaderLogBtn_Click"/>
+                                Content="📜" ToolTip="گزارش کانکشن‌ها" Click="HotspotNavLogs_Click"/>
+                        <Button x:Name="HeaderHotspotBtn" Width="32" Height="26" Margin="0,0,6,0"
+                                Style="{StaticResource ActionBtn}" Padding="0"
+                                ToolTip="باز کردن پنجره Hotspot" Click="OpenHotspotWindow_Click">
+                            <TextBlock x:Name="HotspotHeaderIcon" Text="📶"
+                                       FontSize="15" Foreground="#4B5563"
+                                       VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Button>
                         <Button x:Name="HeaderToolsBtn" Width="32" Height="26" Margin="0,0,6,0"
                                 Style="{StaticResource ActionBtn}" Padding="0" Tag="tools"
-                                Content="🧰" ToolTip="ابزارها و گزارش" Click="Nav_Click"/>
+                                Content="🧰" ToolTip="ابزارها و گزارش" Click="HotspotNavTools_Click"/>
                         <Button x:Name="HeaderSettingsBtn" Width="32" Height="26"
                                 Style="{StaticResource ActionBtn}" Padding="0" Tag="settings"
-                                Content="⚙" ToolTip="تنظیمات" Click="Nav_Click"/>
+                                Content="⚙" ToolTip="تنظیمات" Click="HotspotNavSettings_Click"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -282,7 +356,6 @@
 
                         <Border Height="1" Margin="0,8,0,7" Background="{DynamicResource LineBrush}" Opacity="0.75"/>
 
-                        <!-- Small text-only details toggle -->
                         <Button x:Name="MoreInfoBtn" Click="MoreInfoToggle_Click" Background="Transparent" BorderThickness="0"
                                 Foreground="{DynamicResource SubTextBrush}" Padding="0" Margin="0,5,0,0"
                                 Cursor="Hand" HorizontalAlignment="Right" HorizontalContentAlignment="Right" Focusable="False">
@@ -358,7 +431,7 @@
                                 </Border>
                                 <Border Background="{DynamicResource FieldBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="7" Padding="9,7" Margin="5,5,0,0">
                                     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="Protocol" FontSize="10" Foreground="{DynamicResource SubTextBrush}"/>
+                                        <TextBlock Grid.Column="0" x:Name="ProtocolLbl" Text="Protocol" FontSize="10" Foreground="{DynamicResource SubTextBrush}"/>
                                         <TextBlock Grid.Column="1" x:Name="ProtocolText" Text="—" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" FlowDirection="LeftToRight"/>
                                     </Grid>
                                 </Border>
@@ -378,14 +451,12 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="کانکشن‌ها" FontWeight="Bold" FontSize="13"
+                    <TextBlock Grid.Column="0" x:Name="ConnSectionLabel" Text="کانکشن‌ها" FontWeight="Bold" FontSize="13"
                                Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
-                    <!-- فیلتر نوع کانکشن + دکمه افزودن کانکشن جدید (همه در یک ردیف تا مشخص باشد که ترتیب/فیلتر یکجا مدیرید می‌شود) -->
                     <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,8,0,0">
                         <Button x:Name="AddBtn" Content="＋ Add" Style="{StaticResource ActionBtn}" FontSize="10.5" FontWeight="Bold"
                                 Padding="9,3" Margin="0,0,8,0" Foreground="White" Background="#3B82F6" BorderBrush="#3B82F6"
                                 ToolTip="افزودن کانکشن جدید" Click="Add_Click"/>
-                        <!-- منوی آبشاری فیلتر: تنها پروتکل‌هایی که در کد پشت واقعاً کانکشن داریم نمایش داده می‌شود (FilterDropdownBtn_Click در MainWindow.Connections.cs) -->
                         <Button x:Name="FilterDropdownBtn" Style="{StaticResource ActionBtn}" FontSize="10.5" Padding="9,3" Click="FilterDropdownBtn_Click">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock x:Name="FilterDropdownLabel" Text="همه" FontSize="10.5"/>
@@ -395,13 +466,12 @@
                     </StackPanel>
                 </Grid>
 
-                <!-- Connections list (راست‌کلیک روی هر کانکشن = ویرایش/حذف) -->
+                <!-- Connections list -->
                 <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
                     <StackPanel x:Name="ConnList" Margin="0,4,0,10"/>
                 </ScrollViewer>
 
-                <!-- کارت خلاصه اشتراک — ثابت در پایین صفحه، فقط وقتی داده داریم؛ جمع‌شده با فلش باز/بسته مثل کارت اینفو -->
-                <!-- هم‌رنگ/هم‌وزن با ردیف‌های لیست کانکشن (RowCardBrush/RowLineBrush) تا کارت اشتراک بیشاز از حد توی چشم نباشد -->
+                <!-- کارت خلاصه اشتراک -->
                 <Border Grid.Row="3" x:Name="SubSummaryCard"
                         Background="{DynamicResource RowCardBrush}" BorderBrush="{DynamicResource RowLineBrush}"
                         BorderThickness="1" CornerRadius="8" Padding="9,7" Margin="2,8,2,2">
@@ -424,10 +494,9 @@
 
                             <StackPanel Grid.Column="1" FlowDirection="RightToLeft" VerticalAlignment="Center" Margin="8,0,0,0">
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                    <TextBlock Text="🎫 اشتراک من" FontSize="11.5" FontWeight="SemiBold"
+                                    <TextBlock x:Name="SubSectionLabel" Text="🎫 اشتراک من" FontSize="11.5" FontWeight="SemiBold"
                                                Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Right"
                                                TextTrimming="CharacterEllipsis"/>
-                                    <!-- بترین بدون پیل رنگی — فقط یک نقطه کوچک رنگی + متن معمولی، مشابه برچسب وضعیت در ردیف‌های لیست -->
                                     <Border x:Name="SubActiveBadge" Background="Transparent"
                                             Margin="0,0,6,0" VerticalAlignment="Center" Visibility="Collapsed">
                                         <StackPanel Orientation="Horizontal">
@@ -452,7 +521,7 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                                        <TextBlock Text="⏳ زمان باقی‌مانده" FontSize="9"
+                                        <TextBlock x:Name="SubTimeLbl" Text="⏳ زمان باقی‌مانده" FontSize="9"
                                                    Foreground="{DynamicResource SubTextBrush}"
                                                    HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                         <TextBlock x:Name="SubTimeLeftText" Text="—" FontSize="11.5" FontWeight="SemiBold"
@@ -460,7 +529,7 @@
                                                    FlowDirection="LeftToRight" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                                        <TextBlock Text="📦 حجم باقی‌مانده" FontSize="9"
+                                        <TextBlock x:Name="SubDataLbl" Text="📦 حجم باقی‌مانده" FontSize="9"
                                                    Foreground="{DynamicResource SubTextBrush}"
                                                    HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                         <TextBlock x:Name="SubDataLeftText" Text="—" FontSize="11.5" FontWeight="SemiBold"
@@ -484,23 +553,24 @@
                 <DockPanel.RenderTransform>
                     <TranslateTransform x:Name="ToolsTransform"/>
                 </DockPanel.RenderTransform>
-                    <TextBlock DockPanel.Dock="Top" Text="🧰 جعبه‌ابزار و عیب‌یابی شبکه" Style="{StaticResource SectionTitle}"/>
-                    <!-- تایل عریض تست سرعت — تمام‌عرض، بالای شبکه‌ی تایل‌ها تا توازن ۲×۳ بهم نخورد -->
+                    <TextBlock DockPanel.Dock="Top" x:Name="ToolboxTitle" Text="🧰 جعبه‌ابزار و عیب‌یابی شبکه" Style="{StaticResource SectionTitle}"/>
+                    
                     <Button DockPanel.Dock="Top" x:Name="SpeedTestBtn" Style="{StaticResource ToolTile}" Click="SpeedTest_Click"
                             Margin="3,3,3,1" Padding="6,9"
-                            ToolTip="اندازه‌گیری پینگ، جیتر و سرعت دانلود/آپلود — وقتی متصل هستید از داخل تانل تست می‌شود">
+                            ToolTip="اندازه‌گیری پینگ، جیتر و سرعت دانلود/آپلود">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="🚀" FontSize="15" Foreground="#22C55E" VerticalAlignment="Center"/>
-                            <TextBlock Text="تست سرعت اتصال" FontSize="11.5" FontWeight="Bold" Margin="8,0,0,0" VerticalAlignment="Center"
+                            <TextBlock x:Name="SpeedTestLbl" Text="تست سرعت اتصال" FontSize="11.5" FontWeight="Bold" Margin="8,0,0,0" VerticalAlignment="Center"
                                        Foreground="{DynamicResource TextBrush}"/>
                         </StackPanel>
                     </Button>
+
                     <UniformGrid DockPanel.Dock="Top" Columns="2" Rows="3">
                         <Button x:Name="RenewIpBtn" Style="{StaticResource ToolTile}" Click="RenewIp_Click"
-                                ToolTip="وقتی شبکه وصل است ولی اینترنت ندارید — چند ثانیه اینترنت قطع می‌شود">
+                                ToolTip="وقتی شبکه وصل است ولی اینترنت ندارید">
                             <StackPanel>
                                 <TextBlock Text="🔄" FontSize="15" HorizontalAlignment="Center" Foreground="#3B82F6"/>
-                                <TextBlock Text="تمدید IP" FontSize="10.5" Margin="0,3,0,0" HorizontalAlignment="Center"
+                                <TextBlock x:Name="RenewIpLbl" Text="تمدید IP" FontSize="10.5" Margin="0,3,0,0" HorizontalAlignment="Center"
                                            TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource TextBrush}"/>
                             </StackPanel>
                         </Button>
@@ -508,7 +578,7 @@
                                 ToolTip="وقتی بعد از تغییر VPN سایت‌ها باز نمی‌شوند">
                             <StackPanel>
                                 <TextBlock Text="🧹" FontSize="15" HorizontalAlignment="Center" Foreground="#F59E0B"/>
-                                <TextBlock Text="پاک‌سازی DNS" FontSize="10.5" Margin="0,3,0,0" HorizontalAlignment="Center"
+                                <TextBlock x:Name="FlushDnsLbl" Text="پاک‌سازی DNS" FontSize="10.5" Margin="0,3,0,0" HorizontalAlignment="Center"
                                            TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource TextBrush}"/>
                             </StackPanel>
                         </Button>
@@ -516,7 +586,7 @@
                                 ToolTip="وقتی پراکسی قدیمی، مرورگر را خراب کرده است">
                             <StackPanel>
                                 <TextBlock Text="🚫" FontSize="15" HorizontalAlignment="Center" Foreground="#6366F1"/>
-                                <TextBlock Text="غیرفعال‌کردن پراکسی" FontSize="10.5" Margin="0,3,0,0" HorizontalAlignment="Center"
+                                <TextBlock x:Name="DisableProxyLbl" Text="غیرفعال‌کردن پراکسی" FontSize="10.5" Margin="0,3,0,0" HorizontalAlignment="Center"
                                            TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource TextBrush}"/>
                             </StackPanel>
                         </Button>
@@ -524,7 +594,7 @@
                                 ToolTip="وقتی اتصال قبلی گیر کرده و قطع نمی‌شود">
                             <StackPanel>
                                 <TextBlock Text="⛔" FontSize="15" HorizontalAlignment="Center" Foreground="#EF4444"/>
-                                <TextBlock Text="بستن پروسه‌های گیرکرده" FontSize="10.5" Margin="0,3,0,0" HorizontalAlignment="Center"
+                                <TextBlock x:Name="KillProcLbl" Text="بستن پروسه‌های گیرکرده" FontSize="10.5" Margin="0,3,0,0" HorizontalAlignment="Center"
                                            TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource TextBrush}"/>
                             </StackPanel>
                         </Button>
@@ -532,76 +602,27 @@
                                 ToolTip="بررسی اینکه DNS شما هم از داخل تانل رد می‌شود یا نشت دارد">
                             <StackPanel>
                                 <TextBlock Text="🧪" FontSize="15" HorizontalAlignment="Center" Foreground="#14B8A6"/>
-                                <TextBlock Text="تست نشتی DNS" FontSize="10.5" Margin="0,3,0,0" HorizontalAlignment="Center"
+                                <TextBlock x:Name="DnsLeakLbl" Text="تست نشتی DNS" FontSize="10.5" Margin="0,3,0,0" HorizontalAlignment="Center"
                                            TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource TextBrush}"/>
                             </StackPanel>
                         </Button>
                         <Button x:Name="ResetAdapterBtn" Style="{StaticResource ToolTile}" Click="ResetAdapter_Click"
-                                ToolTip="غیرفعال و فعال‌کردن کارت شبکه — چند ثانیه اینترنت قطع می‌شود">
+                                ToolTip="غیرفعال و فعال‌کردن کارت شبکه">
                             <StackPanel>
                                 <TextBlock Text="🔁" FontSize="15" HorizontalAlignment="Center" Foreground="#F43F5E"/>
-                                <TextBlock Text="ریست آداپتور" FontSize="10.5" Margin="0,3,0,0" HorizontalAlignment="Center"
+                                <TextBlock x:Name="ResetAdapterLbl" Text="ریست آداپتور" FontSize="10.5" Margin="0,3,0,0" HorizontalAlignment="Center"
                                            TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource TextBrush}"/>
                             </StackPanel>
                         </Button>
                     </UniformGrid>
 
-                    <!-- ===== WiFi Hotspot ===== -->
-                    <TextBlock DockPanel.Dock="Top" Text="&#x1F4F6; WiFi Hotspot"
-                               Style="{StaticResource SectionTitle}"/>
-                    <Border DockPanel.Dock="Top" Background="{DynamicResource CardBrush}"
-                            BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                            CornerRadius="6" Padding="10,8" Margin="0,0,0,8">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-                            <Grid Grid.Row="0" Margin="0,0,0,5">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="70"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="10"/>
-                                    <ColumnDefinition Width="70"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="نام شبکه" Grid.Column="0"
-                                           Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" FontSize="11"/>
-                                <TextBox x:Name="HotspotSsidBox" Grid.Column="1" Text="NetFast-VPN"
-                                         Height="26" VerticalContentAlignment="Center" Padding="6,0"
-                                         Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}"
-                                         BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                                         FontFamily="Consolas" FontSize="12"/>
-                                <TextBlock Text="رمز" Grid.Column="3"
-                                           Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" FontSize="11"/>
-                                <TextBox x:Name="HotspotPassBox" Grid.Column="4" Text="smartvpn1"
-                                         Height="26" VerticalContentAlignment="Center" Padding="6,0"
-                                         Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}"
-                                         BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                                         FontFamily="Consolas" FontSize="12"
-                                         ToolTip="حداقل ۸ کاراکتر"/>
-                            </Grid>
-                            <StackPanel Grid.Row="2" Orientation="Horizontal">
-                                <Button x:Name="HotspotToggleBtn"
-                                        Content="&#x1F4F6; روشن‌کردن Hotspot"
-                                        Style="{StaticResource ActionBtn}" Padding="10,5"
-                                        Click="HotspotToggle_Click" Margin="0,0,8,0"/>
-                                <TextBlock x:Name="HotspotStatusText" Text="غیرفعال"
-                                           Foreground="#9CA3AF" VerticalAlignment="Center" FontSize="11" Margin="0,0,8,0"/>
-                                <TextBlock x:Name="HotspotDevicesText" Text=""
-                                           Foreground="#60A5FA" VerticalAlignment="Center" FontSize="11"/>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-
-                    <TextBlock DockPanel.Dock="Top" Text="🏓 پینگ / Traceroute" Style="{StaticResource SectionTitle}"/>
+                    <TextBlock DockPanel.Dock="Top" x:Name="PingTraceLbl" Text="🏓 پینگ / Traceroute" Style="{StaticResource SectionTitle}"/>
                     <TextBox DockPanel.Dock="Top" x:Name="ToolTargetBox" Height="30" Margin="0,0,0,6"
                              FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="12"
                              VerticalContentAlignment="Center"
                              Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}"
                              BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                             ToolTip="هدف دلخواه (IP یا دامنه) — خالی بگذارید تا از IP سرور فعلی استفاده شود"/>
+                             ToolTip="هدف دلخواه (IP یا دامنه)"/>
                     <Grid DockPanel.Dock="Top" Margin="0,0,0,4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -619,10 +640,9 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="📜 گزارش" Style="{StaticResource SectionTitle}" Margin="0"/>
+                        <TextBlock Grid.Column="0" x:Name="LogSectionLbl" Text="📜 گزارش" Style="{StaticResource SectionTitle}" Margin="0"/>
                         <Button Grid.Column="1" x:Name="ClearLogBtn" Content="🗑 پاک‌سازی" Style="{StaticResource ActionBtn}" Padding="8,4" Click="ClearLog_Click"/>
                     </Grid>
-                    <!-- کادر گزارش باقی‌مانده ارتفاع صفحه را پر می‌کند — فقط خودش اسکرول می‌شود -->
                     <TextBox x:Name="LogBox" IsReadOnly="True" TextWrapping="Wrap" Margin="0,0,0,4"
                              VerticalScrollBarVisibility="Auto" FlowDirection="LeftToRight"
                              FontFamily="Consolas" FontSize="11"
@@ -637,96 +657,114 @@
                     <TranslateTransform x:Name="SettingsTransform"/>
                 </ScrollViewer.RenderTransform>
                 <StackPanel Margin="2,0">
-                    <TextBlock Text="🎨 تم برنامه" Style="{StaticResource SectionTitle}"/>
-                    <StackPanel Orientation="Horizontal">
-                        <RadioButton x:Name="ThemeDarkRb" GroupName="Theme" Content="تیره" Margin="0,0,14,0" Checked="ThemeRb_Checked"/>
-                        <RadioButton x:Name="ThemeLightRb" GroupName="Theme" Content="روشن" Margin="0,0,14,0" Checked="ThemeRb_Checked"/>
-                        <RadioButton x:Name="ThemeSystemRb" GroupName="Theme" Content="سیستم" Checked="ThemeRb_Checked"/>
-                    </StackPanel>
+                    <Expander x:Name="AppearanceExpander" Header="🎨 ظاهر برنامه" IsExpanded="True"
+                              Margin="0,4,0,6" Padding="8" Foreground="{DynamicResource TextBrush}"
+                              Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource LineBrush}"
+                              BorderThickness="1">
+                        <StackPanel Margin="2,8,2,2">
+                            <TextBlock x:Name="LangLabel" Text="زبان برنامه" Foreground="{DynamicResource SubTextBrush}" Margin="0,0,0,4"/>
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton x:Name="LangFaRb" GroupName="Language" Content="فارسی" Margin="0,0,14,0" Checked="LangRb_Click"/>
+                                <RadioButton x:Name="LangEnRb" GroupName="Language" Content="English" Checked="LangRb_Click"/>
+                            </StackPanel>
+                            <TextBlock x:Name="ThemeLabel" Text="تم برنامه" Foreground="{DynamicResource SubTextBrush}" Margin="0,12,0,4"/>
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton x:Name="ThemeDarkRb" GroupName="Theme" Content="تیره" Margin="0,0,14,0" Checked="ThemeRb_Click"/>
+                                <RadioButton x:Name="ThemeLightRb" GroupName="Theme" Content="روشن" Margin="0,0,14,0" Checked="ThemeRb_Click"/>
+                                <RadioButton x:Name="ThemeSystemRb" GroupName="Theme" Content="سیستم" Checked="ThemeRb_Click"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Expander>
 
-                    <TextBlock Text="⚙ رفتار" Style="{StaticResource SectionTitle}"/>
-                    <CheckBox x:Name="SmartToggle" Content="اتصال هوشمند (امتحان خودکار همه کانکشن‌ها)"
-                              Checked="SmartToggle_Changed" Unchecked="SmartToggle_Changed"/>
-                    <CheckBox x:Name="TrayToggle" Content="مخفی‌شدن در کنار ساعت به‌جای بستن"
-                              Checked="TrayToggle_Changed" Unchecked="TrayToggle_Changed"/>
-                    <CheckBox x:Name="KillSwitchToggle" Content="Kill Switch (مسدودی ترافیک در صورت قطع ناگهانی VPN)" Margin="0,6,0,0"
-                              Checked="KillSwitchToggle_Changed" Unchecked="KillSwitchToggle_Changed"/>
-                    <CheckBox x:Name="StartupToggle" Content="اجرای خودکار با ویندوز"
-                              Checked="StartupToggle_Changed" Unchecked="StartupToggle_Changed"/>
+                    <Expander x:Name="BehaviorExpander" Header="⚙ رفتار اتصال" Margin="0,0,0,6" Padding="8"
+                              Foreground="{DynamicResource TextBrush}" Background="{DynamicResource CardBrush}"
+                              BorderBrush="{DynamicResource LineBrush}" BorderThickness="1">
+                        <StackPanel Margin="2,8,2,2">
+                            <CheckBox x:Name="SmartToggle" Content="اتصال هوشمند (امتحان خودکار همه کانکشن‌ها)"
+                                      Checked="SmartToggle_Changed" Unchecked="SmartToggle_Changed"/>
+                            <CheckBox x:Name="TrayToggle" Content="مخفی‌شدن در کنار ساعت به‌جای بستن"
+                                      Checked="TrayToggle_Changed" Unchecked="TrayToggle_Changed" Margin="0,5,0,0"/>
+                            <CheckBox x:Name="KillSwitchToggle" Content="Kill Switch" Margin="0,5,0,0"
+                                      Checked="KillSwitchToggle_Changed" Unchecked="KillSwitchToggle_Changed"/>
+                            <CheckBox x:Name="StartupToggle" Content="اجرای خودکار با ویندوز"
+                                      Checked="StartupToggle_Changed" Unchecked="StartupToggle_Changed" Margin="0,5,0,0"/>
+                        </StackPanel>
+                    </Expander>
 
-                    <TextBlock Text="⏱ قطع خودکار در بی‌استفادگی" Style="{StaticResource SectionTitle}"/>
-                    <RadioButton x:Name="IdleOffRb" GroupName="IdleMode" Content="همیشه متصل" Checked="IdleRb_Checked"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                        <RadioButton x:Name="IdleOnRb" GroupName="IdleMode" Content="قطع بعد از" VerticalAlignment="Center" Checked="IdleRb_Checked"/>
-                        <TextBox x:Name="IdleMinutesBox" Width="52" Height="26" Margin="8,0,6,0"
-                                 FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="12"
-                                 VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
-                                 Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}"
-                                 BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                                 LostFocus="IdleMinutes_LostFocus"/>
-                        <TextBlock Text="دقیقه بی‌استفادگی" VerticalAlignment="Center" Foreground="{DynamicResource SubTextBrush}"/>
-                    </StackPanel>
+                    <Expander x:Name="IdleExpander" Header="⏱ قطع خودکار در بی‌استفادگی" Margin="0,0,0,6" Padding="8"
+                              Foreground="{DynamicResource TextBrush}" Background="{DynamicResource CardBrush}"
+                              BorderBrush="{DynamicResource LineBrush}" BorderThickness="1">
+                        <StackPanel Margin="2,8,2,2">
+                            <RadioButton x:Name="IdleOffRb" GroupName="IdleMode" Content="همیشه متصل" Checked="IdleRb_Checked"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                <RadioButton x:Name="IdleOnRb" GroupName="IdleMode" Content="قطع بعد از" VerticalAlignment="Center" Checked="IdleRb_Checked"/>
+                                <TextBox x:Name="IdleMinutesBox" Width="52" Height="26" Margin="8,0,6,0"
+                                         FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="12"
+                                         VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                                         Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}"
+                                         BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
+                                         LostFocus="IdleMinutes_LostFocus"/>
+                                <TextBlock x:Name="IdleMinutesLabel" Text="دقیقه بی‌استفادگی" VerticalAlignment="Center" Foreground="{DynamicResource SubTextBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Expander>
 
-                    <TextBlock Text="🔀 اسپلیت تانل (همه کانکشن‌ها)" Style="{StaticResource SectionTitle}"/>
-                    <RadioButton x:Name="StOffRb" GroupName="StMode" Tag="off"
-                                 Content="غیرفعال — همه ترافیک از VPN" Checked="StMode_Checked"/>
-                    <RadioButton x:Name="StDenyRb" GroupName="StMode" Tag="deny"
-                                 Content="Deny — همه از VPN به‌جز موارد لیست" Checked="StMode_Checked"/>
-                    <RadioButton x:Name="StAllowRb" GroupName="StMode" Tag="allow"
-                                 Content="Allow — فقط موارد لیست از VPN" Checked="StMode_Checked"/>
-                    <TextBox x:Name="StListBox" Height="110" Margin="0,6,0,2"
-                             AcceptsReturn="True" TextWrapping="NoWrap"
-                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
-                             FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="12"
-                             Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}"
-                             BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                             LostFocus="StList_LostFocus"/>
-                    <TextBlock Text="هر خط یک مورد: IP یا CIDR (مثل 192.168.1.0/24) یا دامنه — خط با # یعنی توضیح"
-                               FontSize="10.5" Foreground="{DynamicResource SubTextBrush}"/>
+                    <Expander x:Name="SplitExpander" Header="🔀 اسپلیت تانل (همه کانکشن‌ها)" Margin="0,0,0,6" Padding="8"
+                              Foreground="{DynamicResource TextBrush}" Background="{DynamicResource CardBrush}"
+                              BorderBrush="{DynamicResource LineBrush}" BorderThickness="1">
+                        <StackPanel Margin="2,8,2,2">
+                            <RadioButton x:Name="StOffRb" GroupName="StMode" Tag="off"
+                                         Content="غیرفعال — همه ترافیک از VPN" Checked="StMode_Checked"/>
+                            <RadioButton x:Name="StDenyRb" GroupName="StMode" Tag="deny"
+                                         Content="Deny — همه از VPN به‌جز موارد لیست" Checked="StMode_Checked" Margin="0,5,0,0"/>
+                            <RadioButton x:Name="StAllowRb" GroupName="StMode" Tag="allow"
+                                         Content="Allow — فقط موارد لیست از VPN" Checked="StMode_Checked" Margin="0,5,0,0"/>
+                            <TextBox x:Name="StListBox" Height="110" Margin="0,8,0,2"
+                                     AcceptsReturn="True" TextWrapping="NoWrap"
+                                     VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                                     FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="12"
+                                     Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}"
+                                     BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
+                                     LostFocus="StList_LostFocus"/>
+                        </StackPanel>
+                    </Expander>
 
-                    <TextBlock Text="🌐 DNS دلخواه" Style="{StaticResource SectionTitle}"/>
-                    <RadioButton x:Name="DnsAutoRb" GroupName="DnsMode" Tag="auto"
-                                 Content="خودکار — DNS خود سرور VPN" Checked="DnsRb_Checked"/>
-                    <RadioButton x:Name="DnsCfRb" GroupName="DnsMode" Tag="cloudflare"
-                                 Content="Cloudflare — 1.1.1.1" Checked="DnsRb_Checked"/>
-                    <RadioButton x:Name="DnsGoogleRb" GroupName="DnsMode" Tag="google"
-                                 Content="Google — 8.8.8.8" Checked="DnsRb_Checked"/>
-                    <RadioButton x:Name="DnsCustomRb" GroupName="DnsMode" Tag="custom"
-                                 Content="دلخواه (دو کادر زیر)" Checked="DnsRb_Checked"/>
-                    <Grid Margin="0,6,0,2" FlowDirection="LeftToRight">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="8"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBox Grid.Column="0" x:Name="DnsPrimaryBox" Height="30"
-                                 FontFamily="Consolas" FontSize="12" VerticalContentAlignment="Center"
-                                 Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}"
-                                 BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                                 ToolTip="DNS اول (مثل 10.10.10.10)" LostFocus="DnsBox_LostFocus"/>
-                        <TextBox Grid.Column="2" x:Name="DnsSecondaryBox" Height="30"
-                                 FontFamily="Consolas" FontSize="12" VerticalContentAlignment="Center"
-                                 Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}"
-                                 BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                                 ToolTip="DNS دوم (اختیاری)" LostFocus="DnsBox_LostFocus"/>
-                    </Grid>
-                    <TextBlock Text="روی اتصال بعدی اعمال می‌شود — DNS فقط روی خودِ تانل تنظیم می‌شود و با قطع اتصال برمی‌گردد"
-                               FontSize="10.5" Foreground="{DynamicResource SubTextBrush}"/>
+                    <Expander x:Name="DnsExpander" Header="🌐 DNS" Margin="0,0,0,6" Padding="8"
+                              Foreground="{DynamicResource TextBrush}" Background="{DynamicResource CardBrush}"
+                              BorderBrush="{DynamicResource LineBrush}" BorderThickness="1">
+                        <StackPanel Margin="2,8,2,2">
+                            <RadioButton x:Name="DnsAutoRb" GroupName="DnsMode" Tag="auto" Content="خودکار" Checked="DnsRb_Checked"/>
+                            <RadioButton x:Name="DnsCfRb" GroupName="DnsMode" Tag="cloudflare" Content="Cloudflare — 1.1.1.1" Checked="DnsRb_Checked" Margin="0,5,0,0"/>
+                            <RadioButton x:Name="DnsGoogleRb" GroupName="DnsMode" Tag="google" Content="Google — 8.8.8.8" Checked="DnsRb_Checked" Margin="0,5,0,0"/>
+                            <RadioButton x:Name="DnsCustomRb" GroupName="DnsMode" Tag="custom" Content="دلخواه" Checked="DnsRb_Checked" Margin="0,5,0,0"/>
+                            <Grid Margin="0,8,0,2" FlowDirection="LeftToRight">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" x:Name="DnsPrimaryBox" Height="30" FontFamily="Consolas" FontSize="12" VerticalContentAlignment="Center"
+                                         Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}"
+                                         BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" LostFocus="DnsBox_LostFocus"/>
+                                <TextBox Grid.Column="2" x:Name="DnsSecondaryBox" Height="30" FontFamily="Consolas" FontSize="12" VerticalContentAlignment="Center"
+                                         Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}"
+                                         BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" LostFocus="DnsBox_LostFocus"/>
+                            </Grid>
+                        </StackPanel>
+                    </Expander>
 
-                    <TextBlock Text="📦 پکیج و پیکربندی" Style="{StaticResource SectionTitle}"/>
-                    <Button x:Name="UpdateBaseBtn" Content="🔧 به‌روزرسانی base.ovpn از فایل" Style="{StaticResource ActionBtn}"
-                            Margin="0,4" Click="UpdateBase_Click"/>
-                    <Button x:Name="ImportBtn" Content="📥 ایمپورت پکیج / فایل ovpn" Style="{StaticResource ActionBtn}"
-                            Margin="0,4" Click="Import_Click"/>
-                    <Button x:Name="ExportBtn" Content="📤 اکسپورت / بک‌اپ کانکشن‌ها" Style="{StaticResource ActionBtn}"
-                            Margin="0,4" Click="Export_Click"/>
-
-                    <Button Content="ℹ درباره برنامه و اشتراک" Style="{StaticResource ActionBtn}"
-                            Margin="0,14,0,6" Click="About_Click"/>
+                    <Expander x:Name="PackageExpander" Header="📦 پکیج و پیکربندی" Margin="0,0,0,6" Padding="8"
+                              Foreground="{DynamicResource TextBrush}" Background="{DynamicResource CardBrush}"
+                              BorderBrush="{DynamicResource LineBrush}" BorderThickness="1">
+                        <StackPanel Margin="2,8,2,2">
+                            <Button x:Name="UpdateBaseBtn" Content="🔧 به‌روزرسانی base.ovpn از فایل" Style="{StaticResource ActionBtn}" Margin="0,4" Click="UpdateBase_Click"/>
+                            <Button x:Name="ImportBtn" Content="📥 ایمپورت پکیج / فایل ovpn" Style="{StaticResource ActionBtn}" Margin="0,4" Click="Import_Click"/>
+                            <Button x:Name="ExportBtn" Content="📤 اکسپورت / بک‌اپ کانکشن‌ها" Style="{StaticResource ActionBtn}" Margin="0,4" Click="Export_Click"/>
+                            <Button x:Name="AboutBtn" Content="ℹ درباره برنامه و اشتراک" Style="{StaticResource ActionBtn}" Margin="0,14,0,6" Click="About_Click"/>
+                        </StackPanel>
+                    </Expander>
                 </StackPanel>
             </ScrollViewer>
 
-            <!-- ================= CONNECTION LOG (جدا از جعبهٔ ابزار — فقط رویدادهای کانکشن/اتصال) ================= -->
+            <!-- ================= CONNECTION LOG ================= -->
             <DockPanel Grid.Row="1" x:Name="ConnLogPanel" Visibility="Collapsed"
                        Margin="2,0" LastChildFill="True">
                 <DockPanel.RenderTransform>
@@ -737,7 +775,7 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="📶 گزارش کانکشن‌ها" Style="{StaticResource SectionTitle}" Margin="0"/>
+                    <TextBlock Grid.Column="0" x:Name="ConnLogSectionLbl" Text="📶 گزارش کانکشن‌ها" Style="{StaticResource SectionTitle}" Margin="0"/>
                     <Button Grid.Column="1" x:Name="ClearConnLogBtn" Content="🗑 پاکسازی" Style="{StaticResource ActionBtn}" Padding="8,4" Click="ClearConnLog_Click"/>
                 </Grid>
                 <TextBox x:Name="ConnLogBox" IsReadOnly="True" TextWrapping="Wrap" Margin="0,0,0,4"
@@ -746,6 +784,92 @@
                          Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}"
                          BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"/>
             </DockPanel>
+
+            <!-- ================= HOTSPOT PANEL ================= -->
+            <ScrollViewer Grid.Row="1" x:Name="HotspotPanel" Visibility="Collapsed"
+                          Background="{DynamicResource BgBrush}"
+                          VerticalScrollBarVisibility="Auto">
+                <ScrollViewer.RenderTransform>
+                    <TranslateTransform x:Name="HotspotTransform"/>
+                </ScrollViewer.RenderTransform>
+                <StackPanel Margin="2,0">
+                    <TextBlock Text="VPN WIFI-Direct" Style="{StaticResource SectionTitle}" Margin="0,0,0,15"/>
+
+                    <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,15">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="8"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" x:Name="HsVpnLabel" Text="کانکشن VPN فعال:" Foreground="{DynamicResource SubTextBrush}" FontSize="11"/>
+                            <TextBlock Grid.Row="0" x:Name="HsVpnConnectionText" Text="در حال بررسی..." Foreground="{DynamicResource TextBrush}" FontSize="12.5" FontWeight="Bold" FontFamily="Consolas" FlowDirection="LeftToRight" HorizontalAlignment="Right"/>
+                            <TextBlock Grid.Row="2" x:Name="HsAdapterLabel" Text="کارت شبکه اینترنت:" Foreground="{DynamicResource SubTextBrush}" FontSize="11"/>
+                            <TextBlock Grid.Row="2" x:Name="HsSourceText" Text="در حال بررسی..." Foreground="{DynamicResource TextBrush}" FontSize="12" FontWeight="Bold" FontFamily="Consolas" FlowDirection="LeftToRight" HorizontalAlignment="Right"/>
+                        </Grid>
+                    </Border>
+
+                    <UniformGrid Columns="3" Margin="0,0,0,15">
+                        <Button x:Name="BtnHsStart" Content="روشن کردن" Style="{StaticResource ActionBtn}"
+                                Background="#3B82F6" Foreground="White" BorderThickness="0" FontWeight="Bold" FontSize="12" Height="42" Margin="0,0,3,0" Click="BtnHsStart_Click"/>
+
+                        <Button x:Name="BtnHsStop" Content="توقف" Style="{StaticResource ActionBtn}"
+                                Background="#EF4444" Foreground="White" BorderThickness="0" FontWeight="Bold" FontSize="12" Height="42" Margin="3,0,3,0" IsEnabled="False" Click="BtnHsStop_Click"/>
+
+                        <Button x:Name="BtnHsRestart" Content="راه‌اندازی مجدد" Style="{StaticResource ActionBtn}"
+                                Background="#F59E0B" Foreground="White" BorderThickness="0" FontWeight="Bold" FontSize="12" Height="42" Margin="3,0,0,0" IsEnabled="False" Click="BtnHsRestart_Click"/>
+                    </UniformGrid>
+
+                    <TextBlock x:Name="HsStatusText" Text="منتظر اتصال پایدار VPN..." Foreground="#9CA3AF" FontSize="12" Margin="0,0,0,15" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+
+                    <Border x:Name="HsInfoContainer" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,0,0,15" Visibility="Collapsed">
+                        <Grid FlowDirection="LeftToRight">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="8"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="SSID:" Foreground="{DynamicResource SubTextBrush}" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="HsSsidText" Text="-" Foreground="{DynamicResource TextBrush}" FontSize="13" FontWeight="Bold" FontFamily="Consolas" FlowDirection="LeftToRight" HorizontalAlignment="Left" TextAlignment="Left"/>
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="PASS:" Foreground="{DynamicResource SubTextBrush}" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" x:Name="HsPassText" Text="-" Foreground="{DynamicResource TextBrush}" FontSize="13" FontWeight="Bold" FontFamily="Consolas" FlowDirection="LeftToRight" HorizontalAlignment="Left" TextAlignment="Left"/>
+                        </Grid>
+                    </Border>
+
+                    <Border x:Name="HsQrContainer" Background="White" CornerRadius="10" Padding="12" Visibility="Collapsed" HorizontalAlignment="Center">
+                        <StackPanel>
+                            <TextBlock x:Name="QrScanLbl" Text="📱 اسکن برای اتصال سریع" Foreground="#0F172A" FontSize="11" FontWeight="Bold" Margin="0,0,0,8" HorizontalAlignment="Center"/>
+                            <Image x:Name="HsQrImage" Width="130" Height="130" Stretch="Uniform"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border x:Name="HsClientsContainer" Visibility="Collapsed"
+                            Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource LineBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,12,0,0"
+                            Cursor="Hand" MouseEnter="HsClientsContainer_MouseEnter" MouseLeave="HsClientsContainer_MouseLeave">
+                        <Grid>
+                            <TextBlock x:Name="HsClientsCountText" Text="دستگاه‌های متصل: ۰"
+                                       Foreground="{DynamicResource TextBrush}" FontSize="11.5"
+                                       HorizontalAlignment="Center"/>
+                            <Popup x:Name="HsClientsPopup" PlacementTarget="{Binding ElementName=HsClientsContainer}"
+                                   Placement="Bottom" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+                                <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource LineBrush}"
+                                        BorderThickness="1" CornerRadius="8" Padding="8" Width="300">
+                                    <TextBox x:Name="HsClientsTextBox" IsReadOnly="True" TextWrapping="Wrap"
+                                             VerticalScrollBarVisibility="Auto" MaxHeight="130"
+                                             Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}"
+                                             BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
+                                             FontFamily="Consolas" FontSize="11" Padding="6"/>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
 
             </Grid>
 
@@ -766,7 +890,6 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Power toggle (color reflects state) -->
                 <Button Grid.Column="0" x:Name="MiniPowerBtn" Width="44" Height="44" Padding="0"
                         Background="#334155" Cursor="Hand" Click="Power_Click"
                         ToolTip="روشن/خاموش اتصال" VerticalAlignment="Center">
@@ -783,7 +906,6 @@
                           StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                 </Button>
 
-                <!-- Info -->
                 <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
                     <TextBlock x:Name="MiniStatusText" Text="آماده اتصال" FontSize="13.5" FontWeight="Bold"
                                Foreground="{DynamicResource TextBrush}"/>
@@ -791,7 +913,6 @@
                                Foreground="{DynamicResource SubTextBrush}" FlowDirection="LeftToRight" Margin="0,3,0,0"/>
                 </StackPanel>
 
-                <!-- Restore to normal — big & obvious -->
                 <Button Grid.Column="2" x:Name="MiniRestoreBtn" Width="42" Height="42" Padding="0"
                         Background="{DynamicResource AccentBrush}" Cursor="Hand" Click="MiniRestoreBtn_Click"
                         ToolTip="بازگشت به حالت عادی" VerticalAlignment="Center">
@@ -807,5 +928,7 @@
             </Grid>
         </Border>
 
+        </Grid>
     </Grid>
+    </Border>
 </Window>

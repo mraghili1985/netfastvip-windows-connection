@@ -84,7 +84,7 @@ namespace SmartVpn {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/NETFASTVIP;V2.0.0;component/askdialog.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/NETFASTVIP;V3.0.0.0;component/askdialog.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\AskDialog.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

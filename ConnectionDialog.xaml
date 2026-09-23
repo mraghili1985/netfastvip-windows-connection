@@ -212,6 +212,10 @@
                 <TextBox x:Name="WgPublicKeyBox" Style="{StaticResource InputMono}"
                          TextWrapping="Wrap"/>
 
+                <TextBlock Text="Preshared Key  (اختیاری)" Style="{StaticResource Lbl}"/>
+                <PasswordBox x:Name="WgPresharedKeyBox" Style="{StaticResource Pwd}"
+                             FlowDirection="LeftToRight"/>
+
                 <TextBlock Text="Endpoint  *  (host:port)" Style="{StaticResource Lbl}"/>
                 <TextBox x:Name="WgEndpointBox" Style="{StaticResource InputSmall}"/>
 

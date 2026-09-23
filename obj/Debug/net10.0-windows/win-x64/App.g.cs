@@ -58,7 +58,7 @@ namespace SmartVpn {
             
             #line default
             #line hidden
-            System.Uri resourceLocater = new System.Uri("/NETFASTVIP;V2.0.0;component/app.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/NETFASTVIP;V3.0.0.0;component/app.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\App.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

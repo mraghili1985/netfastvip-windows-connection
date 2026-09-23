@@ -1,12 +1,71 @@
 {
   "version": 3,
   "targets": {
-    "net10.0-windows7.0": {},
-    "net10.0-windows7.0/win-x64": {}
+    "net10.0-windows7.0": {
+      "QRCoder/1.8.0": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0/QRCoder.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/QRCoder.dll": {
+            "related": ".xml"
+          }
+        }
+      }
+    },
+    "net10.0-windows7.0/win-x64": {
+      "QRCoder/1.8.0": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0/QRCoder.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/QRCoder.dll": {
+            "related": ".xml"
+          }
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "QRCoder/1.8.0": {
+      "sha512": "RuvX3PEXU6pbY/I5ItAk800jm62r+YnoPLgyS2WTgwxkOnGkOfU9ORiipHUF0LkLyqM8rlroUCA319JjRYfRFQ==",
+      "type": "package",
+      "path": "qrcoder/1.8.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE.txt",
+        "README.md",
+        "lib/net35/QRCoder.dll",
+        "lib/net35/QRCoder.xml",
+        "lib/net40/QRCoder.dll",
+        "lib/net40/QRCoder.xml",
+        "lib/net5.0/QRCoder.dll",
+        "lib/net5.0/QRCoder.xml",
+        "lib/net6.0/QRCoder.dll",
+        "lib/net6.0/QRCoder.xml",
+        "lib/netstandard1.3/QRCoder.dll",
+        "lib/netstandard1.3/QRCoder.xml",
+        "lib/netstandard2.0/QRCoder.dll",
+        "lib/netstandard2.0/QRCoder.xml",
+        "lib/netstandard2.1/QRCoder.dll",
+        "lib/netstandard2.1/QRCoder.xml",
+        "nuget-icon.png",
+        "qrcoder.1.8.0.nupkg.sha512",
+        "qrcoder.nuspec"
+      ]
+    }
+  },
   "projectFileDependencyGroups": {
-    "net10.0-windows7.0": []
+    "net10.0-windows7.0": [
+      "QRCoder >= 1.8.0"
+    ]
   },
   "packageFolders": {
     "C:\\Users\\MrA-Desktop\\.nuget\\packages\\": {}
@@ -50,6 +109,12 @@
     "frameworks": {
       "net10.0-windows7.0": {
         "targetAlias": "net10.0-windows",
+        "dependencies": {
+          "QRCoder": {
+            "target": "Package",
+            "version": "[1.8.0, )"
+          }
+        },
         "imports": [
           "net461",
           "net462",

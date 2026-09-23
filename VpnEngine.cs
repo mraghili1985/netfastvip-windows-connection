@@ -95,6 +95,18 @@ public sealed class VpnEngine
         return fileName;
     }
 
+    private static string GetConnectionHost(ConnectionProfile p)
+    {
+        // برای اتصال واقعی، نام اصلی دامنه/لیست IP را نگه می‌داریم.
+        // EffectiveServer در بعضی نسخه‌ها بعد از resolve فقط اولین IP را برمی‌گرداند؛
+        // همین باعث می‌شد failover داخلی OpenVPN از بین برود.
+        if (!string.IsNullOrWhiteSpace(p.ServerOverride))
+            return p.ServerOverride.Trim();
+        if (!string.IsNullOrWhiteSpace(p.Server))
+            return p.Server.Trim();
+        return p.EffectiveServer;
+    }
+
     private static IConnectionProvider CreateProvider(ConnectionProfile p)
     {
         var creds = new CredentialsConfig
@@ -108,7 +120,7 @@ public sealed class VpnEngine
         {
             var ep = new OpenVpnEndpoint
             {
-                Address = p.EffectiveServer, // Server Override در اولویت
+                Address = GetConnectionHost(p), // دامنه/همه endpointها حفظ می‌شوند
                 Port = p.Port ?? 1194,
                 Proto = p.Proto,
             };
@@ -142,16 +154,17 @@ public sealed class VpnEngine
             {
                 ct.ThrowIfCancellationRequested();
                 var provider = CreateProvider(p);
+                var connectionHost = GetConnectionHost(p);
 
-                Log?.Invoke($"[{provider.Type}] probing...");
-                if (!await provider.ProbeAsync(p.EffectiveServer, ct))
+                Log?.Invoke($"[{provider.Type}] probing {connectionHost}...");
+                if (!await provider.ProbeAsync(connectionHost, ct))
                 {
                     Log?.Invoke($"[{provider.Type}] not reachable - next");
                     continue;
                 }
 
                 Log?.Invoke($"[{provider.Type}] connecting...");
-                if (await provider.ConnectAsync(p.EffectiveServer, ct))
+                if (await provider.ConnectAsync(connectionHost, ct))
                 {
                     _active = provider;
                     activeProfile = p;
@@ -176,8 +189,8 @@ public sealed class VpnEngine
                     AuthFailed?.Invoke();
                     return;
                 }
-                Log?.Invoke("no connection succeeded - retrying in 15s...");
-                await Task.Delay(15000, ct);
+                Log?.Invoke("no connection succeeded - retrying in 5s...");
+                await Task.Delay(5000, ct);
                 continue;
             }
 
@@ -187,7 +200,7 @@ public sealed class VpnEngine
 
             while (true)
             {
-                await Task.Delay(5000, ct);
+                await Task.Delay(3000, ct);
 
                 if (_forceReconnect || !await _active.IsAliveAsync(ct))
                 {

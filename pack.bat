@@ -3,14 +3,15 @@ chcp 65001 >nul
 REM ============================================================
 REM  NETFASTVIP portable ZIP builder
 REM  Usage: pack.bat           (uses default version below)
-REM         pack.bat 2.0.0     (override version)
+REM         pack.bat 3     (override version)
 REM ============================================================
 setlocal
-set VER=2.0.0
+cd /d "%~dp0"
+set VER=3
 if not "%~1"=="" set VER=%~1
 set PUB=bin\Release\net10.0-windows\win-x64\publish
 set STAGE=stage
-set ZIP=NETFASTVIP-Portable-v%VER%.zip
+set ZIP=netfastvip%VER%.zip
 
 echo [1/6] Cleaning old publish/staging output...
 rmdir /s /q "%PUB%" 2>nul
@@ -28,12 +29,18 @@ if errorlevel 1 (
 REM Optional OpenVPN payload: portable folder (exe+DLLs+driver, devcon 64-bit)
 REM داخل Data\openvpn\ می‌رود، همراه با بقیه‌ی فایل‌های Data
 REM نصاب MSI دیگر لازم نیست: devcon.exe 64-bit به‌تنهایی درایور را درست نصب می‌کند
-echo [3/6] Copying optional OpenVPN files...
+echo [3/6] Copying optional OpenVPN + WireGuard files...
 if exist "openvpn\" (
   xcopy /e /i /y "openvpn" "%PUB%\Data\openvpn\" >nul
-  echo   - openvpn folder copied into Data\openvpn
+  echo   - openvpn folder copied
 ) else (
-  echo   - no openvpn folder found, skipping
+  echo   - no openvpn folder, skipping
+)
+if exist "wireguard\" (
+  xcopy /e /i /y "wireguard" "%PUB%\Data\wireguard\" >nul
+  echo   - wireguard folder copied
+) else (
+  echo   - no wireguard folder, skipping
 )
 
 REM از این‌جا دیگر تک‌فایلی نیستیم: خروجی publish شامل exe + انبوهی DLL رانتایم است.

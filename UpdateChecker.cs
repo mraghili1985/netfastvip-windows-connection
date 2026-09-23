@@ -47,7 +47,7 @@ public static class UpdateChecker
 
             var notes = info.Notes.Trim().Length == 0 ? "" : "\n" + info.Notes.Trim();
             var curText = $"{cur.Major}.{cur.Minor}.{cur.Build}";
-            if (!AskDialog.Confirm(owner, string.Format(MsgNewVersionFmt, info.Version.Trim(), curText, notes)))
+            if (!AskDialog.Confirm(owner, string.Format(Localization.T(MsgNewVersionFmt), info.Version.Trim(), curText, notes)))
                 return;
 
             var dl = info.DownloadUrl.Trim().Length == 0 ? url : info.DownloadUrl.Trim();

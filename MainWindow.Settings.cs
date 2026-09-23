@@ -24,6 +24,25 @@ namespace SmartVpn
 {
     public partial class MainWindow : Window
     {
+        // ================= زبان برنامه =================
+        private void LangRb_Click(object sender, RoutedEventArgs e)
+        {
+            var language = sender == LangEnRb ? "en" : "fa";
+            if (string.Equals(_config.Language, language, StringComparison.OrdinalIgnoreCase)) return;
+
+            _config.Language = language;
+            _config.Save();
+            Localization.SetLanguage(language);
+
+            // اول FlowDirection پنجره اصلی را اعمال کن تا بیدی پرانتزها درست شود
+            FlowDirection = Localization.IsEnglish ? FlowDirection.LeftToRight : FlowDirection.RightToLeft;
+
+            // اعمال مستقیم روی همه المان‌های named — چون پنل‌های Collapsed از LogicalTreeHelper مخفی‌اند
+            ApplyLocalizationToNamedElements();
+            ReapplyCurrentStatusText();
+            RefreshList();
+        }
+
         // ================= تم =================
         private void ThemeBtn_Click(object sender, RoutedEventArgs e)
         {
@@ -33,31 +52,42 @@ namespace SmartVpn
             _config.Save();
         }
 
-        private void ThemeRb_Checked(object sender, RoutedEventArgs e)
+        private void ThemeRb_Click(object sender, RoutedEventArgs e)
         {
-            if (_suppressTheme || !_ready) return;
             string theme = sender == ThemeDarkRb ? "dark" : sender == ThemeLightRb ? "light" : "system";
             ApplyThemeChoice(theme);
             _config.Theme = theme;
             _config.Save();
         }
 
+        private void RefreshThemeSurfaces()
+        {
+            // The window uses custom transparent chrome, so explicitly rebind
+            // its surfaces whenever the application theme changes.
+            WindowSurface.SetResourceReference(Border.BackgroundProperty, "BgBrush");
+            WindowSurface.SetResourceReference(Border.BorderBrushProperty, "LineBrush");
+            AppTitleBar.SetResourceReference(Border.BackgroundProperty, "BgBrush");
+            AppTitleBar.SetResourceReference(Border.BorderBrushProperty, "LineBrush");
+        }
+
         private void ApplyThemeChoice(string theme)
         {
-            _suppressTheme = true;
             try
             {
                 App.ApplyTheme(theme);
+                RefreshThemeSurfaces();
+                ApplyDarkTitleBar();
+                
                 ThemeDarkRb.IsChecked = theme == "dark";
                 ThemeLightRb.IsChecked = theme == "light";
                 ThemeSystemRb.IsChecked = theme == "system";
 
-                // کارت‌های لیست کانکشن‌ها رنگ‌شان را توی کد بر اساس IsLightTheme() مستقیم می‌سازند،
-                // نه با DynamicResource؛ پس با تغییر تم باید دوباره ساخته شوند وگرنه با رنگ تم قبلی
-                // (مثلاً نوشته‌ی روشن روی پس‌زمینه‌ی تم روشن) باقی می‌مانند و خوانده نمی‌شوند.
                 try { RefreshList(); } catch { }
             }
-            finally { _suppressTheme = false; }
+            catch 
+            { 
+                // جلوگیری از کرش مخفی در صورت عدم تطابق ریسورس‌های تم
+            }
         }
 
         // ================= رفتار/اسپلیت =================
@@ -207,7 +237,109 @@ namespace SmartVpn
             catch (Exception ex) { AppendConnLog("تنظیم اجرای خودکار ناموفق بود: " + ex.Message); }
         }
 
+        // ================= اعمال ترجمه روی المان‌های named =================
+        // LogicalTreeHelper به پنل‌های Collapsed نفوذ نمی‌کند؛ اینجا مستقیم ست می‌شود
+        private void ApplyLocalizationToNamedElements()
+        {
+            var T = Localization.T;
 
+            // --- Labels بدون x:Name (اضافه شد) ---
+            LangLabel.Text        = T("زبان برنامه");
+            ThemeLabel.Text       = T("تم برنامه");
+            IdleMinutesLabel.Text = T("دقیقه بی‌استفادگی");
+
+            // --- Settings Expander headers ---
+            AppearanceExpander.Header = T("🎨 ظاهر برنامه");
+            BehaviorExpander.Header   = T("⚙ رفتار اتصال");
+            IdleExpander.Header       = T("⏱ قطع خودکار در بی‌استفادگی");
+            SplitExpander.Header      = T("🔀 اسپلیت تانل (همه کانکشن‌ها)");
+            PackageExpander.Header    = T("📦 پکیج و پیکربندی");
+
+            // --- Settings RadioButton / CheckBox labels ---
+            ThemeDarkRb.Content   = T("تیره");
+            ThemeLightRb.Content  = T("روشن");
+            ThemeSystemRb.Content = T("سیستم");
+            SmartToggle.Content   = T("اتصال هوشمند (امتحان خودکار همه کانکشن‌ها)");
+            TrayToggle.Content    = T("مخفی‌شدن در کنار ساعت به‌جای بستن");
+            StartupToggle.Content = T("اجرای خودکار با ویندوز");
+            IdleOffRb.Content     = T("همیشه متصل");
+            IdleOnRb.Content      = T("قطع بعد از");
+            DnsAutoRb.Content     = T("خودکار");
+            DnsCustomRb.Content   = T("دلخواه");
+            StOffRb.Content       = T("غیرفعال — همه ترافیک از VPN");
+            StDenyRb.Content      = T("Deny — همه از VPN به‌جز موارد لیست");
+            StAllowRb.Content     = T("Allow — فقط موارد لیست از VPN");
+
+            // --- Buttons in settings ---
+            UpdateBaseBtn.Content = T("🔧 به‌روزرسانی base.ovpn از فایل");
+            ImportBtn.Content     = T("📥 ایمپورت پکیج / فایل ovpn");
+            ExportBtn.Content     = T("📤 اکسپورت / بک‌اپ کانکشن‌ها");
+
+            // --- Home panel dynamic labels ---
+            var moreOpen = MoreInfoPanel?.Visibility == Visibility.Visible;
+            MoreInfoText.Text  = T(moreOpen ? "بستن جزئیات" : "نمایش جزئیات");
+            PowerHintText.Text = T(_currentStatusKey == TxtConnected
+                ? "برای قطع اتصال کلیک کنید" : "روشن/خاموش اتصال");
+
+            // --- Toolbox buttons ---
+            PingToggleBtn.Content       = T(_pingProc is { HasExited: false }
+                ? "⏹ توقف پینگ" : "🏓 شروع پینگ");
+            TracerouteToggleBtn.Content = T(_tracertProc is { HasExited: false }
+                ? "⏹ توقف Traceroute" : "🛰 شروع Traceroute");
+
+            // --- Subscription badge ---
+            SubEmptyText.Text   = T("برای مشاهده وضعیت اشتراک کلیک کنید");
+            SubSectionLabel.Text = T("🎫 اشتراک من");
+            SubTimeLbl.Text     = T("⏳ زمان باقی‌مانده");
+            SubDataLbl.Text     = T("📦 حجم باقی‌مانده");
+
+            // --- Connections panel ---
+            ConnSectionLabel.Text = T("کانکشن‌ها");
+
+            // --- Toolbox panel ---
+            ToolboxTitle.Text     = T("🧰 جعبه‌ابزار و عیب‌یابی شبکه");
+            SpeedTestLbl.Text     = T("تست سرعت اتصال");
+            RenewIpLbl.Text       = T("تمدید IP");
+            FlushDnsLbl.Text      = T("پاک‌سازی DNS");
+            DisableProxyLbl.Text  = T("غیرفعال‌کردن پراکسی");
+            KillProcLbl.Text      = T("بستن پروسه‌های گیرکرده");
+            DnsLeakLbl.Text       = T("تست نشتی DNS");
+            ResetAdapterLbl.Text  = T("ریست آداپتور");
+            PingTraceLbl.Text     = T("🏓 پینگ / Traceroute");
+            LogSectionLbl.Text    = T("📜 گزارش");
+
+            // --- ConnLog panel ---
+            ConnLogSectionLbl.Text = T("📶 گزارش کانکشن‌ها");
+
+            // --- Hotspot panel ---
+            HsVpnLabel.Text     = T("کانکشن VPN فعال:");
+            HsAdapterLabel.Text = T("کارت شبکه اینترنت:");
+            QrScanLbl.Text      = T("📱 اسکن برای اتصال سریع");
+
+            // --- Hotspot buttons ---
+            BtnHsStart.Content   = T("روشن کردن");
+            BtnHsStop.Content    = T("توقف");
+            BtnHsRestart.Content = T("راه‌اندازی مجدد");
+
+            // --- Settings About button ---
+            AboutBtn.Content = T("ℹ درباره برنامه و اشتراک");
+
+            // --- Settings Clear log button ---
+            ClearConnLogBtn.Content = T("🗑 پاکسازی");
+
+            // --- NavBar ToolTips ---
+            HeaderPowerBtn.ToolTip = T("روشن/خاموش اتصال");
+            HeaderSettingsBtn.ToolTip = T("تنظیمات");
+            if (MiniPowerBtn != null) MiniPowerBtn.ToolTip = T("روشن/خاموش اتصال");
+
+            // --- Info card labels (Protocol label in HomePanel) ---
+            ProtocolLbl.Text = T("Protocol");
+
+            // --- FilterDropdown label ---
+            FilterDropdownLabel.Text = _connFilter.Length == 0
+                ? T("همه")
+                : FilterDropdownLabel.Text; // مقدار داینامیک — موقع باز کردن dropdown به‌روز می‌شه
+        }
 
         // ================= درباره =================
         private void About_Click(object sender, RoutedEventArgs e)

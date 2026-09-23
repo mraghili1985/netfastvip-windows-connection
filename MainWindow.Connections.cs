@@ -10,6 +10,7 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -70,7 +71,16 @@ namespace SmartVpn
         // ترتیب نمایش پروتکل‌ها در منوی آبشاری — طبق اصل «هر مدل کانکشنی داریم باید توی لیست باشه»، این فقط ترتیب نمایش است؛
         // فیلتر واقعی پایین‌تر (AvailableConnTypes) فقط پروتکل‌هایی را نشان می‌دهد که حداقل یک کانکشن از آن نوع واقعاً وجود دارد
         // (مثلاً IKEv2 تا کانکشنی از این نوع نساخته‌ایم در منو دیده نمی‌شود؛ به محض ساختنش خودکار اضافه می‌شود)
-        private static readonly string[] ProtocolOrder = { "openvpn", "l2tp", "pptp", "sstp", "ikev2" };
+        private static readonly string[] ProtocolOrder =
+        {
+            "openvpn",
+            "wireguard",
+            "amneziawg",
+            "l2tp",
+            "pptp",
+            "sstp",
+            "ikev2"
+        };
 
         private List<string> AvailableConnTypes() =>
             ProtocolOrder.Where(t => _config.Connections.Any(c => string.Equals(c.Type, t, StringComparison.OrdinalIgnoreCase))).ToList();
@@ -141,7 +151,7 @@ namespace SmartVpn
                 return item;
             }
 
-            stack.Children.Add(MakeItem("", "همه"));
+            stack.Children.Add(MakeItem("", Localization.T("همه")));
             foreach (var t in AvailableConnTypes())
                 stack.Children.Add(MakeItem(t, CategoryLabel(t)));
 
@@ -157,7 +167,7 @@ namespace SmartVpn
                 // اگر فیلتر روی نوعی مانده که دیگر هیچ کانکشنی از آن نیست (مثلاً آخرین کانکشن آن نوع حذف شده)، به «همه» برمی‌گردد
                 if (_connFilter.Length > 0 && !AvailableConnTypes().Contains(_connFilter.ToLowerInvariant()))
                     _connFilter = "";
-                FilterDropdownLabel.Text = _connFilter.Length == 0 ? "همه" : CategoryLabel(_connFilter);
+                FilterDropdownLabel.Text = _connFilter.Length == 0 ? Localization.T("همه") : CategoryLabel(_connFilter);
             }
             catch { }
         }
@@ -228,7 +238,7 @@ namespace SmartVpn
             var subBrush = (Brush)FindResource("SubTextBrush");
             stack.Children.Add(new TextBlock
             {
-                Text = expanded ? "بستن" : $"نمایش {hiddenCount} مورد دیگر",
+                Text = expanded ? Localization.T("بستن") : string.Format(Localization.T("نمایش {0} مورد دیگر"), hiddenCount),
                 FontSize = 10.5,
                 FontWeight = FontWeights.SemiBold,
                 Foreground = subBrush,
@@ -463,9 +473,10 @@ namespace SmartVpn
 
             var textStack = new StackPanel { Orientation = Orientation.Vertical, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
 
+            var _geoFlag = GeoFlagFromName(c.Name);
             var nameText = new TextBlock
             {
-                Text = c.Name,
+                Text = _geoFlag.Length > 0 ? _geoFlag + " " + c.Name : c.Name,
                 FontSize = 11.5,
                 FontWeight = FontWeights.Bold,
                 Foreground = new SolidColorBrush(light ? Color.FromRgb(0x0F, 0x17, 0x2A) : Color.FromRgb(0xF8, 0xFA, 0xFC)),
@@ -523,8 +534,8 @@ namespace SmartVpn
             var isActiveRow = c.Name == _selectedName;
             string? statusLabel = null;
             if (connected) statusLabel = "CONNECTED";
-            else if (isActiveRow && StatusText.Text == TxtReconnecting) statusLabel = "RECONNECTING";
-            else if (isActiveRow && StatusText.Text == TxtConnecting) statusLabel = "CONNECTING";
+            else if (isActiveRow && _currentPowerState == "reconnecting") statusLabel = "RECONNECTING";
+            else if (isActiveRow && _currentPowerState == "connecting") statusLabel = "CONNECTING";
             Border? statusPill = null;
             if (statusLabel != null)
             {
@@ -728,7 +739,17 @@ namespace SmartVpn
             }
         }
 
-        private static string SanitizeOvpn(string content) => content.Replace("\r\n", "\n");
+        private static string SanitizeOvpn(string content)
+        {
+            var s = content.Replace("\r\n", "\n");
+            // VpnEngine اینا رو خودش اضافه می‌کنه — از inline strip می‌شن
+            s = Regex.Replace(s, @"^remote\s+.*\n?",       "", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+            s = Regex.Replace(s, @"^proto\s+.*\n?",        "", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+            s = Regex.Replace(s, @"^auth-user-pass\s*\n?", "", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+            s = Regex.Replace(s, @"^mute\s+\d+\s*\n?",   "", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+            s = Regex.Replace(s, @"\n{3,}", "\n\n");
+            return s.Trim();
+        }
 
         // ================= درگ‌اند‌دراپ فایل روی پنجره =================
         private const string MsgWgDetected = "فایل وایرگارد (.conf) شناسایی شد — پشتیبانی WireGuard به‌زودی اضافه می‌شود.";
@@ -848,13 +869,23 @@ namespace SmartVpn
                 var ext = Path.GetExtension(path).ToLowerInvariant();
                 if (ext == ".ovpn")
                 {
-                    var content = SanitizeOvpn(File.ReadAllText(path));
-                    var name = Path.GetFileNameWithoutExtension(path);
+                    var rawOvpn = File.ReadAllText(path);
+                    var content = SanitizeOvpn(rawOvpn);
+                    var name    = Path.GetFileNameWithoutExtension(path);
+
+                    var remMatch = Regex.Match(rawOvpn, @"^remote\s+(\S+)\s+(\d+)", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+                    var server   = remMatch.Success ? remMatch.Groups[1].Value : "";
+                    var port     = remMatch.Success ? int.Parse(remMatch.Groups[2].Value) : 1194;
+                    var proto    = Regex.IsMatch(rawOvpn, @"^proto\s+tcp", RegexOptions.Multiline | RegexOptions.IgnoreCase) ? "tcp" : "udp";
+
                     _config.Connections.Add(new ConnectionProfile
                     {
-                        Name = name,
-                        Type = "openvpn",
-                        Source = "custom",
+                        Name       = name,
+                        Type       = "openvpn",
+                        Source     = "custom",
+                        Server     = server,
+                        Port       = port,
+                        Proto      = proto,
                         OvpnInline = content,
                     });
                     _config.Save();
@@ -926,6 +957,51 @@ namespace SmartVpn
             }
         }
 
+
+        private static string GeoFlagFromName(string name)
+        {
+            var u = name.ToUpperInvariant();
+            if (u.Contains("USA") || u.Contains("AMERICA")) return "🇺🇸";
+            if (u.Contains("TURKEY") || u.Contains("TURK")) return "🇹🇷";
+            if (u.Contains("NETHERLANDS") || u.Contains("HOLLAND")) return "🇳🇱";
+            if (u.Contains("FINLAND")) return "🇫🇮";
+            if (u.Contains("POLAND")) return "🇵🇱";
+            if (u.Contains("GERMANY")) return "🇩🇪";
+            if (u.Contains("FRANCE")) return "🇫🇷";
+            if (u.Contains("CANADA")) return "🇨🇦";
+            if (u.Contains("JAPAN")) return "🇯🇵";
+            if (u.Contains("SINGAPORE")) return "🇸🇬";
+            if (u.Contains("AUSTRALIA")) return "🇦🇺";
+            if (u.Contains("SWEDEN")) return "🇸🇪";
+            if (u.Contains("NORWAY")) return "🇳🇴";
+            if (u.Contains("RUSSIA")) return "🇷🇺";
+            if (u.Contains("ITALY")) return "🇮🇹";
+            if (u.Contains("SPAIN")) return "🇪🇸";
+            // 2-letter code after NFV-
+            var m = Regex.Match(name, @"NFV-([A-Z]{2})\b", RegexOptions.IgnoreCase);
+            if (m.Success) switch (m.Groups[1].Value.ToUpperInvariant())
+            {
+                case "US": return "🇺🇸";
+                case "TR": return "🇹🇷";
+                case "DE": return "🇩🇪";
+                case "FR": return "🇫🇷";
+                case "NL": return "🇳🇱";
+                case "PL": return "🇵🇱";
+                case "FI": return "🇫🇮";
+                case "GB": return "🇬🇧";
+                case "CA": return "🇨🇦";
+                case "JP": return "🇯🇵";
+                case "SG": return "🇸🇬";
+                case "AU": return "🇦🇺";
+                case "SE": return "🇸🇪";
+                case "NO": return "🇳🇴";
+                case "CH": return "🇨🇭";
+                case "RU": return "🇷🇺";
+                case "IT": return "🇮🇹";
+                case "ES": return "🇪🇸";
+            }
+            return string.Empty;
+        }
 
     }
 }

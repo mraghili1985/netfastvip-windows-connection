@@ -145,18 +145,82 @@ public sealed class OpenVpnProvider : IConnectionProvider
     // با این پرچم، چک بعدی IsAlive (حداکثر ۵ ثانیه بعد) همیشه اتصال مجدد کامل و تمیز انجام می‌دهد
     private volatile bool _restartDetected;
 
-    public async Task<bool> ProbeAsync(string host, CancellationToken ct)
+    public Task<bool> ProbeAsync(string host, CancellationToken ct)
     {
-        if (_ep.Proto == "udp") return true;
+        // پیش‌آزمایش TCP حذف شد. این تست فقط اولین IP دامنه را بررسی می‌کرد،
+        // سه ثانیه به هر اتصال اضافه می‌کرد و ممکن بود قبل از رسیدن OpenVPN
+        // به IP بعدی، همان پروفایل را رد کند. خود OpenVPN باید DNS و failover را انجام دهد.
+        return Task.FromResult(true);
+    }
 
-        using var client = new TcpClient();
-        try
+    private async Task<List<string>> ResolveRemoteTargetsAsync(string host, CancellationToken ct)
+    {
+        var value = (host ?? string.Empty).Trim();
+        if (value.Length == 0) return [];
+
+        // پشتیبانی از چند IP که کاربر با ; یا , وارد کرده است.
+        var tokens = value
+            .Split([';', ',', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(x => x.Length > 0)
+            .ToList();
+        if (tokens.Count == 0) tokens.Add(value);
+
+        var targets = new List<string>();
+        foreach (var token in tokens)
         {
-            var connect = client.ConnectAsync(_ep.Address, _ep.Port);
-            var winner = await Task.WhenAny(connect, Task.Delay(3000, ct));
-            return winner == connect && client.Connected;
+            var before = targets.Count;
+
+            if (IPAddress.TryParse(token, out var literal))
+            {
+                targets.Add(literal.ToString());
+            }
+            else
+            {
+                try
+                {
+                    using var dnsCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                    dnsCts.CancelAfter(TimeSpan.FromSeconds(2));
+                    var addresses = await Dns.GetHostAddressesAsync(token, dnsCts.Token);
+                    foreach (var address in addresses)
+                    {
+                        // کانفیگ‌های فعلی برنامه IPv4 هستند؛ IPv6 را وارد لیست
+                        // نکن تا روی سیستم‌های بدون IPv6 باعث timeout اضافه نشود.
+                        if (address.AddressFamily == AddressFamily.InterNetwork)
+                            targets.Add(address.ToString());
+                    }
+                }
+                catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+                {
+                    // در صورت کند بودن DNS، خود OpenVPN با نام دامنه تلاش می‌کند.
+                }
+                catch when (!ct.IsCancellationRequested)
+                {
+                    // خطای موقت DNS نباید اتصال را متوقف کند.
+                }
+
+                // اگر DNS در این لحظه جواب نداد، hostname را نگه می‌داریم تا
+                // resolv-retry خود OpenVPN آن را دوباره resolve کند.
+                if (targets.Count == before) targets.Add(token);
+            }
         }
-        catch { return false; }
+
+        return targets
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(12)
+            .ToList();
+    }
+
+    private static string RemoveOptionLines(string text, params string[] optionNames)
+    {
+        var names = new HashSet<string>(optionNames, StringComparer.OrdinalIgnoreCase);
+        var lines = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+        return string.Join(Environment.NewLine, lines.Where(line =>
+        {
+            var trimmed = line.TrimStart();
+            if (trimmed.StartsWith("#") || trimmed.Length == 0) return true;
+            var option = trimmed.Split([' ', '\t'], 2, StringSplitOptions.RemoveEmptyEntries)[0];
+            return !names.Contains(option);
+        }));
     }
 
     // پورت آزاد از خود سیستم می‌گیریم — دیگه هیچ‌وقت Socket bind failed نمی‌گیریم
@@ -218,7 +282,7 @@ public sealed class OpenVpnProvider : IConnectionProvider
         try
         {
             var psi = new ProcessStartInfo("powershell.exe",
-                "-NoProfile -Command \"(Get-NetAdapter | Where-Object { $_.InterfaceDescription -match 'OpenVPN|TAP-Windows|Wintun' }).Count\"")
+                "-NoProfile -Command \"(Get-NetAdapter -IncludeHidden | Where-Object { $_.Status -eq 'Up' -and $_.InterfaceDescription -match 'OpenVPN|TAP-Windows|Wintun' }).Count\"")
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
@@ -278,6 +342,17 @@ public sealed class OpenVpnProvider : IConnectionProvider
         var ovpn = Path.Combine(AppContext.BaseDirectory, "Data", $"gen-{_ep.Proto}-{_ep.Port}.ovpn");
         var baseText = await File.ReadAllTextAsync(basePath, ct);
 
+        // این گزینه‌ها را خود برنامه مدیریت می‌کند؛ اگر در base.ovpn هم باشند،
+        // نسخه قدیمی می‌توانست با مقدار کندتر/متناقض آن‌ها را override کند.
+        baseText = RemoveOptionLines(baseText,
+            "resolv-retry", "connect-timeout", "connect-retry", "connect-retry-max");
+
+        var remoteTargets = await ResolveRemoteTargetsAsync(_ep.Address, ct);
+        if (remoteTargets.Count == 0) remoteTargets.Add(_ep.Address);
+        var remoteLines = string.Join(Environment.NewLine,
+            remoteTargets.Select(target => $"remote {target} {_ep.Port}"));
+        Log?.Invoke($"[{Type}] remote candidates: {string.Join(", ", remoteTargets)}");
+
         // --- سخت‌سازی سمت کلاینت: فقط بستن نشت IPv6 (معادل رفتار OpenVPN Connect) ---
         // وگرنه ویندوز یوتیوب/واتس‌اپ را از IPv6 مستقیم (فیلترشده) می‌فرستد و فقط همین اپ‌ها از کار می‌افتند.
         // ⚠ گزینه‌های DNS (dhcp-option / block-outside-dns) عمدا حذف شدند:
@@ -301,8 +376,15 @@ public sealed class OpenVpnProvider : IConnectionProvider
         // و مقدار ثابت کوتاه‌تر از ضربان سرور باعث قطع/وصل مداوم در حالت idle می‌شود (باگ ۱۸ اوت).
         // تشخیص سریع قطعی به عهده نگهبان پینگ برنامه است (MainWindow.Stats.cs) که پروتکل-مستقل است.
 
+        const string connectionTuning =
+            "# --- fast connection and endpoint failover ---\n" +
+            "resolv-retry infinite\n" +
+            "connect-timeout 6\n" +
+            "connect-retry 1 2\n" +
+            "connect-retry-max 1\n";
+
         await File.WriteAllTextAsync(ovpn,
-            $"remote {_ep.Address} {_ep.Port}\nproto {proto}\n{baseText}{hardening}", ct);
+            $"{remoteLines}\nproto {proto}\n{connectionTuning}{baseText}{hardening}", ct);
 
         var authPath = Path.Combine(AppContext.BaseDirectory, "Data", "auth.txt");
         await File.WriteAllLinesAsync(authPath, [_creds.Username, _creds.Password], ct);
@@ -314,7 +396,7 @@ public sealed class OpenVpnProvider : IConnectionProvider
         await File.WriteAllTextAsync(mgmtPwFile, _mgmtPassword + "\n", ct);
 
         var psi = new ProcessStartInfo(exePath,
-            $"--config \"{ovpn}\" --auth-user-pass \"{authPath}\" --connect-retry-max 2 " +
+            $"--config \"{ovpn}\" --auth-user-pass \"{authPath}\" " +
             $"--management 127.0.0.1 {_mgmtPort} \"{mgmtPwFile}\"")
         {
             RedirectStandardOutput = true,
@@ -357,7 +439,7 @@ public sealed class OpenVpnProvider : IConnectionProvider
         _proc.BeginOutputReadLine();
         _proc.BeginErrorReadLine();
 
-        var winner = await Task.WhenAny(connected.Task, Task.Delay(45000, ct));
+        var winner = await Task.WhenAny(connected.Task, Task.Delay(35000, ct));
         if (winner != connected.Task)
         {
             Log?.Invoke($"[{Type}] timeout — وصل نشد");
@@ -505,7 +587,7 @@ public sealed class OpenVpnProvider : IConnectionProvider
             if (res is not null)
             {
                 var exited = _proc.WaitForExitAsync(ct);
-                if (await Task.WhenAny(exited, Task.Delay(5000, ct)) == exited)
+                if (await Task.WhenAny(exited, Task.Delay(2500, ct)) == exited)
                     Log?.Invoke($"[{Type}] خاموشی تمیز انجام شد ✓");
             }
             if (_proc is { HasExited: false })

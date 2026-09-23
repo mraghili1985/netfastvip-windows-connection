@@ -20,6 +20,7 @@ public partial class ConnectionDialog : Window
     public ConnectionDialog()
     {
         InitializeComponent();
+        Loaded += (_, _) => Localization.Watch(this);
         TypeCombo.SelectedIndex = 0;
         UpdateFieldVisibility();
     }
@@ -42,7 +43,7 @@ public partial class ConnectionDialog : Window
             // پر کردن فیلدهای WG از کانفیگ ذخیره‌شده
             if (_wgConf.Trim().Length > 0)
             {
-                WgStatusText.Text = "کانفیگ: بارگذاری شده ✔";
+                WgStatusText.Text = Localization.T("کانفیگ: بارگذاری شده ✔");
                 PopulateWgFields(_wgConf);
             }
         }
@@ -59,7 +60,7 @@ public partial class ConnectionDialog : Window
                 if ((string)item.Tag == existing.Proto) { ProtoCombo.SelectedItem = item; break; }
 
             if (_ovpnInline.Trim().Length > 0)
-                OvpnStatusText.Text = "embedded profile: yes";
+                OvpnStatusText.Text = Localization.T("embedded profile: yes");
         }
 
         UpdateFieldVisibility();
@@ -117,7 +118,11 @@ public partial class ConnectionDialog : Window
         var addr     = WgAddressBox.Text.Trim();
         var pubKey   = WgPublicKeyBox.Text.Trim();
         var endpoint = WgEndpointBox.Text.Trim();
-        if (priv.Length == 0 || addr.Length == 0 || pubKey.Length == 0 || endpoint.Length == 0)
+
+        static bool Missing(string value) =>
+            string.IsNullOrWhiteSpace(value) || value == "—";
+
+        if (Missing(priv) || Missing(addr) || Missing(pubKey) || Missing(endpoint))
             return "";
         var sb = new System.Text.StringBuilder();
         sb.AppendLine("[Interface]");
@@ -147,6 +152,13 @@ public partial class ConnectionDialog : Window
         sb.AppendLine();
         sb.AppendLine("[Peer]");
         sb.AppendLine($"PublicKey = {pubKey}");
+
+        // PresharedKey اختیاری است؛ بعضی کانفیگ‌های WireGuard آن را دارند
+        // و بعضی ندارند. اگر خالی باشد، اصلاً این خط را تولید نمی‌کنیم.
+        var presharedKey = WgPresharedKeyBox.Password.Trim();
+        if (presharedKey.Length > 0 && presharedKey != "—")
+            sb.AppendLine($"PresharedKey = {presharedKey}");
+
         sb.AppendLine($"Endpoint = {endpoint}");
         var ips = WgAllowedIPsBox.Text.Trim();
         sb.AppendLine($"AllowedIPs = {(ips.Length > 0 && ips != "—" ? ips : "0.0.0.0/0, ::/0")}");
@@ -160,17 +172,17 @@ public partial class ConnectionDialog : Window
         var ofd = new OpenFileDialog
         {
             Filter = "WireGuard / AmneziaWG config (*.conf)|*.conf|All files (*.*)|*.*",
-            Title  = "انتخاب فایل .conf",
+            Title  = Localization.T("انتخاب فایل .conf"),
         };
         if (ofd.ShowDialog(this) != true) return;
 
         string conf;
         try { conf = File.ReadAllText(ofd.FileName).Replace("\r\n", "\n"); }
-        catch { MessageBox.Show(this, "فایل .conf معتبر نیست.", AppConfig.BrandName); return; }
+        catch { MessageBox.Show(this, Localization.T("فایل .conf معتبر نیست."), AppConfig.BrandName); return; }
 
         if (!conf.Contains("[Interface]") || !conf.Contains("[Peer]"))
         {
-            MessageBox.Show(this, "فایل .conf معتبر نیست (باید شامل [Interface] و [Peer] باشد).", AppConfig.BrandName);
+            MessageBox.Show(this, Localization.T("فایل .conf معتبر نیست (باید شامل [Interface] و [Peer] باشد)."), AppConfig.BrandName);
             return;
         }
 
@@ -180,7 +192,7 @@ public partial class ConnectionDialog : Window
             NameBox.Text = Path.GetFileNameWithoutExtension(ofd.FileName);
 
         PopulateWgFields(conf);
-        WgStatusText.Text = $"کانفیگ بارگذاری شد: {Path.GetFileName(ofd.FileName)} ✔";
+        WgStatusText.Text = Localization.T("کانفیگ بارگذاری شد: ") + Path.GetFileName(ofd.FileName) + " ✔";
         WgFieldsPanel.Visibility = Visibility.Visible;
     }
 
@@ -194,14 +206,18 @@ public partial class ConnectionDialog : Window
         var peer  = ParseSection(conf, "[Peer]");
 
         // ─── Interface ───
-        WgAddressBox.Text  = iface.GetValueOrDefault("address",  "—");
-        WgDnsBox.Text      = iface.GetValueOrDefault("dns",      "—");
-        WgMtuBox.Text      = iface.GetValueOrDefault("mtu",      "—");
+        // PrivateKey قبلاً در Import خوانده نمی‌شد و به همین دلیل
+        // بعد از Import فرم آن را خالی نشان می‌داد.
+        WgPrivateKeyBox.Text = iface.GetValueOrDefault("privatekey", "");
+        WgAddressBox.Text    = iface.GetValueOrDefault("address",    "");
+        WgDnsBox.Text        = iface.GetValueOrDefault("dns",        "");
+        WgMtuBox.Text        = iface.GetValueOrDefault("mtu",        "");
 
         // ─── Peer ───
-        WgEndpointBox.Text  = peer.GetValueOrDefault("endpoint",   "—");
-        WgPublicKeyBox.Text = peer.GetValueOrDefault("publickey",  "—");
-        WgAllowedIPsBox.Text = peer.GetValueOrDefault("allowedips", "—");
+        WgEndpointBox.Text        = peer.GetValueOrDefault("endpoint",    "");
+        WgPublicKeyBox.Text       = peer.GetValueOrDefault("publickey",   "");
+        WgPresharedKeyBox.Password = peer.GetValueOrDefault("presharedkey", "");
+        WgAllowedIPsBox.Text      = peer.GetValueOrDefault("allowedips",  "0.0.0.0/0, ::/0");
 
         var keepalive = peer.GetValueOrDefault("persistentkeepalive", "");
         if (keepalive.Length > 0)
@@ -294,13 +310,13 @@ public partial class ConnectionDialog : Window
 
         string norm;
         try { norm = File.ReadAllText(ofd.FileName).Replace("\r\n", "\n"); }
-        catch { MessageBox.Show(this, MsgBadOvpn, AppConfig.BrandName); return; }
+        catch { MessageBox.Show(this, Localization.T(MsgBadOvpn), AppConfig.BrandName); return; }
 
         var lines = norm.Split('\n');
         if (!lines.Any(l => l.Trim() == "client") || !lines.Any(l => l.TrimStart().StartsWith("remote ")))
-        { MessageBox.Show(this, MsgBadOvpn, AppConfig.BrandName); return; }
+        { MessageBox.Show(this, Localization.T(MsgBadOvpn), AppConfig.BrandName); return; }
         if (lines.Any(l => l.TrimStart().StartsWith("dev tap")))
-        { MessageBox.Show(this, MsgTapRejected, AppConfig.BrandName); return; }
+        { MessageBox.Show(this, Localization.T(MsgTapRejected), AppConfig.BrandName); return; }
 
         var host = ""; var port = 0; var proto = "";
         foreach (var line in lines)
@@ -336,7 +352,7 @@ public partial class ConnectionDialog : Window
         if (proto.StartsWith("tcp")) SelectProto("tcp");
         else if (proto.StartsWith("udp")) SelectProto("udp");
 
-        OvpnStatusText.Text = "embedded profile: " + Path.GetFileName(ofd.FileName);
+        OvpnStatusText.Text = Localization.T("embedded profile: ") + Path.GetFileName(ofd.FileName);
         UpdateCredsEnabled();
     }
 
@@ -354,17 +370,17 @@ public partial class ConnectionDialog : Window
     {
         var name = NameBox.Text.Trim();
         if (name.Length == 0)
-        { MessageBox.Show(this, MsgNameRequired, AppConfig.BrandName); return; }
+        { MessageBox.Show(this, Localization.T(MsgNameRequired), AppConfig.BrandName); return; }
 
         var isWg = SelectedType == "wireguard" || SelectedType == "amneziawg";
 
         if (isWg)
         {
-            // WireGuard: فقط .conf لازم است
+            // همیشه از مقادیر فعلی فرم کانفیگ را بساز؛
+            // تا تغییر Preshared Key یا سایر فیلدها بعد از Import هم ذخیره شود.
+            _wgConf = BuildWgConf();
             if (_wgConf.Trim().Length == 0)
-                _wgConf = BuildWgConf();
-            if (_wgConf.Trim().Length == 0)
-            { MessageBox.Show(this, "لطفاً Private Key، Address، Public Key و Endpoint را پر کنید.", AppConfig.BrandName); return; }
+            { MessageBox.Show(this, Localization.T("لطفاً Private Key، Address، Public Key و Endpoint را پر کنید."), AppConfig.BrandName); return; }
 
             // Server/Port را از Endpoint در conf می‌خوانیم
             var ep = WgEndpointBox.Text.Trim();
@@ -403,7 +419,7 @@ public partial class ConnectionDialog : Window
         {
             var server = ServerBox.Text.Trim();
             if (server.Length == 0)
-            { MessageBox.Show(this, "نام و آدرس سرور الزامی است.", AppConfig.BrandName); return; }
+            { MessageBox.Show(this, Localization.T("نام و آدرس سرور الزامی است."), AppConfig.BrandName); return; }
 
             int? port = null;
             if (int.TryParse(PortBox.Text.Trim(), out var pv) && pv > 0) port = pv;

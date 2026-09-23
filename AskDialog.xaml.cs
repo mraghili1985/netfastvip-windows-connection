@@ -18,6 +18,7 @@ public partial class AskDialog : Window
     public AskDialog(string message, string btn0, string? btn1 = null, string? btn2 = null)
     {
         InitializeComponent();
+        Loaded += (_, _) => Localization.Watch(this);
         Title = AppConfig.BrandName; // نام برند از config.json
         MsgText.Text = message;
         Btn0.Content = btn0;
@@ -32,14 +33,14 @@ public partial class AskDialog : Window
     // پیام ساده با یک دکمه «باشه»
     public static void Info(Window owner, string message)
     {
-        var d = new AskDialog(message, BtnOk) { Owner = owner };
+        var d = new AskDialog(Localization.T(message), Localization.T(BtnOk)) { Owner = owner };
         d.ShowDialog();
     }
 
     // تأیید بله/خیر — true فقط وقتی کاربر صراحتاً «بله» بزند
     public static bool Confirm(Window owner, string message, string yes = BtnYes, string no = BtnNo)
     {
-        var d = new AskDialog(message, yes, no) { Owner = owner };
+        var d = new AskDialog(Localization.T(message), Localization.T(yes), Localization.T(no)) { Owner = owner };
         return d.ShowDialog() == true && d.Choice == 0;
     }
 
@@ -47,7 +48,7 @@ public partial class AskDialog : Window
     // دکمه انصراف فقط اگر cancel داده شود نمایش داده می‌شود (دکمه بستن کفایت می‌کند)
     public static int Choose(Window owner, string message, string opt0, string opt1, string? cancel = null)
     {
-        var d = new AskDialog(message, opt0, opt1, cancel) { Owner = owner };
+        var d = new AskDialog(Localization.T(message), Localization.T(opt0), Localization.T(opt1), cancel is null ? null : Localization.T(cancel)) { Owner = owner };
         if (d.ShowDialog() != true || d.Choice == 2) return -1;
         return d.Choice;
     }

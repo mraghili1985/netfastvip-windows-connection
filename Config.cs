@@ -15,12 +15,13 @@ public sealed class AppConfig
 
     // --- New in step 11.6 ---
     public string Theme { get; set; } = "dark"; // dark | light | system (پیش‌فرض: تم سیستم)
+    public string Language { get; set; } = "fa"; // fa | en
 	public string SplitTunnelMode { get; set; } = "off"; // off | deny | allow
 	public List<string> SplitTunnelList { get; set; } = [];
     public string BaseOvpn { get; set; } = "";    // base.ovpn content kept inside config (self-healing)
     public int PackageVersion { get; set; }       // version of last imported official package
     public bool MinimizeToTray { get; set; }
-    public bool KillSwitchEnabled { get; set; } // Kill Switch (WFP) — وضعیت توگل بین اجراهای برنامه حفظ می‌شود
+    public bool KillSwitchEnabled { get; set; } = true; // Kill Switch (WFP) — وضعیت توگل بین اجراهای برنامه حفظ می‌شود
 
     // آخرین کانکشنی که واقعاً وصل شده — بعد از بستن/باز کردن برنامه همین انتخاب‌شده نمایش داده می‌شود
     public string? LastConnectedName { get; set; }
@@ -45,7 +46,7 @@ public sealed class AppConfig
     public string UpdateUrl { get; set; } = "https://dl.netfast.vip/version.json";
 
     // آدرس فایل connections.json روی هاست برای دریافت خودکار سرورها/base.ovpn/گواهی CA — خالی یعنی بررسی خاموش (ConnectionsUpdateChecker.cs)
-    public string ConnectionsUpdateUrl { get; set; } = "https://dl.netfast.vip/connections.json";
+    public string ConnectionsUpdateUrl { get; set; } = "";
 
     // محتوای گواهی CA به‌صورت Base64 — داخل کانفیگ نگه داشته می‌شود (self-healing مثل BaseOvpn)
     public string Ca { get; set; } = "";

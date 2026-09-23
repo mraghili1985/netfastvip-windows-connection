@@ -24,24 +24,29 @@ public partial class SubscriptionDialog : Window
     private const string MsgServerErrorFmt = "خطای سرور: {0}";
     private const string StActive          = "فعال ✅";
     private const string StExpired         = "منقضی ❌";
-    private const string OnlineText        = "آنلاین ✅";
-    private const string OfflineText       = "آفلاین ⚫";
+    private const string OnlineText  = "آنلاین ✅";
+    private const string OfflineText = "آفلاین ⚫";
     private const string BtnCheck          = "📊 استعلام وضعیت";
     private const string BtnChecking       = "⏳ در حال استعلام...";
 
     private readonly string _portalBaseUrl;
     public Action<string, string>? OnSaveCredentials;
+    public Action<PortalApiClient, string, string>? OnSyncConnections; // دریافت و سینک کانکشن‌های پورتال
 
     public SubscriptionDialog(string portalBaseUrl, string username, string password)
     {
         InitializeComponent();
-        Title = AppConfig.BrandName + " — " + TitleSuffix;
         _portalBaseUrl = portalBaseUrl;
         UserBox.Text = username;
         PassBox.Password = password;
         SourceInitialized += (_, __) => ApplyDarkTitleBar();
         Loaded += (_, __) =>
         {
+            // اعمال ترجمه بعد از Load کامل پنجره
+            Localization.Watch(this);
+            Title = AppConfig.BrandName + " — " + Localization.T(TitleSuffix);
+            CheckBtn.Content = Localization.T(BtnCheck);
+
             if (UserBox.Text.Trim().Length > 0 && PassBox.Password.Length > 0)
                 Check_Click(this, new RoutedEventArgs());
         };
@@ -64,11 +69,11 @@ public partial class SubscriptionDialog : Window
     {
         var user = UserBox.Text.Trim();
         var pass = PassBox.Password;
-        if (user.Length == 0 || pass.Length == 0) { ShowStatus(MsgMissingCreds, true); return; }
+        if (user.Length == 0 || pass.Length == 0) { ShowStatus(Localization.T(MsgMissingCreds), true); return; }
 
         CheckBtn.IsEnabled = false;
-        CheckBtn.Content   = BtnChecking;
-        ShowStatus(MsgChecking, false);
+        CheckBtn.Content   = Localization.T(BtnChecking);
+        ShowStatus(Localization.T(MsgChecking), false);
         ResultPanel.Visibility = Visibility.Collapsed;
         try
         {
@@ -80,18 +85,23 @@ public partial class SubscriptionDialog : Window
             StatusText.Visibility  = Visibility.Collapsed;
             ResultPanel.Visibility = Visibility.Visible;
 
+            // ابتدا اعتبارها را ذخیره می‌کنیم تا بعد از بستن دیالوگ،
+            // کارت اشتراک صفحه اصلی بتواند با همان یوزر/پسورد استعلام بگیرد.
             if (SaveCheck.IsChecked == true) OnSaveCredentials?.Invoke(user, pass);
+
+            // سپس کانکشن‌های پورتال را همگام می‌کنیم.
+            OnSyncConnections?.Invoke(client, user, pass);
         }
         catch (PortalApiException ex)
         {
-            if (ex.StatusCode is 400 or 401 or 403 or 404) ShowStatus(MsgBadCreds, true);
-            else ShowStatus(string.Format(MsgServerErrorFmt, ex.Message), true);
+            if (ex.StatusCode is 400 or 401 or 403 or 404) ShowStatus(Localization.T(MsgBadCreds), true);
+            else ShowStatus(string.Format(Localization.T(MsgServerErrorFmt), ex.Message), true);
         }
-        catch { ShowStatus(MsgNetworkError, true); }
+        catch { ShowStatus(Localization.T(MsgNetworkError), true); }
         finally
         {
             CheckBtn.IsEnabled = true;
-            CheckBtn.Content   = BtnCheck;
+            CheckBtn.Content   = Localization.T(BtnCheck);
         }
     }
 
@@ -101,7 +111,7 @@ public partial class SubscriptionDialog : Window
                       || d.Account.RemainingDays <= 0;
 
         // وضعیت اشتراک
-        StatusValue.Text = expired ? StExpired : StActive;
+        StatusValue.Text = expired ? Localization.T(StExpired) : Localization.T(StActive);
         StatusValue.Foreground = new SolidColorBrush(
             expired ? Color.FromRgb(0xEF, 0x44, 0x44) : Color.FromRgb(0x22, 0xC5, 0x5E));
 
@@ -116,7 +126,7 @@ public partial class SubscriptionDialog : Window
         RemainValue.Text = FormatRemaining(d.Account.ExpireAt, expired);
 
         // وضعیت اتصال
-        OnlineValue.Text = canConnect ? OnlineText : OfflineText;
+        OnlineValue.Text = canConnect ? Localization.T(OnlineText) : Localization.T(OfflineText);
         OnlineValue.Foreground = new SolidColorBrush(
             canConnect ? Color.FromRgb(0x22, 0xC5, 0x5E) : Color.FromRgb(0x9C, 0xA3, 0xAF));
 
@@ -135,7 +145,7 @@ public partial class SubscriptionDialog : Window
 
             // خلاصه بالای بار
             TrafficSummaryText.Text =
-                $"{usedGb:0.0} / {totalGb:0.#} گیگ";
+                $"{usedGb:0.0} / {totalGb:0.#} " + Localization.T("گیگ");
 
             // بار progress — عرض والد ≈ ۳۰۴ پیکسل (360 - 2×14 padding - 2×10 card padding)
             const double barWidth = 304;
@@ -153,7 +163,7 @@ public partial class SubscriptionDialog : Window
         }
         else
         {
-            TrafficSummaryText.Text = "نامحدود";
+            TrafficSummaryText.Text = Localization.T("نامحدود");
             TrafficBar.Width        = 0;
             UsageText.Text          = $"Used: {usedGb:0.0}GB";
             RemainTrafficText.Text  = "—";

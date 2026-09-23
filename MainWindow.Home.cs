@@ -181,7 +181,7 @@ namespace SmartVpn
             _tunnelPeerIp = null; // شروع تمیز — IP سرور فقط از همین اتصال جدید خوانده شود
 
             SetStatusText(TxtConnecting);
-            PowerHintText.Text = "Connecting...";
+            PowerHintText.Text = Localization.T("در حال اتصال...");
             StartSpin();
             SetPowerState("connecting");
             _manualStop = false;
@@ -261,7 +261,7 @@ namespace SmartVpn
                 StopSpin();
                 StartPulse();
                 SetStatusText(TxtConnected);
-                PowerHintText.Text = "Click to Disconnect";
+                PowerHintText.Text = Localization.T("برای قطع اتصال کلیک کنید");
                 SetPowerState("connected");
                 Notify((_wasReconnecting ? NotifyReconnected : NotifyConnected) + " — " + profile.Name);
                 _wasReconnecting = false;
@@ -270,6 +270,7 @@ namespace SmartVpn
                 _connectedName = profile.Name; // تنها اینجا مشخص می‌شود چه چیزی واقعا وصل شده
                 MoveToTop(profile.Name); // کانکشن متصل‌شده می‌رود صدر لیست
                 ActiveConnText.Text = $"{CategoryLabel(profile.Type)} {profile.Name}";
+                HsVpnConnectionText.Text = ActiveConnText.Text;
                 ServerSubText.Text = profile.ServerLine;
                 PrivateIpText.Text = string.IsNullOrEmpty(localIp) ? "—" : localIp;
                 ServerIpText.Text = _tunnelPeerIp ?? "—"; // sniff لاگ openvpn از قبل IP را گرفته — پاک نشود
@@ -280,12 +281,12 @@ namespace SmartVpn
                 {
                     WireGuardProvider.LastHandshake = null;
                     YouText.Text = "—";
-                    YouLbl.Text = "Last Handshake";
+                    YouLbl.Text = Localization.T("Last Handshake");
                 }
                 else
                 {
                     YouText.Text = string.IsNullOrEmpty(profile.Username) ? "—" : profile.Username;
-                    YouLbl.Text = "User";
+                    YouLbl.Text = Localization.T("User");
                 }
                 ProtocolText.Text = GetProtocolLabel(profile);
 
@@ -328,9 +329,9 @@ namespace SmartVpn
             Dispatcher.Invoke(() =>
             {
                 SetStatusText(TxtReconnecting);
-                PowerHintText.Text = "Reconnecting...";
+                PowerHintText.Text = Localization.T("تلاش مجدد برای اتصال...");
                 StartSpin();
-                SetPowerState("connecting");
+                SetPowerState("reconnecting");
                 Notify(NotifyReconnecting);
                 _wasReconnecting = true;
                 GeoIpText.Text = "—";
@@ -353,10 +354,11 @@ namespace SmartVpn
                 StopSpin();
                 StopPulse();
                 SetStatusText(TxtReady);
-                PowerHintText.Text = "Click to Connect";
+                PowerHintText.Text = Localization.T("روشن/خاموش اتصال");
                 SetPowerState(_manualStop ? "off" : "error");
                 _manualStop = false;
                 _connectedName = null; // دیگر هیچ کارتی واقعا وصل نیست
+                HsVpnConnectionText.Text = Localization.T("عدم اتصال");
                 DurationText.Text = "00:00:00";
                 DlSpeedText.Text = "↓ 0 B/s";
                 UlSpeedText.Text = "↑ 0 B/s";
@@ -374,7 +376,7 @@ namespace SmartVpn
                 GeoIpText.Text = "—";
                 GeoFlagImg.Source = null;
                 YouText.Text = "—";
-                YouLbl.Text = "User"; // reset label برای اتصال بعدی
+                YouLbl.Text = Localization.T("User"); // reset label برای اتصال بعدی
                 _activeIsWg = false;
                 _dlHistory.Clear();
                 _ulHistory.Clear();
@@ -392,7 +394,7 @@ namespace SmartVpn
             {
                 StopSpin();
                 SetStatusText(TxtAuthFailed);
-                PowerHintText.Text = "Click to Connect";
+                PowerHintText.Text = Localization.T("روشن/خاموش اتصال");
                 AppendConnLog("خطا: احراز هویت ناموفق است.");
                 // دکمه «بررسی اشتراک» — چون علت رایج AUTH_FAILED پایان اشتراک است، مستقیم به پنل کاربری هدایت می‌شود
                 var choice = AskDialog.Choose(this, MsgAuthFailed, BtnCheckSubscription, BtnOkText);
@@ -421,7 +423,7 @@ namespace SmartVpn
             // هدر: صفحه خانه = برند و آیکون‌ها، بقیه صفحات = فلش برگشت + عنوان صفحه
             HeaderBrandPanel.Visibility = tag == "home" ? Visibility.Visible : Visibility.Collapsed;
             HeaderPagePanel.Visibility = tag == "home" ? Visibility.Collapsed : Visibility.Visible;
-            HeaderTitleText.Text = tag == "tools" ? "ابزارها و گزارش" : tag == "settings" ? "تنظیمات" : tag == "connlog" ? "گزارش کانکشن‌ها" : "";
+            HeaderTitleText.Text = tag == "tools" ? Localization.T("ابزارها و گزارش") : tag == "settings" ? Localization.T("تنظیمات") : tag == "connlog" ? Localization.T("گزارش کانکشن‌ها") : "";
 
             switch (tag)
             {
@@ -489,7 +491,7 @@ namespace SmartVpn
         {
             var open = MoreInfoPanel.Visibility != Visibility.Visible;
             MoreInfoArrow.Text = open ? "⌃" : "⌄";
-            MoreInfoText.Text = open ? "Hide" : "Details";
+            MoreInfoText.Text = open ? Localization.T("بستن جزئیات") : Localization.T("نمایش جزئیات");
 
             // باز/بسته‌شدن نرم به جای توگل لحظه‌ای Visibility — ۲۰۰ میلی‌ثانیه بر روی Opacity
             var anim = new DoubleAnimation
@@ -540,9 +542,15 @@ namespace SmartVpn
 
         private void SetStatusText(string text)
         {
-            StatusText.Text = text;
-            if (MiniStatusText != null) MiniStatusText.Text = text;
+            // text همیشه کلید فارسی است — ذخیره می‌کنیم تا هنگام تغییر زبان بتوانیم دوباره ترجمه کنیم
+            _currentStatusKey = text;
+            var translated = Localization.T(text);
+            StatusText.Text = translated;
+            if (MiniStatusText != null) MiniStatusText.Text = translated;
         }
+
+        // فراخوانی از Settings هنگام تغییر زبان — وضعیت جاری را با زبان جدید دوباره نمایش می‌دهد
+        internal void ReapplyCurrentStatusText() => SetStatusText(_currentStatusKey);
 
         // رنگ کلید پاور: خاکستری=خاموش — آبی=در حال اتصال — سبز=متصل — قرمز=قطع ناخواسته
         private void SetPowerState(string state)
@@ -550,7 +558,7 @@ namespace SmartVpn
             _currentPowerState = state; // ثبت وضعیت واقعی — لیست کانکشن‌ها هم از همین منبع می‌خوانند تا با کارت بالا هم‌خوان بماند
             var brush = state switch
             {
-                "connecting" => new SolidColorBrush(Color.FromRgb(0x3B, 0x82, 0xF6)),
+                "connecting" or "reconnecting" => new SolidColorBrush(Color.FromRgb(0x3B, 0x82, 0xF6)),
                 "connected" => new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E)),
                 "error" => new SolidColorBrush(Color.FromRgb(0xEF, 0x44, 0x44)),
                 _ => new SolidColorBrush(Color.FromRgb(0x33, 0x41, 0x55)),

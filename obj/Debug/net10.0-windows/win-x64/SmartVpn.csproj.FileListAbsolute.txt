@@ -11,6 +11,7 @@ C:\Users\MrA-Desktop\SmartVpn-final\bin\Debug\net10.0-windows\win-x64\README.txt
 C:\Users\MrA-Desktop\SmartVpn-final\bin\Debug\net10.0-windows\win-x64\NETFASTVIP.deps.json
 C:\Users\MrA-Desktop\SmartVpn-final\bin\Debug\net10.0-windows\win-x64\NETFASTVIP.runtimeconfig.json
 C:\Users\MrA-Desktop\SmartVpn-final\bin\Debug\net10.0-windows\win-x64\NETFASTVIP.dll
+C:\Users\MrA-Desktop\SmartVpn-final\bin\Debug\net10.0-windows\win-x64\QRCoder.dll
 C:\Users\MrA-Desktop\SmartVpn-final\bin\Debug\net10.0-windows\win-x64\Microsoft.CSharp.dll
 C:\Users\MrA-Desktop\SmartVpn-final\bin\Debug\net10.0-windows\win-x64\Microsoft.VisualBasic.Core.dll
 C:\Users\MrA-Desktop\SmartVpn-final\bin\Debug\net10.0-windows\win-x64\Microsoft.Win32.Primitives.dll
@@ -258,10 +259,12 @@ C:\Users\MrA-Desktop\SmartVpn-final\bin\Debug\net10.0-windows\win-x64\PenImc_cor
 C:\Users\MrA-Desktop\SmartVpn-final\bin\Debug\net10.0-windows\win-x64\PresentationNative_cor3.dll
 C:\Users\MrA-Desktop\SmartVpn-final\bin\Debug\net10.0-windows\win-x64\vcruntime140_cor3.dll
 C:\Users\MrA-Desktop\SmartVpn-final\bin\Debug\net10.0-windows\win-x64\wpfgfx_cor3.dll
+C:\Users\MrA-Desktop\SmartVpn-final\obj\Debug\net10.0-windows\win-x64\SmartVpn.csproj.AssemblyReference.cache
 C:\Users\MrA-Desktop\SmartVpn-final\obj\Debug\net10.0-windows\win-x64\AboutDialog.baml
 C:\Users\MrA-Desktop\SmartVpn-final\obj\Debug\net10.0-windows\win-x64\AskDialog.baml
 C:\Users\MrA-Desktop\SmartVpn-final\obj\Debug\net10.0-windows\win-x64\ConnectionDialog.baml
 C:\Users\MrA-Desktop\SmartVpn-final\obj\Debug\net10.0-windows\win-x64\CredentialsDialog.baml
+C:\Users\MrA-Desktop\SmartVpn-final\obj\Debug\net10.0-windows\win-x64\HotspotWindow.baml
 C:\Users\MrA-Desktop\SmartVpn-final\obj\Debug\net10.0-windows\win-x64\MainWindow.baml
 C:\Users\MrA-Desktop\SmartVpn-final\obj\Debug\net10.0-windows\win-x64\SpeedTestDialog.baml
 C:\Users\MrA-Desktop\SmartVpn-final\obj\Debug\net10.0-windows\win-x64\SubscriptionDialog.baml
@@ -270,6 +273,7 @@ C:\Users\MrA-Desktop\SmartVpn-final\obj\Debug\net10.0-windows\win-x64\AboutDialo
 C:\Users\MrA-Desktop\SmartVpn-final\obj\Debug\net10.0-windows\win-x64\AskDialog.g.cs
 C:\Users\MrA-Desktop\SmartVpn-final\obj\Debug\net10.0-windows\win-x64\ConnectionDialog.g.cs
 C:\Users\MrA-Desktop\SmartVpn-final\obj\Debug\net10.0-windows\win-x64\CredentialsDialog.g.cs
+C:\Users\MrA-Desktop\SmartVpn-final\obj\Debug\net10.0-windows\win-x64\HotspotWindow.g.cs
 C:\Users\MrA-Desktop\SmartVpn-final\obj\Debug\net10.0-windows\win-x64\MainWindow.g.cs
 C:\Users\MrA-Desktop\SmartVpn-final\obj\Debug\net10.0-windows\win-x64\SpeedTestDialog.g.cs
 C:\Users\MrA-Desktop\SmartVpn-final\obj\Debug\net10.0-windows\win-x64\SubscriptionDialog.g.cs

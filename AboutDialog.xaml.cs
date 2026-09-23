@@ -25,6 +25,7 @@ public partial class AboutDialog : Window
     public AboutDialog(string telegramUrl, string panelUrl, string supportUrl)
     {
         InitializeComponent();
+        Loaded += (_, _) => Localization.Watch(this);
         _telegramUrl = telegramUrl;
         _panelUrl = panelUrl;
         _supportUrl = supportUrl;

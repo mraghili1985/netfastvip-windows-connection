@@ -26,7 +26,6 @@ namespace SmartVpn
 {
     public partial class MainWindow : Window
     {
-        // ================= جعبه‌ابزار (کلیک یک‌باره) =================
         private async void FlushDns_Click(object sender, RoutedEventArgs e)
         {
             AppendLog("> ipconfig /flushdns");
@@ -41,14 +40,12 @@ namespace SmartVpn
             await RunToolAsync("ipconfig", "/renew");
         }
 
-        // ================= تست سرعت (پاپ‌آپ) =================
         private void SpeedTest_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new SpeedTestDialog(_engine.IsRunning, ActiveConnText.Text) { Owner = this };
             dlg.ShowDialog();
         }
 
-        // ================= وضعیت اشتراک (پاپ‌آپ) =================
         private const string MsgSubNotConfigured = "استعلام اشتراک در این نسخه پیکربندی نشده است (PortalApiUrl در config.json).";
 
         private void Subscription_Click(object sender, RoutedEventArgs e)
@@ -60,24 +57,32 @@ namespace SmartVpn
                 return;
             }
 
-            // پیش‌فرض: یوزر/پس کانکشن فعال؛ وگرنه اولین پروفایلی که نام کاربری دارد
             var prof = _config.Connections.FirstOrDefault(c => c.Name == ActiveConnText.Text && c.IsOfficial && c.Username.Length > 0)
                     ?? _config.Connections.FirstOrDefault(c => c.IsOfficial && c.Username.Length > 0);
 
             var dlg = new SubscriptionDialog(url, prof?.Username ?? "", prof?.Password ?? "") { Owner = this };
-            // تیک «ذخیره» در دیالوگ اشتراک: یوزر/پسِ تأییدشده روی همه کانکشن‌های رسمی ست می‌شود
             dlg.OnSaveCredentials = (u, p) =>
             {
-                foreach (var c in _config.Connections.Where(x => x.Source == "official"))
+                // اطلاعات جدید روی همه کانکشن‌های رسمی ذخیره شود.
+                // بعضی پروفایل‌ها فقط IsOfficial دارند و بعضی فقط Source=official؛
+                // بنابراین هر دو حالت را پوشش می‌دهیم.
+                foreach (var c in _config.Connections.Where(x =>
+                    x.IsOfficial || string.Equals(x.Source, "official", StringComparison.OrdinalIgnoreCase)))
                 {
-                    c.Username = u; c.Password = p;
+                    c.Username = u;
+                    c.Password = p;
                 }
+
                 _config.Save();
                 RefreshList();
-                TryAutoCheckSubscriptionSummaryOnce();
+
+                // این متد فقط یک‌بار اجرا می‌شود؛ اگر قبلاً اجرا شده باشد،
+                // بعد از ذخیره اعتبارهای جدید کارت دیگر به‌روزرسانی نمی‌شود.
+                // وضعیت را آزاد می‌کنیم و استعلام را فوراً دوباره انجام می‌دهیم.
+                _subAutoCheckDone = false;
+                _ = RefreshSubscriptionSummaryAsync();
             };
 
-            // سینک کانکشن‌ها از پورتال بعد از هر لاگین موفق (بدون توجه به تیک ذخیره)
             dlg.OnSyncConnections = async (portalClient, u, p) =>
             {
                 var result = await PortalSyncService.SyncFromPortalAsync(portalClient, _config, u, p);
@@ -85,17 +90,14 @@ namespace SmartVpn
                 Dispatcher.Invoke(() =>
                 {
                     RefreshList();
-
                 });
             };
             dlg.ShowDialog();
         }
 
-        // ================= کارت خلاصه اشتراک (پایین صفحه) =================
         private bool _subAutoCheckDone;
         private bool _subRefreshInFlight;
 
-        // استعلام خودکار فقط یک‌بار در هر سشن — اولین باری که یوزر/پس معتبری وجود داشته باشد (استارتاپ یا بعد از ذخیرهٔ جدید) — بعدازش فقط با کلیک روی دکمهٔ رفرش انجام می‌شود
         private void TryAutoCheckSubscriptionSummaryOnce()
         {
             if (_subAutoCheckDone) return;
@@ -112,23 +114,20 @@ namespace SmartVpn
             _ = RefreshSubscriptionSummaryAsync();
         }
 
-        // کلیک روی بدنهٔ کارت = همان پاپ‌آپ زندهٔ موجود، با استعلام تازه
         private void SubSummaryCard_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             Subscription_Click(sender, new RoutedEventArgs());
         }
 
-        // باز/بسته‌کردن جزئیات کارت خلاصه — مثل کارت اینفو، کلیک روی فلش صفحه رو بزرگ نمی‌کنه و پاپ‌آپ رو باز نمی‌کنه
-        // بجژ رنگی وضعیت کنار عنوان کارت: سبز = فعال، نارنجی = رو به اتمام (کمتر از ۱ روز یا کمتر از ۱۰٪ حجم)، قرمز = منقضی
         private void UpdateSubActiveBadge(double? remainingSeconds, double? leftGb, double quotaGb)
         {
             string text; string hex;
             var expired = (remainingSeconds != null && remainingSeconds <= 0) || (leftGb != null && leftGb <= 0);
             var low = !expired && ((remainingSeconds != null && remainingSeconds <= 86400) ||
                                     (leftGb != null && quotaGb > 0 && leftGb <= quotaGb * 0.1));
-            if (expired) { text = "منقضی"; hex = "#EF4444"; }
-            else if (low) { text = "رو به اتمام"; hex = "#F59E0B"; }
-            else { text = "فعال"; hex = "#22C55E"; }
+            if (expired) { text = Localization.T("منقضی"); hex = "#EF4444"; }
+            else if (low) { text = Localization.T("رو به اتمام"); hex = "#F59E0B"; }
+            else { text = Localization.T("فعال"); hex = "#22C55E"; }
 
             var color = (Color)ColorConverter.ConvertFromString(hex);
             var brush = new SolidColorBrush(color);
@@ -138,7 +137,6 @@ namespace SmartVpn
             SubActiveBadge.Background = new SolidColorBrush(color) { Opacity = 0.12 };
         }
 
-        // نمایش حالت خالی کارت اشتراک: قبل از ست‌شدن یوزر/پس رسمی یا وقتی استعلام امکان‌پذیر نیست
         private void ShowSubCardEmpty()
         {
             SubActiveBadge.Visibility = Visibility.Collapsed;
@@ -147,7 +145,6 @@ namespace SmartVpn
             SubEmptyText.Visibility = Visibility.Visible;
         }
 
-        // نمایش حالت پر کارت اشتراک: بعد از استعلام موفق با یوزر/پس یک کانکشن رسمی
         private void ShowSubCardFilled()
         {
             SubEmptyText.Visibility = Visibility.Collapsed;
@@ -189,14 +186,13 @@ namespace SmartVpn
                 var checkedAt = DateTime.Now;
 
                 SubTimeLeftText.Text = FormatRemainingShort(remaining);
-                SubDataLeftText.Text = leftGb != null ? leftGb.Value.ToString("0.##", CultureInfo.InvariantCulture) + " گیگ" : "—";
-                SubUpdatedText.Text = "آخرین به‌روزرسانی: " + checkedAt.ToString("HH:mm", CultureInfo.InvariantCulture);
+                SubDataLeftText.Text = leftGb != null ? leftGb.Value.ToString("0.##", CultureInfo.InvariantCulture) + " " + Localization.T("گیگ") : "—";
+                SubUpdatedText.Text = Localization.T("آخرین به‌روزرسانی: ") + checkedAt.ToString("HH:mm", CultureInfo.InvariantCulture);
                 UpdateSubActiveBadge(remaining, leftGb, quotaGb);
                 ShowSubCardFilled();
             }
             catch
             {
-                // خطای شبکه/احراز هویت — بی‌صدا نادیده می‌گیریم، مقدار قبلی روی کارت (اگر بود) دست‌نخورده باقی می‌ماند
             }
             finally
             {
@@ -208,11 +204,11 @@ namespace SmartVpn
         private static string FormatRemainingShort(double? seconds)
         {
             if (seconds == null) return "—";
-            if (seconds <= 0) return "منقضی شده ❌";
+            if (seconds <= 0) return Localization.T("منقضی شده ❌");
             var t = TimeSpan.FromSeconds(seconds.Value);
             var days = (int)t.TotalDays;
             var hours = t.Hours;
-            return days > 0 ? $"{days} روز و {hours} ساعت" : $"{Math.Max(1, hours)} ساعت";
+            return days > 0 ? Localization.T("{0} روز و {1} ساعت").Replace("{0}", days.ToString()).Replace("{1}", hours.ToString()) : Math.Max(1, hours) + " " + Localization.T("ساعت");
         }
 
         private void StartSubRefreshSpin()
@@ -294,7 +290,6 @@ namespace SmartVpn
             catch (Exception ex) { AppendLog(exe + " failed: " + ex.Message); }
         }
 
-        // اجرای پروسه با خروجی زنده — هر خط همان لحظه در گزارش ثبت می‌شود، نه بعد از پایان پروسه
         private Process? StartStreamingProc(string exe, string args)
         {
             var psi = new ProcessStartInfo(exe, args)
@@ -313,7 +308,6 @@ namespace SmartVpn
             return proc;
         }
 
-        // ================= پینگ / Traceroute با هدف دلخواه و Start/Stop =================
         private string? ResolveToolTarget()
         {
             var t = ToolTargetBox.Text.Trim();
@@ -339,11 +333,10 @@ namespace SmartVpn
             var target = ResolveToolTarget();
             if (target == null) return;
 
-            PingToggleBtn.Content = "⏹ توقف پینگ";
+            PingToggleBtn.Content = Localization.T("⏹ توقف پینگ");
             AppendLog("> ping -t " + target);
             try
             {
-                // پینگ پیوسته با خروجی زنده — هر جواب همان لحظه دیده می‌شود؛ تا زدن «توقف» ادامه دارد
                 _pingProc = StartStreamingProc("ping", "-t " + target);
                 if (_pingProc != null) await _pingProc.WaitForExitAsync();
             }
@@ -352,7 +345,7 @@ namespace SmartVpn
             {
                 _pingProc?.Dispose();
                 _pingProc = null;
-                PingToggleBtn.Content = "🏓 شروع پینگ";
+                PingToggleBtn.Content = Localization.T("🏓 شروع پینگ");
             }
         }
 
@@ -368,11 +361,10 @@ namespace SmartVpn
             var target = ResolveToolTarget();
             if (target == null) return;
 
-            TracerouteToggleBtn.Content = "⏹ توقف Traceroute";
+            TracerouteToggleBtn.Content = Localization.T("⏹ توقف Traceroute");
             AppendLog("> tracert -h 20 -w 800 " + target);
             try
             {
-                // خروجی زنده — هر هاپ همان لحظه در گزارش دیده می‌شود
                 _tracertProc = StartStreamingProc("tracert", "-h 20 -w 800 " + target);
                 if (_tracertProc != null) await _tracertProc.WaitForExitAsync();
             }
@@ -381,112 +373,13 @@ namespace SmartVpn
             {
                 _tracertProc?.Dispose();
                 _tracertProc = null;
-                TracerouteToggleBtn.Content = "🛰 شروع Traceroute";
+                TracerouteToggleBtn.Content = Localization.T("🛰 شروع Traceroute");
             }
         }
 
-        // ================= متفرقه =================
         private void ClearLog_Click(object sender, RoutedEventArgs e)
         {
             LogBox.Clear();
         }
-
-
-        // ================= WiFi Hotspot =================
-        private readonly HotspotService _hotspot = new();
-        private System.Windows.Threading.DispatcherTimer? _hotspotStatusTimer;
-
-        private async void HotspotToggle_Click(object sender, RoutedEventArgs e)
-        {
-            if (_hotspot.IsRunning)
-            {
-                HotspotToggleBtn.IsEnabled = false;
-                await _hotspot.StopAsync();
-                _hotspotStatusTimer?.Stop();
-                SetHotspotUiOff();
-                return;
-            }
-
-            var ssid = HotspotSsidBox.Text.Trim();
-            var pass = HotspotPassBox.Text.Trim();
-            if (ssid.Length == 0) { AppendLog("[Hotspot] نام شبکه را وارد کنید."); return; }
-            if (pass.Length < 8)  { AppendLog("[Hotspot] رمز عبور حداقل ۸ کاراکتر باشد."); return; }
-
-            // بررسی پشتیبانی درایور
-            HotspotToggleBtn.IsEnabled = false;
-            HotspotToggleBtn.Content = "در حال بررسی...";
-            AppendLog("> netsh wlan show drivers");
-            var driversOut = await RunToolOutputAsync("netsh", "wlan show drivers");
-            bool supported = driversOut.Contains("Hosted network supported  : Yes",
-                StringComparison.OrdinalIgnoreCase);
-            if (!supported)
-            {
-                AppendLog("[Hotspot] وایرلس لن سیستم شما این متد را پشتیبانی نمی‌کند.");
-                SetHotspotUiOff();
-                return;
-            }
-
-            HotspotToggleBtn.Content = "در حال راه‌اندازی...";
-            HotspotService.Log += msg => Dispatcher.Invoke(() => AppendLog(msg));
-            var (ok, err) = await _hotspot.StartAsync(ssid, pass);
-            if (!ok) { AppendLog("[Hotspot] خطا: " + err); SetHotspotUiOff(); return; }
-
-            SetHotspotUiOn(ssid, pass);
-            _hotspotStatusTimer = new System.Windows.Threading.DispatcherTimer
-                { Interval = TimeSpan.FromSeconds(5) };
-            _hotspotStatusTimer.Tick += async (_, _) =>
-            {
-                var c = await HotspotService.GetConnectedDevicesCountAsync();
-                HotspotDevicesText.Text = c == 0 ? "" : $"{c} دستگاه متصل";
-            };
-            _hotspotStatusTimer.Start();
-        }
-
-        // خروجی RunToolAsync با خروجی string — برای خواندن نتیجه دستور
-        private async Task<string> RunToolOutputAsync(string exe, string args)
-        {
-            try
-            {
-                var psi = new System.Diagnostics.ProcessStartInfo(exe, args)
-                {
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                };
-                using var proc = System.Diagnostics.Process.Start(psi)!;
-                var stdout = await proc.StandardOutput.ReadToEndAsync();
-                var stderr = await proc.StandardError.ReadToEndAsync();
-                await proc.WaitForExitAsync();
-                return stdout + stderr;
-            }
-            catch (Exception ex) { return ex.Message; }
-        }
-
-        private void SetHotspotUiOn(string ssid, string pass)
-        {
-            HotspotToggleBtn.IsEnabled  = true;
-            HotspotToggleBtn.Content    = "⏹ خاموش‌کردن Hotspot";
-            HotspotStatusText.Text      = "✅ فعال";
-            HotspotStatusText.Foreground = new SolidColorBrush(
-                (Color)ColorConverter.ConvertFromString("#22C55E"));
-            HotspotSsidBox.IsEnabled    = false;
-            HotspotPassBox.IsEnabled    = false;
-            HotspotDevicesText.Text     = "";
-            AppendLog($"[Hotspot] فعال — {ssid} / {pass}");
-        }
-
-        private void SetHotspotUiOff()
-        {
-            HotspotToggleBtn.IsEnabled  = true;
-            HotspotToggleBtn.Content    = "📶 روشن‌کردن Hotspot";
-            HotspotStatusText.Text      = "غیرفعال";
-            HotspotStatusText.Foreground = new SolidColorBrush(
-                (Color)ColorConverter.ConvertFromString("#9CA3AF"));
-            HotspotSsidBox.IsEnabled    = true;
-            HotspotPassBox.IsEnabled    = true;
-            HotspotDevicesText.Text     = "";
-        }
-
     }
 }

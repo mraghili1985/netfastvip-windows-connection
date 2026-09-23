@@ -41,8 +41,13 @@ public partial class App : Application
         }
 
         base.OnStartup(e);
-        try { ApplyTheme(AppConfig.Load().Theme); }
-        catch { ApplyTheme("dark"); }
+        try
+        {
+            var cfg = AppConfig.Load();
+            Localization.SetLanguage(cfg.Language);
+            ApplyTheme(cfg.Theme);
+        }
+        catch { Localization.SetLanguage("fa"); ApplyTheme("dark"); }
 
         // اعمال خودکار روی همه پنجره‌ها (پاپ‌آپ‌ها هم) بعد از ساخته‌شدن هندل:
         // ۱) پس‌زمینه کمی متمایز برای پاپ‌آپ‌ها تا روی برنامه مشخص باشند
@@ -52,6 +57,7 @@ public partial class App : Application
             {
                 if (s is Window w)
                 {
+                    Localization.Watch(w);
                     ApplyPopupTint(w);
                     DarkTitleBar.Apply(w);
                 }

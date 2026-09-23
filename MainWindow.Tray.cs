@@ -55,6 +55,7 @@ namespace SmartVpn
 
             RootGrid.Visibility = Visibility.Collapsed;
             MiniWidget.Visibility = Visibility.Visible;
+            TitleBarRow.Height = new GridLength(0);
 
             // حذف نوار عنوان ویندوز تا فقط خود کارت دیده شود (بدون Always-on-Top)
             WindowStyle = WindowStyle.None;
@@ -71,11 +72,12 @@ namespace SmartVpn
 
             MiniWidget.Visibility = Visibility.Collapsed;
             RootGrid.Visibility = Visibility.Visible;
+            TitleBarRow.Height = new GridLength(31);
 
-            WindowStyle = WindowStyle.SingleBorderWindow;
+            WindowStyle = WindowStyle.None;
             Width = _normalWidth; Height = _normalHeight;
             Left = _normalLeft; Top = _normalTop;
-            ResizeMode = ResizeMode.CanMinimize;
+            ResizeMode = ResizeMode.NoResize;
         }
 
 
@@ -88,7 +90,7 @@ namespace SmartVpn
                 {
                     var text = new TextBlock
                     {
-                        Text = message,
+                        Text = Localization.T(message),
                         Foreground = new SolidColorBrush(Color.FromRgb(0xF8, 0xFA, 0xFC)),
                         FontSize = 12.5,
                         TextWrapping = TextWrapping.Wrap,

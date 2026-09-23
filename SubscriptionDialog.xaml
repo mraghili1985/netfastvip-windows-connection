@@ -89,7 +89,7 @@
                 Style="{StaticResource DlgBtn}" Margin="0,12,0,0"
                 FlowDirection="RightToLeft"/>
 
-        <CheckBox x:Name="SaveCheck" Content="ذخیره یوزر/پس برای همه کانکشن‌های رسمی"
+        <CheckBox x:Name="SaveCheck" IsChecked="True" Content="ذخیره یوزر/پس برای همه کانکشن‌های رسمی"
                   FontSize="11" Margin="2,8,0,0" FlowDirection="RightToLeft"
                   Foreground="{DynamicResource SubTextBrush}"/>
 

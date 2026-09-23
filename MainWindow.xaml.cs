@@ -24,7 +24,6 @@ namespace SmartVpn
 {
     public partial class MainWindow : Window
     {
-        // ----- متون فارسی متمرکز (بقیه فایل انگلیسی) -----
         private const string TxtReady = "آماده اتصال";
         private const string TxtConnecting = "در حال اتصال...";
         private const string TxtConnected = "متصل";
@@ -71,51 +70,44 @@ namespace SmartVpn
         private readonly List<double> _ulHistory = new List<double>();
 
         private string? _selectedName;
-        // نام پروفایلی که واقعا الان وصل است، فقط در OnEngineConnected تنظیم می‌شود -
-        // برخلاف _selectedName که با یک تک‌کلیک روی کارت هم بدون اتصال واقعی تغییر می‌کند
         private string? _connectedName;
+        private string _currentStatusKey = "آماده اتصال"; // کلید فارسی وضعیت جاری برای ترجمه مجدد هنگام تغییر زبان
         private bool _isMiniMode;
         private int _geoGen;
-        private bool _ready;          // جلوگیری از شلیک رویدادها هنگام لود اولیه
+        private bool _ready;
 
-        // تشخیص تم روشن/تیره فعلی برای رنگ‌بندی مناسب کارت‌های کانکشن
         internal bool IsLightTheme()
         {
-            // قبلاً اینجا دوباره رجیستری چک می‌شد که برای حالت "system" می‌توانست با نتیجه‌ی
-            // واقعی که App.ApplyTheme روی DynamicResource ها (کارت بالا و بقیه‌ی برنامه) اعمال
-            // کرده بود هم‌خوان نباشد (مثلاً بین لحظه‌ی استارت و لحظه‌ی رسم لیست، یا خطای رجیستری)؛
-            // برای همین لیست کانکشن‌ها گاهی با رنگ اشتباه (مثلاً کارت روشن روی تم تیره) می‌ماند.
-            // حالا از همان پرچم نهایی و قطعی App.IsDark استفاده می‌شود تا همیشه یکسان باشند.
             return !App.IsDark;
         }
-        private bool _suppressTheme;  // جلوگیری از حلقه رویداد تم
-        private bool _everConnected;   // اعلان «قطع شد» فقط بعد از یک اتصال واقعی
-        private bool _wasReconnecting; // تشخیص «اتصال مجدد برقرار شد»
-        private bool _manualStop;      // قطع دستی توسط کاربر (قطع ناخواسته = رنگ قرمز)
-        private string _currentPowerState = "off"; // آخرین وضعیت واقعی که SetPowerState اعمال کرده (off/connecting/connected/error) — منبع مرجع برای هم‌خوانی بج لیست کانکشن‌ها با کارت بالا
+        
+        private bool _everConnected;
+        private bool _wasReconnecting;
+        private bool _manualStop;
+        private string _currentPowerState = "off";
 
         private DispatcherTimer? _statsTimer;
         private DateTime _connectStart;
         private long _lastDownBytes = -1;
         private long _lastUpBytes = -1;
         private long _sessionStartTotalBytes;
-        private string? _tunnelLocalIp; // IP تانل — برای شناسایی آداپتور تانل
-        private string? _tunnelNicId;   // آداپتور تانل شناسایی‌شده — منبع دقیق شمارش حجم
-        private int _nicFindTries;      // شمارنده تلاش برای شناسایی آداپتور تانل (برای لاگ هشدار)
+        private string? _tunnelLocalIp;
+        private string? _tunnelNicId;
+        private int _nicFindTries;
 
-        private string? _pingHost;   // هدف پینگ زنده (سرور کانکشن فعال)
-        private string? _tunnelPeerIp; // IP واقعی سرور از لاگ خود تونل (OpenVPN) — دقیق‌تر از DNS
-        private HashSet<string> _routesBeforeConnect = new(); // عکس از routeهای /32 قبل از اتصال — route جدید = سرور واقعی
+        private string? _pingHost;
+        private string? _tunnelPeerIp;
+        private HashSet<string> _routesBeforeConnect = new();
         private int _pingTick;
-        private int _pingFails;      // شکست‌های پیاپی پینگ — برای نشانگر «ناپایدار»
-        private bool _pingInFlight;  // جلوگیری از هم‌پوشانی دو پینگ زنده وقتی فاصله کوتاه شده
+        private int _pingFails;
+        private bool _pingInFlight;
 
-        private int _idleTick;         // شمارنده ثانیه برای پنجره یک‌دقیقه‌ای بی‌استفادگی
-        private long _idleWindowBytes; // ترافیک ردوبدل‌شده در دقیقه جاری
-        private int _idleMinutes;      // دقیقه‌های پیاپی بی‌استفادگی
-        private bool _activeIsWg;      // پروتکل فعلی WireGuard یا AmneziaWG است — برای نمایش هندشیک
-        private bool _reallyExit;      // خروج واقعی از منوی تری (به‌جای مخفی‌شدن)
-        private bool _trayHintShown;   // اعلان راهنمای تری فقط یک بار
+        private int _idleTick;
+        private long _idleWindowBytes;
+        private int _idleMinutes;
+        private bool _activeIsWg;
+        private bool _reallyExit;
+        private bool _trayHintShown;
 
         private double _normalWidth, _normalHeight, _normalLeft, _normalTop;
         private string? _nicBase;
@@ -128,7 +120,6 @@ namespace SmartVpn
         private const string RunKeyPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
         private const string RunValueName = "NETFASTVIP";
 
-        // ریسپانسیو: روی مانیتورهای کوچیک (مثل لپ‌تاپ HD) کل UI با حفظ نسبت کوچیک می‌شه تا از صفحه بیرون نزنه
         private double _uiScale = 1.0;
 
         private void FitToScreen()
@@ -146,31 +137,33 @@ namespace SmartVpn
         public MainWindow()
         {
             InitializeComponent();
-            // برندینگ از config.json — عنوان پنجره و نام هدر
             Title = AppConfig.BrandName;
             BrandTitleText.Text = AppConfig.BrandName;
             FitToScreen();
 
-            // بررسی نسخه جدید از روی هاست — بی‌صدا؛ فقط اگر نسخه جدید بود می‌پرسد (UpdateChecker.cs)
             Loaded += async (_, _) => await UpdateChecker.CheckAsync(this);
-
-            // بررسی و اعمال پکیج کانکشن‌ها (سرورها/base.ovpn/CA) — اگر چیزی تغییر کند خلاصه‌اش با یک پیام به کاربر نشان داده می‌شود (ConnectionsUpdateChecker.cs)
             Loaded += async (_, _) => await ConnectionsUpdateChecker.CheckAsync(this, _config);
 
             _engine.Log += AppendConnLog;
+            _hotspot.Log += AppendConnLog;
             _engine.Connected += OnEngineConnected;
+            
+            // اتصال رویدادهای هات‌اسپات داخلی
+            _engine.Connected += delegate { Dispatcher.Invoke(() => { try { HsOnVpnConnected(); } catch {} }); };
             _engine.Reconnecting += OnEngineReconnecting;
+            _engine.Reconnecting += delegate { Dispatcher.Invoke(() => { try { HsHandleVpnDisconnect(); } catch {} }); };
             _engine.Stopped += OnEngineStopped;
+            _engine.Stopped += delegate { Dispatcher.Invoke(() => { try { HsHandleVpnDisconnect(); } catch {} }); };
+
             _engine.AuthFailed += OnEngineAuthFailed;
 
             SplitTunnel.Log += AppendConnLog;
             KillSwitch.Log += AppendConnLog;
             RasProvider.Log += AppendConnLog;
-            OpenVpnProvider.Log += AppendConnLog; // خروجی openvpn.exe — منبع IP واقعی سرور برای sniff
-            CredentialsDialog.PanelUrl = _config.PanelUrl; // لینک خرید/تمدید در دیالوگ یوزر/پس
+            OpenVpnProvider.Log += AppendConnLog;
+            CredentialsDialog.PanelUrl = _config.PanelUrl;
             DnsManager.Log += AppendConnLog;
 
-            // ثبت کرش‌های غیرمنتظره در app.log برای عیب��یابی
             AppDomain.CurrentDomain.UnhandledException += (_, exArgs) =>
             {
                 try { LogWriter.Write("CRASH: " + exArgs.ExceptionObject); } catch { }
@@ -183,17 +176,18 @@ namespace SmartVpn
             System.Windows.Application.Current.DispatcherUnhandledException += (_, exArgs) =>
             {
                 try { LogWriter.Write("UI CRASH: " + exArgs.Exception); } catch { }
-                exArgs.Handled = true; // جلوگیری از بسته‌شدن کامل برنامه
+                exArgs.Handled = true;
             };
 
-            // در حالت مینیمال، با گرفتن کارت می‌توان پنجره را جابه‌جا کرد
             MiniWidget.MouseLeftButtonDown += (_, __) => { try { DragMove(); } catch { } };
         }
 
-        // ================= DWM دارک تایتل =================
         [DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
 
+        private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+        private const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
+        private const int DWMWCP_ROUND = 2;
         private const int DWMWA_CAPTION_COLOR = 35;
         private const int DWMWA_TEXT_COLOR = 36;
 
@@ -202,29 +196,51 @@ namespace SmartVpn
             try
             {
                 var hwnd = new WindowInteropHelper(this).Handle;
-                int caption = 0x00171717;
-                int text = 0x00F8FAFC;
+                if (hwnd == IntPtr.Zero) return;
+
+                // عنوان ویندوز 11 باید با تم داخلی برنامه هماهنگ بماند.
+                int darkMode = App.IsDark ? 1 : 0;
+                int caption = App.IsDark ? 0x00020817 : 0x00E8ECF1;
+                int text = App.IsDark ? 0x00F8FAFC : 0x000F172A;
+
+                DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref darkMode, sizeof(int));
                 DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, ref caption, sizeof(int));
                 DwmSetWindowAttribute(hwnd, DWMWA_TEXT_COLOR, ref text, sizeof(int));
+                int cornerPreference = DWMWCP_ROUND;
+                DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerPreference, sizeof(int));
             }
             catch { }
         }
 
-        // ================= Lifecycle =================
+        private void AppTitleBar_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton != System.Windows.Input.MouseButton.Left) return;
+            if (e.ClickCount == 2) return;
+            try { DragMove(); } catch { }
+        }
+
+        private void TitleMinimizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Minimized;
+        }
+
+        private void TitleCloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             ApplyDarkTitleBar();
+            Localization.SetLanguage(_config.Language);
+            if (_config.Language == "en") LangEnRb.IsChecked = true;
+            else LangFaRb.IsChecked = true;
             ApplyThemeChoice(_config.Theme);
             InitStartupToggle();
 
-            // درگ‌اند‌دراپ فایل در حالت ادمین — بدون این، ویندوز دراپ روی پنجره ادمین را بلاک می‌کند
             EnableElevatedDragDrop();
 
-            // نوار اسکرول تنظیمات مخفی — اسکرول با غلتک ماوس همچنان کار می‌کند
-            // (صفحه ابزارها دیگر اسکرول ندارد — فقط کادر گزارش اسکرول می‌شود)
-            SettingsPanel.VerticalScrollBarVisibility = ScrollBarVisibility.Hidden;
-
-            // اسکرول‌بار لیست کانکشن‌ها هم مخفی — اسکرول با غلتک ماوس کار می‌کند
+            SettingsPanel.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
             HideConnListScrollBar();
 
             SmartToggle.IsChecked = _config.SmartSwitch;
@@ -259,23 +275,18 @@ namespace SmartVpn
             DnsPrimaryBox.Text = _config.DnsPrimary;
             DnsSecondaryBox.Text = _config.DnsSecondary;
 
-            // پاک‌سازی روت‌های به‌جامانده از اجرای قبلی (کرش/بسته‌شدن ناگهانی)
-            // نکته: چون KillSwitch از FWPM_SESSION_FLAG_DYNAMIC استفاده می‌کند، اگر برنامه قبلاً
-            // کرش کرده باشد، خود ویندوز فیلترهای آن Session را حذف کرده — نیازی به پاک‌سازی دس����������ی در استارتاپ نیست.
             _ = Task.Run(async () => { try { await SplitTunnel.ClearAsync(); } catch { } });
 
             TryFirstRunImport();
             InitTray();
 
-            // بازیابی رفتار سیو‌شدهی لیست کانکشن‌ها از اجرای قبلی برنامه: وضعیت باز/بسته «نمایش بیشتر» و اینکه آخرین کانکشنی که واقعاً وصل بوده
-            // به‌طور انتخاب‌شده/هایلایت در بالای لیست بماند (ردیف لیست هم خودش به‌دلیل MoveToTop از قبل بر اساس استفاده‌ی واقعی مرتب مانده)
             _connListExpanded = _config.ConnListExpanded;
             if (!string.IsNullOrEmpty(_config.LastConnectedName) &&
                 _config.Connections.Any(c => c.Name == _config.LastConnectedName))
                 _selectedName = _config.LastConnectedName;
 
             RefreshList();
-            TryAutoCheckSubscriptionSummaryOnce(); // استعلام خودکار یک‌باره وضعیت اشتراک اگر یوزر/پس از قبل ذخیره شده
+            TryAutoCheckSubscriptionSummaryOnce();
 
             ShowPanel("home");
             SetStatusText(TxtReady);
@@ -286,7 +297,6 @@ namespace SmartVpn
 
         private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
-            // مخفی‌شدن کنار ساعت به‌جای بستن (اگر در تنظیمات فعال باشد)
             if (_config.MinimizeToTray && !_reallyExit)
             {
                 e.Cancel = true;
@@ -299,7 +309,6 @@ namespace SmartVpn
                 return;
             }
 
-            // اگر VPN وصل است، قبل از خروج تأیید بگیر — خروج از منوی تری آگاهانه است و بدون سؤال
             if (_engine.IsRunning && !_reallyExit && !AskDialog.Confirm(this, MsgExitConfirm))
             {
                 e.Cancel = true;
@@ -308,9 +317,108 @@ namespace SmartVpn
 
             _geoGen++;
             try { _tray?.Dispose(); } catch { }
+            try { HsForceStopAsync().Wait(2000); } catch { }
             try { SplitTunnel.ClearAsync().Wait(2000); } catch { }
             try { KillSwitch.DisableAsync().Wait(2000); } catch { }
             try { _engine.StopAsync().Wait(4000); } catch { }
+        }
+
+        private void OpenHotspotWindow_Click(object sender, RoutedEventArgs e)
+        {
+            SetPanelFromHotspotNavigation("hotspot");
+
+            HsCheckVpnState();
+            _ = HsRefreshAdaptersAsync(searchForTarget: false);
+        }
+
+        // این handlerها نام‌های اختصاصی دارند تا با handlerهای قبلی پروژه
+        // مثل ShowPanel، Nav_Click یا HeaderLogBtn_Click تداخل نداشته باشند.
+        private void HotspotNavHome_Click(object sender, RoutedEventArgs e)
+        {
+            SetPanelFromHotspotNavigation("home");
+        }
+
+        private void HotspotNavTools_Click(object sender, RoutedEventArgs e)
+        {
+            SetPanelFromHotspotNavigation("tools");
+        }
+
+        private void HotspotNavSettings_Click(object sender, RoutedEventArgs e)
+        {
+            SetPanelFromHotspotNavigation("settings");
+        }
+
+        private void HotspotNavLogs_Click(object sender, RoutedEventArgs e)
+        {
+            SetPanelFromHotspotNavigation("logs");
+        }
+
+        private void SetPanelFromHotspotNavigation(string page)
+        {
+            // ابتدا همه پنل‌ها را مخفی کن؛ این خط مانع باقی‌ماندن هات‌اسپات می‌شود.
+            HomePanel.Visibility = Visibility.Collapsed;
+            ToolboxPanel.Visibility = Visibility.Collapsed;
+            SettingsPanel.Visibility = Visibility.Collapsed;
+            ConnLogPanel.Visibility = Visibility.Collapsed;
+            HotspotPanel.Visibility = Visibility.Collapsed;
+
+            // توقف انیمیشن و بازگرداندن موقعیت پنل‌ها
+            ResetNavigationTransform(HomeTransform);
+            ResetNavigationTransform(ToolsTransform);
+            ResetNavigationTransform(SettingsTransform);
+            ResetNavigationTransform(ConnLogTransform);
+            ResetNavigationTransform(HotspotTransform);
+
+            switch (page)
+            {
+                case "home":
+                    HomePanel.Visibility = Visibility.Visible;
+                    HeaderBrandPanel.Visibility = Visibility.Visible;
+                    HeaderPagePanel.Visibility = Visibility.Collapsed;
+                    break;
+
+                case "tools":
+                    ToolboxPanel.Visibility = Visibility.Visible;
+                    HeaderTitleText.Text = Localization.T("ابزارها و گزارش");
+                    HeaderBrandPanel.Visibility = Visibility.Collapsed;
+                    HeaderPagePanel.Visibility = Visibility.Visible;
+                    break;
+
+                case "settings":
+                    SettingsPanel.Visibility = Visibility.Visible;
+                    HeaderTitleText.Text = Localization.T("تنظیمات");
+                    HeaderBrandPanel.Visibility = Visibility.Collapsed;
+                    HeaderPagePanel.Visibility = Visibility.Visible;
+                    break;
+
+                case "logs":
+                    ConnLogPanel.Visibility = Visibility.Visible;
+                    HeaderTitleText.Text = Localization.T("گزارش کانکشن‌ها");
+                    HeaderBrandPanel.Visibility = Visibility.Collapsed;
+                    HeaderPagePanel.Visibility = Visibility.Visible;
+                    break;
+
+                case "hotspot":
+                    HotspotPanel.Visibility = Visibility.Visible;
+                    HeaderTitleText.Text = Localization.T("VPN WIFI-Direct");
+                    HeaderBrandPanel.Visibility = Visibility.Collapsed;
+                    HeaderPagePanel.Visibility = Visibility.Visible;
+                    break;
+
+                default:
+                    HomePanel.Visibility = Visibility.Visible;
+                    HeaderBrandPanel.Visibility = Visibility.Visible;
+                    HeaderPagePanel.Visibility = Visibility.Collapsed;
+                    break;
+            }
+        }
+
+        private static void ResetNavigationTransform(TranslateTransform transform)
+        {
+            transform.BeginAnimation(TranslateTransform.XProperty, null);
+            transform.BeginAnimation(TranslateTransform.YProperty, null);
+            transform.X = 0;
+            transform.Y = 0;
         }
 
         private void TryFirstRunImport()
@@ -318,7 +426,6 @@ namespace SmartVpn
             try
             {
                 if (_config.Connections.Count > 0) return;
-                // فرمت رسمی: JSON — نام قدیمی و pkg هم برای سازگاری پذیرفته می‌شوند
                 var candidates = new[]
                 {
                     Path.Combine(AppContext.BaseDirectory, "netfastvip-package.json"),
@@ -346,7 +453,6 @@ namespace SmartVpn
                 };
                 _tray.DoubleClick += (_, __) => { Show(); WindowState = WindowState.Normal; Activate(); };
 
-                // منوی راست‌کلیک آیکون تری — نمایش / خروج کامل
                 var trayMenu = new System.Windows.Forms.ContextMenuStrip();
                 trayMenu.Items.Add(TrayShowApp, null, (_, __) =>
                     Dispatcher.Invoke(() => { Show(); WindowState = WindowState.Normal; Activate(); }));
@@ -356,11 +462,8 @@ namespace SmartVpn
             }
             catch { }
         }
-
-
-
-        // لاگ جعبهٔ ابزار — فقط پینگ/تریس و اقدامات جعبهٔابزار (از MainWindow.Tools.cs)
-        private void AppendLog(string line)
+		
+		internal void AppendLog(string line)
         {
             Dispatcher.Invoke(() =>
             {
@@ -371,7 +474,6 @@ namespace SmartVpn
             LogWriter.Write(line);
         }
 
-        // لاگ مجزای کانکشن‌ها — رویدادهای اتصال/قطع/killswitch/dns/split-tunnel/openvpn و غیره — مستقل از لاگ جعبهٔ ابزار
         private void AppendConnLog(string line)
         {
             Dispatcher.Invoke(() =>
@@ -379,7 +481,6 @@ namespace SmartVpn
                 ConnLogBox.AppendText("[" + DateTime.Now.ToString("HH:mm:ss") + "] " + line + Environment.NewLine);
                 ConnLogBox.ScrollToEnd();
 
-                // IP واقعی سرور از لاگ خود OpenVPN — دقیق‌تر از DNS که با چند رکورد ممکن است سرور دیگری را نشان دهد
                 try
                 {
                     string[] markers = { "Peer Connection Initiated with [AF_INET]", "link remote: [AF_INET]", "Preserving recently used remote address: [AF_INET]", "Connecting to [" };
@@ -390,7 +491,6 @@ namespace SmartVpn
                         var rest = line.Substring(idx + marker.Length);
                         if (marker == "Connecting to [")
                         {
-                            // فرمت: Connecting to [host]:port (5.10.249.9) via UDP
                             var p1 = rest.IndexOf('(');
                             var p2 = rest.IndexOf(')');
                             if (p1 >= 0 && p2 > p1 + 1) rest = rest.Substring(p1 + 1, p2 - p1 - 1) + ":";
@@ -412,7 +512,6 @@ namespace SmartVpn
                 }
                 catch { }
 
-                // اسکرول لاگ همیشه روی آخرین داده‌ها بماند — حتی بعد از افزودن خط داخلی
                 ConnLogBox.CaretIndex = ConnLogBox.Text.Length;
                 ConnLogBox.ScrollToEnd();
             });
@@ -447,5 +546,305 @@ namespace SmartVpn
             }
         }
 
+        #region Hotspot Internal Logic
+        private readonly global::SmartVpn.HotspotService _hotspot = new();
+        private DispatcherTimer? _hsStabilizationTimer;
+        private int _hsSecondsRemaining = 0;
+        private bool _isHsVpnConnected = false;
+        private string? _hsBestSrc = null;
+        private DispatcherTimer? _hsClientsTimer;
+        private bool _hsClientsRefreshInFlight;
+
+        private void HsCheckVpnState()
+        {
+            var activeConn = ActiveConnText?.Text?.Trim();
+            _isHsVpnConnected = !string.IsNullOrEmpty(activeConn) && activeConn != "—" && activeConn != Localization.T("قطع شده");
+            HsVpnConnectionText.Text = _isHsVpnConnected ? activeConn : Localization.T("عدم اتصال");
+
+            if (!_isHsVpnConnected)
+            {
+                HsResetAllState(Localization.T("برای استفاده از هات‌اسپات ابتدا به VPN متصل شوید."));
+                HsSourceText.Text = Localization.T("عدم اتصال");
+            }
+        }
+
+        public void HsOnVpnConnected()
+        {
+            _isHsVpnConnected = true;
+            HsVpnConnectionText.Text = ActiveConnText?.Text?.Trim() ?? Localization.T("اتصال VPN");
+            HsCheckVpnState();
+            _hsStabilizationTimer?.Stop();
+            _hsSecondsRemaining = 5;
+
+            BtnHsStart.IsEnabled = false;
+
+            _hsStabilizationTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _hsStabilizationTimer.Tick += async (s, e) =>
+            {
+                _hsSecondsRemaining--;
+                if (_hsSecondsRemaining > 0)
+                {
+                    HsStatusText.Text = Localization.T("⏳ در حال تثبیت شبکه و درایورهای مجازی... ") + $"({_hsSecondsRemaining} ثانیه)";
+                    HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B"));
+                }
+                else
+                {
+                    _hsStabilizationTimer.Stop();
+                    HsStatusText.Text = Localization.T("✅ شبکه تثبیت شد. آماده راه‌اندازی هات‌اسپات.");
+                    HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+                    await HsRefreshAdaptersAsync(searchForTarget: false);
+                    BtnHsStart.IsEnabled = true;
+                }
+            };
+            _hsStabilizationTimer.Start();
+        }
+
+        private async Task<string?> HsRefreshAdaptersAsync(bool searchForTarget)
+        {
+            var adapters = await _hotspot.GetAllAdaptersAsync();
+            var activeConn = ActiveConnText?.Text?.Trim() ?? "";
+
+            _hsBestSrc = null;
+            string? bestTgt = null;
+            bool exactMatchFound = false;
+
+            foreach (string adp in adapters)
+            {
+                if (adp.Contains("Local Area Connection*", StringComparison.OrdinalIgnoreCase) || adp.Contains("Wi-Fi Direct", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (searchForTarget) bestTgt = adp;
+                    continue; 
+                }
+
+                if (exactMatchFound) continue;
+
+                bool isL2TP = activeConn.Contains("L2TP", StringComparison.OrdinalIgnoreCase) && adp.Contains("l2tp", StringComparison.OrdinalIgnoreCase);
+                bool isSSTP = activeConn.Contains("SSTP", StringComparison.OrdinalIgnoreCase) && adp.Contains("sstp", StringComparison.OrdinalIgnoreCase);
+                bool isIKEv2 = activeConn.Contains("IKEv2", StringComparison.OrdinalIgnoreCase) && adp.Contains("ikev2", StringComparison.OrdinalIgnoreCase);
+                bool isPPTP = activeConn.Contains("PPTP", StringComparison.OrdinalIgnoreCase) && adp.Contains("pptp", StringComparison.OrdinalIgnoreCase);
+                bool isOpenVPN = activeConn.Contains("OpenVPN", StringComparison.OrdinalIgnoreCase) && (adp.Contains("OpenVPN", StringComparison.OrdinalIgnoreCase) || adp.Contains("DCO", StringComparison.OrdinalIgnoreCase) || adp.Contains("TAP", StringComparison.OrdinalIgnoreCase));
+                bool isWG = activeConn.Contains("WireGuard", StringComparison.OrdinalIgnoreCase) && (adp.Contains("WireGuard", StringComparison.OrdinalIgnoreCase) || adp.Contains("Wintun", StringComparison.OrdinalIgnoreCase) || adp.Contains("wg", StringComparison.OrdinalIgnoreCase));
+                bool isAmnezia = activeConn.Contains("Amnezia", StringComparison.OrdinalIgnoreCase) && (adp.Contains("Amnezia", StringComparison.OrdinalIgnoreCase) || adp.Contains("Wintun", StringComparison.OrdinalIgnoreCase));
+                bool isExact = adp.Equals(activeConn, StringComparison.OrdinalIgnoreCase) || adp.Contains(activeConn, StringComparison.OrdinalIgnoreCase) || activeConn.Contains(adp, StringComparison.OrdinalIgnoreCase);
+
+                if (isExact) { _hsBestSrc = adp; exactMatchFound = true; }
+                else if (_hsBestSrc == null && (isL2TP || isSSTP || isIKEv2 || isPPTP || isOpenVPN || isWG || isAmnezia)) { _hsBestSrc = adp; }
+            }
+
+            HsSourceText.Text = _hsBestSrc ?? Localization.T("پیدا نشد");
+            return bestTgt;
+        }
+
+        private async void BtnHsStart_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_isHsVpnConnected || string.IsNullOrEmpty(_hsBestSrc))
+            {
+                MessageBox.Show(Localization.T("کارت شبکه اینترنت (VPN) یافت نشد."), Localization.T("اخطار"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            BtnHsStart.IsEnabled = false;
+            BtnHsStop.IsEnabled = false;
+            BtnHsRestart.IsEnabled = false;
+            HsStatusText.Text = Localization.T("مرحله ۱: راه‌اندازی هات‌اسپات...");
+            HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3B82F6"));
+
+            var startResult = await _hotspot.StartHotspotOnlyAsync(_hsBestSrc);
+            if (!startResult.ok)
+            {
+                HsStatusText.Text = Localization.T("خطا در روشن شدن هات‌اسپات!");
+                HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
+                BtnHsStart.IsEnabled = true;
+                BtnHsRestart.IsEnabled = false;
+                return;
+            }
+
+            for (int i = 5; i > 0; i--)
+            {
+                HsStatusText.Text = Localization.T("مرحله ۲: تثبیت شبکه وای‌فای دایرکت... ") + $"({i} ثانیه)";
+                HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B"));
+                await Task.Delay(1000);
+            }
+
+            string? targetName = await HsRefreshAdaptersAsync(searchForTarget: true);
+            if (string.IsNullOrEmpty(targetName))
+            {
+                HsStatusText.Text = Localization.T("کارت شبکه Wi-Fi Direct یافت نشد.");
+                HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
+                await _hotspot.StopAsync();
+                BtnHsStart.IsEnabled = true;
+                BtnHsRestart.IsEnabled = false;
+                return;
+            }
+
+            HsStatusText.Text = Localization.T("مرحله ۳: برقراری پل ارتباطی با ") + targetName + "...";
+            var shareResult = await _hotspot.ApplySharingOnlyAsync(_hsBestSrc, targetName);
+
+            if (!shareResult.ok)
+            {
+                HsStatusText.Text = Localization.T("خطا در برقراری شیرینگ!");
+                HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
+                await _hotspot.StopAsync();
+                BtnHsStart.IsEnabled = true;
+                BtnHsRestart.IsEnabled = false;
+                return;
+            }
+
+            HsSsidText.Text = startResult.ssid;
+            HsPassText.Text = startResult.pass;
+            HsInfoContainer.Visibility = Visibility.Visible;
+            GenerateHsQrCode(startResult.ssid, startResult.pass);
+            HsQrContainer.Visibility = Visibility.Visible;
+
+            HsStatusText.Text = Localization.T("✅ هات‌اسپات فعال شد و ترافیک در جریان است.");
+            HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+            BtnHsStop.IsEnabled = true;
+            BtnHsRestart.IsEnabled = true;
+            StartHsClientsPolling();
+        }
+
+        private void GenerateHsQrCode(string ssid, string password)
+        {
+            string wifiPayload = $"WIFI:T:WPA;S:{ssid};P:{password};;";
+            using var qrGen = new QRCoder.QRCodeGenerator();
+            using var qrData = qrGen.CreateQrCode(wifiPayload, QRCoder.QRCodeGenerator.ECCLevel.M);
+            using var qrCode = new QRCoder.PngByteQRCode(qrData);
+            
+            using var ms = new MemoryStream(qrCode.GetGraphic(20));
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.StreamSource = ms;
+            bitmap.EndInit();
+            HsQrImage.Source = bitmap;
+        }
+
+        private async void BtnHsStop_Click(object sender, RoutedEventArgs e)
+        {
+            BtnHsStop.IsEnabled = false;
+            BtnHsRestart.IsEnabled = false;
+            HsStatusText.Text = Localization.T("در حال توقف هات‌اسپات...");
+            await _hotspot.StopAsync();
+            HsResetAllState(Localization.T("هات‌اسپات متوقف شد."));
+            if (_isHsVpnConnected) BtnHsStart.IsEnabled = true;
+        }
+
+        private async void BtnHsRestart_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_isHsVpnConnected || string.IsNullOrEmpty(_hsBestSrc)) return;
+
+            BtnHsStart.IsEnabled = false;
+            BtnHsStop.IsEnabled = false;
+            BtnHsRestart.IsEnabled = false;
+            HsStatusText.Text = Localization.T("در حال راه‌اندازی مجدد هات‌اسپات...");
+            HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B"));
+
+            try
+            {
+                await _hotspot.StopAsync();
+                HsResetAllState(Localization.T("در حال راه‌اندازی مجدد..."));
+                BtnHsStart.IsEnabled = true;
+                BtnHsStart_Click(this, new RoutedEventArgs());
+            }
+            catch (Exception ex)
+            {
+                HsResetAllState(Localization.T("راه‌اندازی مجدد ناموفق بود."));
+                HsStatusText.Text = Localization.T("خطا: ") + ex.Message;
+                if (_isHsVpnConnected) BtnHsStart.IsEnabled = true;
+            }
+        }
+
+        private void StartHsClientsPolling()
+        {
+            StopHsClientsPolling();
+            // شمارنده حتی وقتی هیچ دستگاهی وصل نیست هم دیده شود.
+            HsClientsContainer.Visibility = Visibility.Visible;
+            HsClientsCountText.Text = Localization.T("دستگاه‌های متصل: ") + "۰";
+            HsClientsTextBox.Text = Localization.T("در حال بررسی دستگاه‌های متصل...");
+            _hsClientsTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+            _hsClientsTimer.Tick += async (_, __) => await RefreshHsClientsAsync();
+            _hsClientsTimer.Start();
+            _ = RefreshHsClientsAsync();
+        }
+
+        private void StopHsClientsPolling()
+        {
+            _hsClientsTimer?.Stop();
+            _hsClientsTimer = null;
+            _hsClientsRefreshInFlight = false;
+        }
+
+        private async Task RefreshHsClientsAsync()
+        {
+            if (_hsClientsRefreshInFlight || HotspotPanel.Visibility != Visibility.Visible) return;
+            _hsClientsRefreshInFlight = true;
+            try
+            {
+                HsClientsContainer.Visibility = Visibility.Visible;
+                var clients = await _hotspot.GetConnectedClientsAsync();
+                HsClientsCountText.Text = Localization.T("دستگاه‌های متصل: ") + clients.Count;
+                HsClientsTextBox.Text = clients.Count == 0
+                    ? Localization.T("هیچ دستگاهی متصل نیست.")
+                    : string.Join(Environment.NewLine + Environment.NewLine, clients.Select(c =>
+                        $"{c.Name}\r\nIP: {c.IpAddress}\r\nMAC: {c.MacAddress}"));
+            }
+            catch
+            {
+                HsClientsCountText.Text = Localization.T("دستگاه‌های متصل: ") + Localization.T("نامشخص");
+                HsClientsTextBox.Text = Localization.T("امکان دریافت فهرست دستگاه‌ها وجود ندارد.");
+            }
+            finally
+            {
+                _hsClientsRefreshInFlight = false;
+            }
+        }
+
+        private void HsClientsContainer_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            HsClientsPopup.IsOpen = true;
+        }
+
+        private void HsClientsContainer_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            HsClientsPopup.IsOpen = false;
+        }
+
+        private void HsResetAllState(string message)
+        {
+            _hsStabilizationTimer?.Stop();
+            StopHsClientsPolling();
+            BtnHsStart.IsEnabled = false;
+            BtnHsStop.IsEnabled = false;
+            BtnHsRestart.IsEnabled = false;
+            HsInfoContainer.Visibility = Visibility.Collapsed;
+            HsQrContainer.Visibility = Visibility.Collapsed;
+            HsClientsContainer.Visibility = Visibility.Collapsed;
+            HsClientsPopup.IsOpen = false;
+            HsClientsTextBox.Clear();
+            HsClientsCountText.Text = Localization.T("دستگاه‌های متصل: ") + "۰";
+            HsStatusText.Text = message;
+            HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#9CA3AF"));
+        }
+
+        public void HsHandleVpnDisconnect()
+        {
+            _isHsVpnConnected = false;
+            Dispatcher.Invoke(() =>
+            {
+                HsVpnConnectionText.Text = Localization.T("عدم اتصال");
+            });
+            Dispatcher.Invoke(() =>
+            {
+                HsCheckVpnState();
+                HsResetAllState(Localization.T("اتصال VPN قطع شد. هات‌اسپات متوقف گردید."));
+            });
+            _ = Task.Run(async () => { try { await _hotspot.StopAsync(); } catch { } });
+        }
+
+        public async Task HsForceStopAsync()
+        {
+            await _hotspot.StopAsync();
+        }
+        #endregion
     }
 }

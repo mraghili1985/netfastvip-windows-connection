@@ -28,6 +28,7 @@ public partial class CredentialsDialog : Window
     public CredentialsDialog(string prompt)
     {
         InitializeComponent();
+        Loaded += (_, _) => Localization.Watch(this);
         PromptText.Text = prompt;
         UserBox.Focus();
         SourceInitialized += (_, __) => ApplyDarkTitleBar();
@@ -51,12 +52,12 @@ public partial class CredentialsDialog : Window
     {
         if (CredsPanel.Visibility == Visibility.Visible && (Username.Length == 0 || Password.Length == 0))
         {
-            AskDialog.Info(this, "نام کاربری و پسورد اجباری‌ان.");
+            AskDialog.Info(this, Localization.T("نام کاربری و پسورد اجباری‌ان."));
             return;
         }
         if (PskPanel.Visibility == Visibility.Visible && Psk.Length == 0)
         {
-            AskDialog.Info(this, "وارد کردن PSK اجباری است.");
+            AskDialog.Info(this, Localization.T("وارد کردن PSK اجباری است."));
             return;
         }
         DialogResult = true;
