@@ -116,6 +116,7 @@ namespace SmartVpn
         private System.Diagnostics.Process? _tracertProc;
 
         private System.Windows.Forms.NotifyIcon? _tray;
+        private System.Drawing.Icon? _trayIcon;
 
         private const string RunKeyPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
         private const string RunValueName = "NETFASTVIP";
@@ -317,6 +318,7 @@ namespace SmartVpn
 
             _geoGen++;
             try { _tray?.Dispose(); } catch { }
+            try { _trayIcon?.Dispose(); } catch { }
             try { HsForceStopAsync().Wait(2000); } catch { }
             try { SplitTunnel.ClearAsync().Wait(2000); } catch { }
             try { KillSwitch.DisableAsync().Wait(2000); } catch { }
@@ -445,9 +447,10 @@ namespace SmartVpn
         {
             try
             {
+                _trayIcon = LoadTrayIcon();
                 _tray = new System.Windows.Forms.NotifyIcon
                 {
-                    Icon = System.Drawing.SystemIcons.Shield,
+                    Icon = _trayIcon,
                     Visible = true,
                     Text = AppConfig.BrandName
                 };
@@ -461,6 +464,24 @@ namespace SmartVpn
                 _tray.ContextMenuStrip = trayMenu;
             }
             catch { }
+        }
+
+        private static System.Drawing.Icon LoadTrayIcon()
+        {
+            try
+            {
+                var resource = System.Windows.Application.GetResourceStream(
+                    new Uri("pack://application:,,,/app.ico", UriKind.Absolute));
+                if (resource?.Stream is not null)
+                {
+                    using var stream = resource.Stream;
+                    using var source = new System.Drawing.Icon(stream);
+                    return new System.Drawing.Icon(source, source.Width, source.Height);
+                }
+            }
+            catch { }
+
+            return (System.Drawing.Icon)System.Drawing.SystemIcons.Application.Clone();
         }
 		
 		internal void AppendLog(string line)
@@ -571,6 +592,7 @@ namespace SmartVpn
         public void HsOnVpnConnected()
         {
             _isHsVpnConnected = true;
+            SetHotspotHeaderState("busy");
             HsVpnConnectionText.Text = ActiveConnText?.Text?.Trim() ?? Localization.T("اتصال VPN");
             HsCheckVpnState();
             _hsStabilizationTimer?.Stop();
@@ -610,10 +632,10 @@ namespace SmartVpn
 
             foreach (string adp in adapters)
             {
-                if (adp.Contains("Local Area Connection*", StringComparison.OrdinalIgnoreCase) || adp.Contains("Wi-Fi Direct", StringComparison.OrdinalIgnoreCase))
+                if (HotspotService.IsHotspotTargetAdapter(adp))
                 {
-                    if (searchForTarget) bestTgt = adp;
-                    continue; 
+                    if (searchForTarget && bestTgt == null) bestTgt = adp;
+                    continue;
                 }
 
                 if (exactMatchFound) continue;
@@ -625,10 +647,27 @@ namespace SmartVpn
                 bool isOpenVPN = activeConn.Contains("OpenVPN", StringComparison.OrdinalIgnoreCase) && (adp.Contains("OpenVPN", StringComparison.OrdinalIgnoreCase) || adp.Contains("DCO", StringComparison.OrdinalIgnoreCase) || adp.Contains("TAP", StringComparison.OrdinalIgnoreCase));
                 bool isWG = activeConn.Contains("WireGuard", StringComparison.OrdinalIgnoreCase) && (adp.Contains("WireGuard", StringComparison.OrdinalIgnoreCase) || adp.Contains("Wintun", StringComparison.OrdinalIgnoreCase) || adp.Contains("wg", StringComparison.OrdinalIgnoreCase));
                 bool isAmnezia = activeConn.Contains("Amnezia", StringComparison.OrdinalIgnoreCase) && (adp.Contains("Amnezia", StringComparison.OrdinalIgnoreCase) || adp.Contains("Wintun", StringComparison.OrdinalIgnoreCase));
-                bool isExact = adp.Equals(activeConn, StringComparison.OrdinalIgnoreCase) || adp.Contains(activeConn, StringComparison.OrdinalIgnoreCase) || activeConn.Contains(adp, StringComparison.OrdinalIgnoreCase);
+                bool isLikelyVpn = HotspotService.IsLikelyVpnSourceAdapter(adp)
+                    || adp.Contains("VPN", StringComparison.OrdinalIgnoreCase)
+                    || adp.Contains("WireGuard", StringComparison.OrdinalIgnoreCase)
+                    || adp.Contains("OpenVPN", StringComparison.OrdinalIgnoreCase)
+                    || adp.Contains("Wintun", StringComparison.OrdinalIgnoreCase)
+                    || adp.Contains("TAP", StringComparison.OrdinalIgnoreCase)
+                    || adp.Contains("TUN", StringComparison.OrdinalIgnoreCase)
+                    || adp.Contains("ovpn", StringComparison.OrdinalIgnoreCase);
+                bool isExact = adp.Equals(activeConn, StringComparison.OrdinalIgnoreCase)
+                    || adp.Contains(activeConn, StringComparison.OrdinalIgnoreCase)
+                    || activeConn.Contains(adp, StringComparison.OrdinalIgnoreCase);
 
-                if (isExact) { _hsBestSrc = adp; exactMatchFound = true; }
-                else if (_hsBestSrc == null && (isL2TP || isSSTP || isIKEv2 || isPPTP || isOpenVPN || isWG || isAmnezia)) { _hsBestSrc = adp; }
+                if (isExact)
+                {
+                    _hsBestSrc = adp;
+                    exactMatchFound = true;
+                }
+                else if (_hsBestSrc == null && (isL2TP || isSSTP || isIKEv2 || isPPTP || isOpenVPN || isWG || isAmnezia || isLikelyVpn))
+                {
+                    _hsBestSrc = adp;
+                }
             }
 
             HsSourceText.Text = _hsBestSrc ?? Localization.T("پیدا نشد");
@@ -646,6 +685,7 @@ namespace SmartVpn
             BtnHsStart.IsEnabled = false;
             BtnHsStop.IsEnabled = false;
             BtnHsRestart.IsEnabled = false;
+            SetHotspotHeaderState("busy");
             HsStatusText.Text = Localization.T("مرحله ۱: راه‌اندازی هات‌اسپات...");
             HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3B82F6"));
 
@@ -698,6 +738,7 @@ namespace SmartVpn
 
             HsStatusText.Text = Localization.T("✅ هات‌اسپات فعال شد و ترافیک در جریان است.");
             HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+            SetHotspotHeaderState("active");
             BtnHsStop.IsEnabled = true;
             BtnHsRestart.IsEnabled = true;
             StartHsClientsPolling();
@@ -811,6 +852,7 @@ namespace SmartVpn
 
         private void HsResetAllState(string message)
         {
+            SetHotspotHeaderState("off");
             _hsStabilizationTimer?.Stop();
             StopHsClientsPolling();
             BtnHsStart.IsEnabled = false;

@@ -34,7 +34,6 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs; Excludes: "config.json,auth.txt,mgmt-pass.txt,gen-*.ovpn,inline-*.ovpn,netfastvip-package.json,*.log"
-Source: "config.json"; DestDir: "{app}"; Flags: onlyifdoesntexist
 Source: "netfastvip-package.json"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 Source: "Fonts\*"; DestDir: "{app}\Fonts"; Flags: ignoreversion skipifsourcedoesntexist
 Source: "{#OpenVpnMsi}"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: not OpenVpnInstalled

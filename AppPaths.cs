@@ -2,7 +2,7 @@ using System;
 using System.IO;
 
 // مسیر پوشه فایل‌های برنامه (نسخه پرتابل: پوشه «NFV Connect» کنار EXE)
-// ساختار ZIP: NETFASTVIP.exe + README.txt + NFV Connect\ (شامل ca.crt، base.ovpn، config.json، پوشه openvpn و ...)
+// ساختار ZIP: NETFASTVIP.exe + README.txt + NFV Connect\ (شامل ca.crt، base.ovpn، app-config.json، connection-profile.json و ...)
 // اگر پوشه وجود نداشته باشد (اجرای توسعه یا چیدمان قدیمی)، خودِ پوشه EXE استفاده می‌شود
 public static class AppPaths
 {

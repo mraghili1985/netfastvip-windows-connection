@@ -60,7 +60,7 @@ namespace SmartVpn
             // حذف نوار عنوان ویندوز تا فقط خود کارت دیده شود (بدون Always-on-Top)
             WindowStyle = WindowStyle.None;
             ResizeMode = ResizeMode.NoResize;
-            Width = Math.Round(300 * _uiScale); Height = Math.Round(86 * _uiScale);
+            Width = Math.Round(320 * _uiScale); Height = Math.Round(100 * _uiScale);
             Left = SystemParameters.WorkArea.Right - Width - 16;
             Top = SystemParameters.WorkArea.Bottom - Height - 16;
         }

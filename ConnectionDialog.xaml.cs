@@ -20,6 +20,10 @@ public partial class ConnectionDialog : Window
     public ConnectionDialog()
     {
         InitializeComponent();
+        AsciiInputFilter.ApplyTo(UserBox);
+        AsciiInputFilter.ApplyTo(PassBox);
+        AsciiInputFilter.ApplyTo(PskBox);
+        AsciiInputFilter.ApplyTo(WgPresharedKeyBox);
         Loaded += (_, _) => Localization.Watch(this);
         TypeCombo.SelectedIndex = 0;
         UpdateFieldVisibility();

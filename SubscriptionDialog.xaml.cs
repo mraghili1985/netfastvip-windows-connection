@@ -31,11 +31,12 @@ public partial class SubscriptionDialog : Window
 
     private readonly string _portalBaseUrl;
     public Action<string, string>? OnSaveCredentials;
-    public Action<PortalApiClient, string, string>? OnSyncConnections; // دریافت و سینک کانکشن‌های پورتال
 
     public SubscriptionDialog(string portalBaseUrl, string username, string password)
     {
         InitializeComponent();
+        AsciiInputFilter.ApplyTo(UserBox);
+        AsciiInputFilter.ApplyTo(PassBox);
         _portalBaseUrl = portalBaseUrl;
         UserBox.Text = username;
         PassBox.Password = password;
@@ -75,6 +76,7 @@ public partial class SubscriptionDialog : Window
         CheckBtn.Content   = Localization.T(BtnChecking);
         ShowStatus(Localization.T(MsgChecking), false);
         ResultPanel.Visibility = Visibility.Collapsed;
+
         try
         {
             var client     = new PortalApiClient(_portalBaseUrl);
@@ -85,12 +87,8 @@ public partial class SubscriptionDialog : Window
             StatusText.Visibility  = Visibility.Collapsed;
             ResultPanel.Visibility = Visibility.Visible;
 
-            // ابتدا اعتبارها را ذخیره می‌کنیم تا بعد از بستن دیالوگ،
-            // کارت اشتراک صفحه اصلی بتواند با همان یوزر/پسورد استعلام بگیرد.
+            // پروفایل‌ها از هاست/پروفایل‌های موجود مدیریت می‌شوند؛ این استعلام فقط وضعیت اشتراک را می‌خواند.
             if (SaveCheck.IsChecked == true) OnSaveCredentials?.Invoke(user, pass);
-
-            // سپس کانکشن‌های پورتال را همگام می‌کنیم.
-            OnSyncConnections?.Invoke(client, user, pass);
         }
         catch (PortalApiException ex)
         {

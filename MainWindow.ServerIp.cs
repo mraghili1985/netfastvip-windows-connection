@@ -187,15 +187,13 @@ namespace SmartVpn
                 try
                 {
                     var json = await _http.GetStringAsync(
-                        "http://ip-api.com/json/?fields=status,query,country,countryCode");
+                        "http://ip-api.com/json/?fields=status,query,country");
                     if (gen != _geoGen || !_engine.IsRunning) return;
                     using var doc = JsonDocument.Parse(json);
                     var root = doc.RootElement;
                     if (root.GetProperty("status").GetString() != "success") continue;
                     var ip = root.GetProperty("query").GetString() ?? "";
-                    var cc = root.GetProperty("countryCode").GetString() ?? "";
                     var country = root.GetProperty("country").GetString() ?? "";
-                    SetGeoFlag(cc);
                     GeoIpText.Text = country + " — " + ip;
                     _pingHost = ip; // پینگ زنده از این به بعد به IP خروجی (سرور مقصد) گرفته می‌شود
                     return;
@@ -212,37 +210,23 @@ namespace SmartVpn
             try
             {
                 var json = await _http.GetStringAsync(
-                    "http://ip-api.com/json/?fields=status,query,country,countryCode");
+                    "http://ip-api.com/json/?fields=status,query,country");
                 if (gen != _geoGen || !_engine.IsRunning) return;
                 using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
                 if (root.GetProperty("status").GetString() != "success") return;
                 var ip = root.GetProperty("query").GetString() ?? "";
-                var cc = root.GetProperty("countryCode").GetString() ?? "";
                 var country = root.GetProperty("country").GetString() ?? "";
                 var newText = country + " — " + ip;
                 if (GeoIpText.Text != newText)
                 {
                     if (GeoIpText.Text != "—")
                         AppendConnLog(string.Format(LogExitIpChanged, GeoIpText.Text, newText));
-                    SetGeoFlag(cc);
                     GeoIpText.Text = newText;
                 }
                 if (!string.IsNullOrEmpty(ip)) _pingHost = ip;
             }
             catch { }
-        }
-
-        private void SetGeoFlag(string cc)
-        {
-            if (string.IsNullOrWhiteSpace(cc) || cc.Length != 2) { GeoFlagImg.Source = null; return; }
-            try
-            {
-                var bmp = new BitmapImage(new Uri("https://flagcdn.com/24x18/" + cc.ToLowerInvariant() + ".png", UriKind.Absolute));
-                bmp.DownloadFailed += (_, __) => Dispatcher.Invoke(() => GeoFlagImg.Source = null);
-                GeoFlagImg.Source = bmp;
-            }
-            catch { GeoFlagImg.Source = null; }
         }
 
         // فقط برای خطوط متنی در گزارش (LogBox) استفاده می‌شود

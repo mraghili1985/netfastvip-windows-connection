@@ -78,14 +78,18 @@ public class RasProvider : IConnectionProvider
         // ساخت (یا بازسازی) انتری VPN با پاورشل — پاک‌سازی در هر دو سطح user و all-user
         // کشف باگ: در Add-VpnConnection ویندوز، تانل IKEv2 فقط از Eap یا MachineCertificate پشتیبانی می‌کند؛ MSChapv2 فقط مال sstp/l2tp/pptp است و روی ikev2 خطای «WIN32 87 - The parameter is incorrect» می‌دهد
         var authMethod = _cfg.Type == "ikev2" ? "Eap" : "MSChapv2";
+        var eapSetup = _cfg.Type == "ikev2" ? "$eap = New-EapConfiguration; " : "";
+        var eapArgument = _cfg.Type == "ikev2" ? " -EapConfigXmlStream $eap.EapConfigXmlStream" : "";
 
         var ps =
+            eapSetup +
             $"Remove-VpnConnection -Name '{_entryName}' -Force -ErrorAction SilentlyContinue; " +
             $"Remove-VpnConnection -Name '{_entryName}' -AllUserConnection -Force -ErrorAction SilentlyContinue; " +
             $"Add-VpnConnection -Name '{_entryName}' -ServerAddress '{server}' -TunnelType {TunnelType}{psk} " +
-            $"-AuthenticationMethod {authMethod} -EncryptionLevel Optional -RememberCredential:$false";
+            $"-AuthenticationMethod {authMethod}{eapArgument} -EncryptionLevel Optional -RememberCredential:$false";
 
         var create = await RunAsync("powershell", $"-NoProfile -Command \"{ps}\"", ct);
+
         if (create.ExitCode != 0)
         {
             Log?.Invoke($"[{Type}] entry create failed: {Squash(create.Output)}");

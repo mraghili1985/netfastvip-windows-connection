@@ -35,10 +35,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- config.json و base.ovpn دیگر کنار exe نمی‌ریزند؛ داخل پوشه‌ی Data قرار می‌گیرند -->
+    <!-- تنظیمات برنامه با نام app-config.json داخل پوشه‌ی Data قرار می‌گیرد؛ config.json فقط منبع legacy پروژه است -->
     <None Update="config.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <TargetPath>Data\config.json</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <TargetPath>Data\app-config.json</TargetPath>
     </None>
     <None Update="base.ovpn">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -50,6 +51,15 @@
     </None>
     <None Update="README.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- OpenVPN - copy to Data\openvpn\ on build -->
+    <None Include="openvpn\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <TargetPath>Data\openvpn\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
     </None>
   </ItemGroup>
 

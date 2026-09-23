@@ -194,10 +194,10 @@
                 <ColumnDefinition Width="8"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="0" x:Name="BtnAll" Style="{StaticResource DlgBtnPrimary}" Click="All_Click"/>
-            <Button Grid.Column="2" x:Name="BtnDl" Style="{StaticResource DlgBtn}" Click="Dl_Click"/>
-            <Button Grid.Column="4" x:Name="BtnUl" Style="{StaticResource DlgBtn}" Click="Ul_Click"/>
-            <Button Grid.Column="6" x:Name="BtnCloseCancel" Style="{StaticResource DlgBtn}" MinWidth="64" Click="CloseCancel_Click"/>
+            <Button Grid.Column="0" x:Name="BtnAll" Style="{StaticResource DlgBtnPrimary}" FontSize="11" Padding="6,7" Click="All_Click"/>
+            <Button Grid.Column="2" x:Name="BtnDl" Style="{StaticResource DlgBtn}" FontSize="11" Padding="6,7" Click="Dl_Click"/>
+            <Button Grid.Column="4" x:Name="BtnUl" Style="{StaticResource DlgBtn}" FontSize="11" Padding="6,7" Click="Ul_Click"/>
+            <Button Grid.Column="6" x:Name="BtnCloseCancel" Style="{StaticResource DlgBtn}" FontSize="11" Padding="6,7" MinWidth="64" Click="CloseCancel_Click"/>
         </Grid>
 
         <!-- هشدار مصرف حجم -->

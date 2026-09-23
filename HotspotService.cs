@@ -26,6 +26,100 @@ namespace SmartVpn
         private bool _hotspotBoundToSelectedProfile;
         private string? _lastClientDiagnostic;
 
+        public static bool IsHotspotTargetAdapter(string adapterName)
+        {
+            if (string.IsNullOrWhiteSpace(adapterName)) return false;
+
+            var normalized = adapterName.Trim().Replace("*", " ");
+            normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"\s+", " ");
+
+            bool hasWifi = normalized.Contains("Wi-Fi", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains("WiFi", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains("WLAN", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains("Wireless", StringComparison.OrdinalIgnoreCase);
+
+            bool hasVirtual = normalized.Contains("Virtual Adapter", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains("Virtual", StringComparison.OrdinalIgnoreCase);
+
+            bool hasDirect = normalized.Contains("Wi-Fi Direct", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains("WiFi Direct", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains("Microsoft Wi-Fi Direct Virtual Adapter", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains("Microsoft WiFi Direct Virtual Adapter", StringComparison.OrdinalIgnoreCase)
+                || (normalized.Contains("Direct", StringComparison.OrdinalIgnoreCase) && hasWifi);
+
+            bool hasHosted = normalized.Contains("Hosted Network", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains("HostedNetwork", StringComparison.OrdinalIgnoreCase);
+
+            bool isLocalAreaConnectionTarget = normalized.Contains("Local Area Connection", StringComparison.OrdinalIgnoreCase)
+                && (normalized.Contains("*", StringComparison.Ordinal) || normalized.EndsWith(" 10", StringComparison.OrdinalIgnoreCase)
+                    || normalized.EndsWith(" 11", StringComparison.OrdinalIgnoreCase)
+                    || normalized.EndsWith(" 12", StringComparison.OrdinalIgnoreCase)
+                    || normalized.EndsWith(" 13", StringComparison.OrdinalIgnoreCase)
+                    || normalized.EndsWith(" 14", StringComparison.OrdinalIgnoreCase)
+                    || normalized.EndsWith(" 15", StringComparison.OrdinalIgnoreCase));
+
+            if (hasDirect || hasHosted || isLocalAreaConnectionTarget)
+                return true;
+
+            return hasVirtual && hasWifi;
+        }
+
+        public static bool IsLocalAreaHotspotTargetAdapter(string adapterName)
+        {
+            if (string.IsNullOrWhiteSpace(adapterName)) return false;
+
+            var normalized = adapterName.Trim().Replace("*", " ");
+            normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"\s+", " ");
+
+            return normalized.Contains("Local Area Connection", StringComparison.OrdinalIgnoreCase)
+                && (normalized.EndsWith(" 10", StringComparison.OrdinalIgnoreCase)
+                    || normalized.EndsWith(" 11", StringComparison.OrdinalIgnoreCase)
+                    || normalized.EndsWith(" 12", StringComparison.OrdinalIgnoreCase)
+                    || normalized.EndsWith(" 13", StringComparison.OrdinalIgnoreCase)
+                    || normalized.EndsWith(" 14", StringComparison.OrdinalIgnoreCase)
+                    || normalized.EndsWith(" 15", StringComparison.OrdinalIgnoreCase));
+        }
+
+        public static bool IsWifiDirectTargetAdapter(string adapterName)
+        {
+            if (string.IsNullOrWhiteSpace(adapterName)) return false;
+
+            var normalized = adapterName.Trim().Replace("*", " ");
+            normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"\s+", " ");
+
+            bool isLocalArea = IsLocalAreaHotspotTargetAdapter(adapterName);
+            if (isLocalArea)
+                return false;
+
+            return normalized.Contains("Wi-Fi Direct", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains("WiFi Direct", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains("Microsoft Wi-Fi Direct Virtual Adapter", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains("Microsoft WiFi Direct Virtual Adapter", StringComparison.OrdinalIgnoreCase)
+                || (normalized.Contains("Direct", StringComparison.OrdinalIgnoreCase) &&
+                    (normalized.Contains("Wi-Fi", StringComparison.OrdinalIgnoreCase)
+                     || normalized.Contains("WiFi", StringComparison.OrdinalIgnoreCase)
+                     || normalized.Contains("WLAN", StringComparison.OrdinalIgnoreCase)));
+        }
+
+        public static bool IsLikelyVpnSourceAdapter(string adapterName)
+        {
+            if (string.IsNullOrWhiteSpace(adapterName)) return false;
+
+            var name = adapterName.Trim();
+            return name.Contains("OpenVPN", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("WireGuard", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("Wintun", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("TAP", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("TUN", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("ovpn", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("VPN", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("L2TP", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("SSTP", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("IKEv2", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("PPTP", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("RAS", StringComparison.OrdinalIgnoreCase);
+        }
+
         private void L(string msg) => Log?.Invoke(msg);
         private static string PsQuote(string v) => v.Replace("'", "''");
 
@@ -170,6 +264,16 @@ namespace SmartVpn
             {
                 _activeTgt = targetName;
                 L($"[Hotspot] نیازی به اعمال زورکی COM ICS نیست؛ ترافیک به طور نیتیو از {sourceName} در جریان است.");
+                return (true, "");
+            }
+
+            // On some Windows systems the Wi‑Fi Direct virtual adapter appears as "Local Area Connection* 10".
+            // Treat that adapter as the valid share target for the hotspot, but still avoid unsupported raw Direct names.
+            if (IsWifiDirectTargetAdapter(targetName) && !IsLocalAreaHotspotTargetAdapter(targetName))
+            {
+                _activeSrc = sourceName;
+                _activeTgt = targetName;
+                L($"[Hotspot] target Wi‑Fi Direct نام پشتیبانی‌نشده دارد؛ از اعمال غیرضروری ICS چشم‌پوشی می‌شود تا ویندوز آداپتور مجازی را غیرفعال نکند.");
                 return (true, "");
             }
 

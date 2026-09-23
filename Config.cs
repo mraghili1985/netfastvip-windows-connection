@@ -9,6 +9,7 @@ public sealed class AppConfig
 {
     public bool SmartSwitch { get; set; }
     public CredentialsConfig? Credentials { get; set; } // legacy, migrated on load
+    [JsonIgnore]
     public List<ConnectionProfile> Connections { get; set; } = [];
     public long TotalDownloadBytes { get; set; }
     public long TotalUploadBytes { get; set; }
@@ -37,7 +38,7 @@ public sealed class AppConfig
     public string TelegramUrl { get; set; } = "https://t.me/netfastvip";
 
     // لینک پنل کاربری/اکانتینگ برای بررسی اشتراک (دکمه در پنجره درباره)
-    public string PanelUrl { get; set; } = "http://panel.netfast.vip/portal/login";
+    public string PanelUrl { get; set; } = "https://panel.netfast.vip/portal/login";
 
     // لینک پشتیبانی تلگرام (دکمه Support در پنجره درباره)
     public string SupportUrl { get; set; } = "https://t.me/nfv_sup";
@@ -46,13 +47,13 @@ public sealed class AppConfig
     public string UpdateUrl { get; set; } = "https://dl.netfast.vip/version.json";
 
     // آدرس فایل connections.json روی هاست برای دریافت خودکار سرورها/base.ovpn/گواهی CA — خالی یعنی بررسی خاموش (ConnectionsUpdateChecker.cs)
-    public string ConnectionsUpdateUrl { get; set; } = "";
+    public string ConnectionsUpdateUrl { get; set; } = "https://dl.netfast.vip/connections.json";
 
     // محتوای گواهی CA به‌صورت Base64 — داخل کانفیگ نگه داشته می‌شود (self-healing مثل BaseOvpn)
     public string Ca { get; set; } = "";
 
     // آدرس پایه پورتال جدید NETFASTVIP برای استعلام وضعیت اشتراک/ترافیک — خالی یعنی دکمه «وضعیت اشتراک من» پیام راهنما می‌دهد (SubscriptionDialog / PortalApiClient). ورود با یوزر/پس همان کانکشن رسمی انجام می‌شود؛ نیازی به توکن مشترک نیست.
-    public string PortalApiUrl { get; set; } = "http://panel.netfast.vip/";
+    public string PortalApiUrl { get; set; } = "https://panel.netfast.vip/";
 
     // قطع خودکار پس از این تعداد دقیقه بی‌استفادگی — ۰ یعنی همیشه متصل
     public int IdleDisconnectMinutes { get; set; }
@@ -90,26 +91,49 @@ public sealed class AppConfig
     }
 
     public static string DefaultPath =>
+        Path.Combine(AppContext.BaseDirectory, "Data", "app-config.json");
+
+    public static string LegacyPath =>
         Path.Combine(AppContext.BaseDirectory, "Data", "config.json");
 
     public static AppConfig Load(string? path = null)
     {
+        var requestedPath = path;
         path ??= DefaultPath;
+        var sourcePath = File.Exists(path) ? path : requestedPath is null ? LegacyPath : path;
         AppConfig cfg;
-        if (!File.Exists(path))
+        string? legacyConnectionsJson = null;
+        if (!File.Exists(sourcePath))
         {
             cfg = new AppConfig();
         }
         else
         {
+            var raw = File.ReadAllText(sourcePath);
             var opts = new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true,
                 ReadCommentHandling = JsonCommentHandling.Skip,
             };
-            cfg = JsonSerializer.Deserialize<AppConfig>(File.ReadAllText(path), opts)
+            cfg = JsonSerializer.Deserialize<AppConfig>(raw, opts)
                   ?? new AppConfig();
+
+            try
+            {
+                using var document = JsonDocument.Parse(raw);
+                if (document.RootElement.TryGetProperty("Connections", out var connections))
+                    legacyConnectionsJson = connections.GetRawText();
+            }
+            catch { }
         }
+
+        var profilePathExists = File.Exists(ConnectionProfileStore.DefaultPath);
+        cfg.Connections = profilePathExists
+            ? ConnectionProfileStore.Load()
+            : legacyConnectionsJson is null
+                ? []
+                : JsonSerializer.Deserialize<List<ConnectionProfile>>(legacyConnectionsJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
 
         // Migration 1: old global credentials -> per-connection (from step 10.8)
         if (cfg.Credentials is { } legacy)
@@ -132,6 +156,16 @@ public sealed class AppConfig
             if (string.IsNullOrWhiteSpace(c.Source))
                 c.Source = "custom";
 
+        // Older configs did not contain the host URL, so keep automatic server updates enabled.
+        if (string.IsNullOrWhiteSpace(cfg.ConnectionsUpdateUrl))
+            cfg.ConnectionsUpdateUrl = "https://dl.netfast.vip/connections.json";
+
+        // One-time migration: preserve the old file, then write the split format.
+        if (requestedPath is null && !profilePathExists && legacyConnectionsJson is not null)
+        {
+            try { cfg.Save(); } catch { }
+        }
+
         return cfg;
     }
 
@@ -144,6 +178,7 @@ public sealed class AppConfig
         };
         Directory.CreateDirectory(Path.Combine(AppContext.BaseDirectory, "Data"));
         File.WriteAllText(path ?? DefaultPath, JsonSerializer.Serialize(this, opts));
+        ConnectionProfileStore.Save(Connections);
     }
 
     // Merge an official package: add/update official connections by name,
@@ -235,20 +270,37 @@ public sealed class ConnectionProfile
     public string Server { get; set; } = "";
     public int? Port { get; set; }
     public string Proto { get; set; } = "udp";    // openvpn only: udp | tcp
+    [JsonIgnore]
     public string Psk { get; set; } = "";         // l2tp only
+    [JsonPropertyName("Psk")]
+    public string StoredPsk { get => CredentialProtector.Protect(Psk); set => Psk = CredentialProtector.Unprotect(value); }
+
+    [JsonIgnore]
     public string Username { get; set; } = "";
+    [JsonPropertyName("Username")]
+    public string StoredUsername { get => CredentialProtector.Protect(Username); set => Username = CredentialProtector.Unprotect(value); }
+
+    [JsonIgnore]
     public string Password { get; set; } = "";
+    [JsonPropertyName("Password")]
+    public string StoredPassword { get => CredentialProtector.Protect(Password); set => Password = CredentialProtector.Unprotect(value); }
 
     // --- New in step 11.6 ---
     public string Source { get; set; } = "custom"; // official | custom
+    [JsonIgnore]
     public string OvpnInline { get; set; } = "";   // personal .ovpn content (custom openvpn only)
+    [JsonPropertyName("OvpnInline")]
+    public string StoredOvpnInline { get => CredentialProtector.Protect(OvpnInline); set => OvpnInline = CredentialProtector.Unprotect(value); }
 
     // Server Override — در صورت تنظیم، اتصال حتماً به این آدرس انجام می‌شود (مثل OpenVPN Connect)
     public string ServerOverride { get; set; } = "";
 
     // ===== WireGuard / AmneziaWG =====
     // محتوای فایل .conf — برای type=wireguard و type=amneziawg
+    [JsonIgnore]
     public string WireGuardConf { get; set; } = "";
+    [JsonPropertyName("WireGuardConf")]
+    public string StoredWireGuardConf { get => CredentialProtector.Protect(WireGuardConf); set => WireGuardConf = CredentialProtector.Unprotect(value); }
 
     [JsonIgnore]
     public string EffectiveServer =>
@@ -297,9 +349,20 @@ public sealed class ConnectionProfile
 
 public sealed class CredentialsConfig
 {
+    [JsonIgnore]
     public string Username { get; set; } = "";
+    [JsonPropertyName("Username")]
+    public string StoredUsername { get => CredentialProtector.Protect(Username); set => Username = CredentialProtector.Unprotect(value); }
+
+    [JsonIgnore]
     public string Password { get; set; } = "";
+    [JsonPropertyName("Password")]
+    public string StoredPassword { get => CredentialProtector.Protect(Password); set => Password = CredentialProtector.Unprotect(value); }
+
+    [JsonIgnore]
     public string L2tpPsk { get; set; } = "";
+    [JsonPropertyName("L2tpPsk")]
+    public string StoredL2tpPsk { get => CredentialProtector.Protect(L2tpPsk); set => L2tpPsk = CredentialProtector.Unprotect(value); }
 }
 
 public sealed class ProtocolConfig

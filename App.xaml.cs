@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.Win32;
 
@@ -61,6 +62,16 @@ public partial class App : Application
                     ApplyPopupTint(w);
                     DarkTitleBar.Apply(w);
                 }
+            }));
+
+        EventManager.RegisterClassHandler(typeof(Window), Keyboard.PreviewKeyDownEvent,
+            new KeyEventHandler((s, e) =>
+            {
+                if (e.Key != Key.Escape || s is not Window window || window is MainWindow)
+                    return;
+
+                e.Handled = true;
+                window.Close();
             }));
 
         // نسخه پورتابل: بررسی‌های اولین اجرا (هشدار اجرا از ZIP، مجوز نوشتن، میان‌بر دسکتاپ)

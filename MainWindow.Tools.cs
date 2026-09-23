@@ -48,6 +48,47 @@ namespace SmartVpn
 
         private const string MsgSubNotConfigured = "استعلام اشتراک در این نسخه پیکربندی نشده است (PortalApiUrl در config.json).";
 
+        private ConnectionProfile? ResolveOfficialProfileForSubscription()
+        {
+            var official = _config.Connections
+                .Where(c => c.IsOfficial || string.Equals(c.Source, "official", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (official.Count == 0)
+                return null;
+
+            var activeName = _connectedName;
+            if (string.IsNullOrWhiteSpace(activeName) && ActiveConnText is not null)
+            {
+                var activeText = ActiveConnText.Text?.Trim();
+                if (!string.IsNullOrWhiteSpace(activeText))
+                {
+                    foreach (var c in official)
+                    {
+                        if (activeText.EndsWith(c.Name, StringComparison.OrdinalIgnoreCase)
+                            || activeText.Contains(c.Name, StringComparison.OrdinalIgnoreCase))
+                        {
+                            activeName = c.Name;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(activeName))
+            {
+                var byActive = official.FirstOrDefault(c =>
+                    string.Equals(c.Name, activeName, StringComparison.OrdinalIgnoreCase)
+                    || activeName.EndsWith(c.Name, StringComparison.OrdinalIgnoreCase)
+                    || activeName.Contains(c.Name, StringComparison.OrdinalIgnoreCase));
+                if (byActive is not null && byActive.Username.Length > 0)
+                    return byActive;
+            }
+
+            return official.FirstOrDefault(c => c.Username.Length > 0)
+                ?? official.FirstOrDefault();
+        }
+
         private void Subscription_Click(object sender, RoutedEventArgs e)
         {
             var url = _config.PortalApiUrl.Trim();
@@ -57,15 +98,12 @@ namespace SmartVpn
                 return;
             }
 
-            var prof = _config.Connections.FirstOrDefault(c => c.Name == ActiveConnText.Text && c.IsOfficial && c.Username.Length > 0)
-                    ?? _config.Connections.FirstOrDefault(c => c.IsOfficial && c.Username.Length > 0);
+            var prof = ResolveOfficialProfileForSubscription();
 
             var dlg = new SubscriptionDialog(url, prof?.Username ?? "", prof?.Password ?? "") { Owner = this };
             dlg.OnSaveCredentials = (u, p) =>
             {
                 // اطلاعات جدید روی همه کانکشن‌های رسمی ذخیره شود.
-                // بعضی پروفایل‌ها فقط IsOfficial دارند و بعضی فقط Source=official؛
-                // بنابراین هر دو حالت را پوشش می‌دهیم.
                 foreach (var c in _config.Connections.Where(x =>
                     x.IsOfficial || string.Equals(x.Source, "official", StringComparison.OrdinalIgnoreCase)))
                 {
@@ -75,34 +113,21 @@ namespace SmartVpn
 
                 _config.Save();
                 RefreshList();
-
-                // این متد فقط یک‌بار اجرا می‌شود؛ اگر قبلاً اجرا شده باشد،
-                // بعد از ذخیره اعتبارهای جدید کارت دیگر به‌روزرسانی نمی‌شود.
-                // وضعیت را آزاد می‌کنیم و استعلام را فوراً دوباره انجام می‌دهیم.
                 _subAutoCheckDone = false;
                 _ = RefreshSubscriptionSummaryAsync();
-            };
-
-            dlg.OnSyncConnections = async (portalClient, u, p) =>
-            {
-                var result = await PortalSyncService.SyncFromPortalAsync(portalClient, _config, u, p);
-                _config.Save();
-                Dispatcher.Invoke(() =>
-                {
-                    RefreshList();
-                });
             };
             dlg.ShowDialog();
         }
 
         private bool _subAutoCheckDone;
         private bool _subRefreshInFlight;
+        private bool _hasSubscriptionSummary;
 
         private void TryAutoCheckSubscriptionSummaryOnce()
         {
             if (_subAutoCheckDone) return;
             var url = _config.PortalApiUrl.Trim();
-            var hasCreds = _config.Connections.Any(c => c.IsOfficial && c.Username.Length > 0);
+            var hasCreds = _config.Connections.Any(c => (c.IsOfficial || string.Equals(c.Source, "official", StringComparison.OrdinalIgnoreCase)) && c.Username.Length > 0);
             if (url.Length == 0 || !hasCreds) return;
             _subAutoCheckDone = true;
             _ = RefreshSubscriptionSummaryAsync();
@@ -139,6 +164,7 @@ namespace SmartVpn
 
         private void ShowSubCardEmpty()
         {
+            if (_hasSubscriptionSummary) return;
             SubActiveBadge.Visibility = Visibility.Collapsed;
             SubRefreshBtn.Visibility = Visibility.Collapsed;
             SubDetailPanel.Visibility = Visibility.Collapsed;
@@ -147,6 +173,7 @@ namespace SmartVpn
 
         private void ShowSubCardFilled()
         {
+            _hasSubscriptionSummary = true;
             SubEmptyText.Visibility = Visibility.Collapsed;
             SubActiveBadge.Visibility = Visibility.Visible;
             SubRefreshBtn.Visibility = Visibility.Visible;
@@ -157,9 +184,10 @@ namespace SmartVpn
         {
             if (_subRefreshInFlight) return;
             var url = _config.PortalApiUrl.Trim();
-            var prof = _config.Connections.FirstOrDefault(c => c.Name == ActiveConnText.Text && c.IsOfficial && c.Username.Length > 0)
-                    ?? _config.Connections.FirstOrDefault(c => c.IsOfficial && c.Username.Length > 0);
-            if (url.Length == 0 || prof == null)
+
+            var prof = ResolveOfficialProfileForSubscription();
+
+            if (url.Length == 0 || prof == null || prof.Username.Length == 0)
             {
                 ShowSubCardEmpty();
                 return;
@@ -193,6 +221,7 @@ namespace SmartVpn
             }
             catch
             {
+                // در صورت خطا، متد ShowSubCardEmpty اجرا نمی‌شود تا کارت ریست نشود
             }
             finally
             {

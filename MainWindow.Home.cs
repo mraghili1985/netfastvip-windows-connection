@@ -150,6 +150,11 @@ namespace SmartVpn
             var needsCa = run.Where(p =>
                 string.Equals(p.Type, "sstp", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(p.Type, "ikev2", StringComparison.OrdinalIgnoreCase)).ToList();
+            if (needsCa.Count > 0)
+            {
+                _config.EnsureCaFile();
+            }
+
             if (needsCa.Count > 0 && CaInstaller.Exists && !CaInstaller.IsInstalled())
             {
                 var installed = false;
@@ -268,6 +273,7 @@ namespace SmartVpn
                 _everConnected = true;
                 _selectedName = profile.Name;
                 _connectedName = profile.Name; // تنها اینجا مشخص می‌شود چه چیزی واقعا وصل شده
+                MiniConnectionText.Text = profile.Name;
                 MoveToTop(profile.Name); // کانکشن متصل‌شده می‌رود صدر لیست
                 ActiveConnText.Text = $"{CategoryLabel(profile.Type)} {profile.Name}";
                 HsVpnConnectionText.Text = ActiveConnText.Text;
@@ -335,7 +341,6 @@ namespace SmartVpn
                 Notify(NotifyReconnecting);
                 _wasReconnecting = true;
                 GeoIpText.Text = "—";
-                GeoFlagImg.Source = null;
                 RefreshList(); // بج ردیف کانکشن هم وضعیت «تلاش مجدد» را نشان دهد
             });
             try { await SplitTunnel.ClearAsync(); } catch { }
@@ -358,6 +363,7 @@ namespace SmartVpn
                 SetPowerState(_manualStop ? "off" : "error");
                 _manualStop = false;
                 _connectedName = null; // دیگر هیچ کارتی واقعا وصل نیست
+                MiniConnectionText.Text = "—";
                 HsVpnConnectionText.Text = Localization.T("عدم اتصال");
                 DurationText.Text = "00:00:00";
                 DlSpeedText.Text = "↓ 0 B/s";
@@ -374,7 +380,6 @@ namespace SmartVpn
                 PingText.Foreground = new SolidColorBrush(Color.FromRgb(0x64, 0x74, 0x8B));
                 ProtocolText.Text = "—";
                 GeoIpText.Text = "—";
-                GeoFlagImg.Source = null;
                 YouText.Text = "—";
                 YouLbl.Text = Localization.T("User"); // reset label برای اتصال بعدی
                 _activeIsWg = false;
@@ -486,6 +491,33 @@ namespace SmartVpn
             PowerScale.ScaleY = 1;
         }
 
+        private void SetHotspotHeaderState(string state)
+        {
+            var brush = state switch
+            {
+                "active" => new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E)),
+                "busy" => new SolidColorBrush(Color.FromRgb(0xF5, 0x9E, 0x0B)),
+                _ => new SolidColorBrush(Color.FromRgb(0x64, 0x74, 0x8B)),
+            };
+
+            HotspotHeaderIcon.Foreground = brush;
+            HeaderHotspotBtn.ToolTip = state switch
+            {
+                "active" => Localization.T("هات‌اسپات فعال است"),
+                "busy" => Localization.T("هات‌اسپات در حال آماده‌سازی است"),
+                _ => Localization.T("باز کردن پنجره Hotspot"),
+            };
+
+            HotspotHeaderGlow.Color = brush.Color;
+            HotspotHeaderGlow.Opacity = state == "active" ? 0.75 : state == "busy" ? 0.35 : 0;
+
+            var pulse = (Storyboard)FindResource("HotspotPulseStoryboard");
+            pulse.Stop(this);
+            HotspotHeaderScale.ScaleX = 1;
+            HotspotHeaderScale.ScaleY = 1;
+            if (state == "active") pulse.Begin(this, true);
+        }
+
 
         private void MoreInfoToggle_Click(object sender, RoutedEventArgs e)
         {
@@ -565,9 +597,19 @@ namespace SmartVpn
             };
             PowerBtn.Background = brush;
             if (MiniPowerBtn != null) MiniPowerBtn.Background = brush;
+            PowerHintText.Text = Localization.T(state == "connected"
+                ? "برای قطع اتصال کلیک کنید" : "روشن/خاموش اتصال");
             // نقطه وضعیت کنار متن هم همان پیام رنگی را می‌دهد
             if (StatusDot != null)
                 StatusDot.Fill = state == "off" ? new SolidColorBrush(Color.FromRgb(0x64, 0x74, 0x8B)) : brush;
+            if (MiniStatusDot != null)
+                MiniStatusDot.Fill = state == "off" ? new SolidColorBrush(Color.FromRgb(0x64, 0x74, 0x8B)) : brush;
+
+            if (MiniPowerGlow != null)
+            {
+                MiniPowerGlow.Color = brush.Color;
+                MiniPowerGlow.Opacity = state == "off" ? 0.0 : 0.45;
+            }
 
             // باگ: درخشش (Glow) دور دکمه پاور در XAML همیشه به‌صورت ثابت سبز (#22C55E) بود و هیچ‌وقت به‌روز نمی‌شد؛
             // نتیجه: حتی وقتی وصل قطع بود/خاموش بود (متن "Click to Connect")، همان درخشش سبز مدل وصل دورش دیده می‌شد — همان چیزی که باعث می‌شد کاربر فکر کند اتصال برقرار است در حالی که قطع بوده

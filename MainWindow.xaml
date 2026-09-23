@@ -126,6 +126,12 @@
             <DoubleAnimation Storyboard.TargetName="SubRefreshRotate" Storyboard.TargetProperty="Angle"
                               From="0" To="360" Duration="0:0:0.8"/>
         </Storyboard>
+        <Storyboard x:Key="HotspotPulseStoryboard" RepeatBehavior="Forever" AutoReverse="True">
+            <DoubleAnimation Storyboard.TargetName="HotspotHeaderScale" Storyboard.TargetProperty="ScaleX"
+                             From="1" To="1.12" Duration="0:0:0.8"/>
+            <DoubleAnimation Storyboard.TargetName="HotspotHeaderScale" Storyboard.TargetProperty="ScaleY"
+                             From="1" To="1.12" Duration="0:0:0.8"/>
+        </Storyboard>
     </Window.Resources>
 
     <Border x:Name="WindowSurface" Margin="3"
@@ -242,7 +248,7 @@
                     <StackPanel x:Name="HeaderPagePanel" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
                         <Button x:Name="BackBtn" Width="28" Height="26" Margin="0,0,8,0"
                                 Style="{StaticResource ActionBtn}" Padding="0"
-                                Content="→" ToolTip="بازگشت" Click="HotspotNavHome_Click"/>
+                            Content="⌂" FontSize="16" ToolTip="صفحه اصلی" Click="HotspotNavHome_Click"/>
                         <TextBlock x:Name="HeaderTitleText" Text="" FontSize="14.5" FontWeight="Bold"
                                    Foreground="{DynamicResource TextBrush}"/>
                     </StackPanel>
@@ -262,8 +268,16 @@
                                 Style="{StaticResource ActionBtn}" Padding="0"
                                 ToolTip="باز کردن پنجره Hotspot" Click="OpenHotspotWindow_Click">
                             <TextBlock x:Name="HotspotHeaderIcon" Text="📶"
-                                       FontSize="15" Foreground="#4B5563"
-                                       VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                       FontSize="15" Foreground="#64748B"
+                                       VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <TextBlock.RenderTransform>
+                                    <ScaleTransform x:Name="HotspotHeaderScale" CenterX="0.5" CenterY="0.5"/>
+                                </TextBlock.RenderTransform>
+                                <TextBlock.Effect>
+                                    <DropShadowEffect x:Name="HotspotHeaderGlow" Color="#22C55E"
+                                                      BlurRadius="10" ShadowDepth="0" Opacity="0"/>
+                                </TextBlock.Effect>
+                            </TextBlock>
                         </Button>
                         <Button x:Name="HeaderToolsBtn" Width="32" Height="26" Margin="0,0,6,0"
                                 Style="{StaticResource ActionBtn}" Padding="0" Tag="tools"
@@ -341,8 +355,6 @@
                                 <TextBlock x:Name="ActiveConnText" Text="—" FontSize="12.5" FontWeight="SemiBold" Margin="0,0,0,0"
                                            Foreground="{DynamicResource SubTextBrush}" HorizontalAlignment="Right"/>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5,0,0">
-                                    <Image x:Name="GeoFlagImg" Width="16" Height="12" Margin="0,0,6,0"
-                                           VerticalAlignment="Center" Stretch="Uniform"/>
                                     <TextBlock x:Name="ServerSubText" Text="" FontSize="11.5" FontWeight="SemiBold"
                                                Foreground="{DynamicResource TextBrush}" FlowDirection="LeftToRight"/>
                                 </StackPanel>
@@ -893,6 +905,10 @@
                 <Button Grid.Column="0" x:Name="MiniPowerBtn" Width="44" Height="44" Padding="0"
                         Background="#334155" Cursor="Hand" Click="Power_Click"
                         ToolTip="روشن/خاموش اتصال" VerticalAlignment="Center">
+                    <Button.Effect>
+                        <DropShadowEffect x:Name="MiniPowerGlow" Color="#22C55E"
+                                          BlurRadius="12" ShadowDepth="0" Opacity="0"/>
+                    </Button.Effect>
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <Border Background="{TemplateBinding Background}" CornerRadius="22">
@@ -907,8 +923,15 @@
                 </Button>
 
                 <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
-                    <TextBlock x:Name="MiniStatusText" Text="آماده اتصال" FontSize="13.5" FontWeight="Bold"
-                               Foreground="{DynamicResource TextBrush}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse x:Name="MiniStatusDot" Width="7" Height="7" Fill="#64748B"
+                                 VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock x:Name="MiniStatusText" Text="آماده اتصال" FontSize="12.5" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextBrush}" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                    <TextBlock x:Name="MiniConnectionText" Text="—" FontSize="10"
+                               Foreground="{DynamicResource SubTextBrush}" FlowDirection="LeftToRight"
+                               TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
                     <TextBlock x:Name="MiniSpeedText" Text="↓ 0 B/s   ↑ 0 B/s" FontSize="10.5"
                                Foreground="{DynamicResource SubTextBrush}" FlowDirection="LeftToRight" Margin="0,3,0,0"/>
                 </StackPanel>

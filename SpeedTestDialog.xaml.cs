@@ -43,9 +43,9 @@ public partial class SpeedTestDialog : Window
     private const string RateGood = "خوب";
     private const string RateMid = "متوسط";
     private const string RateBad = "ضعیف";
-    private const string BtnAllText = "Full Test";
-    private const string BtnDlText = "⬇ DOWNLOAD";
-    private const string BtnUlText = "⬆ UPLOAD";
+    private const string BtnAllText = "تست کامل";
+    private const string BtnDlText = "⬇ دانلود";
+    private const string BtnUlText = "⬆ آپلود";
     private const string BtnCloseText = "بستن";
     private const string BtnCancelText = "لغو";
     private const string WarnTraffic = "⚠️ هر فاز حداکثر ۱۰ ثانیه اجرا می‌شود و از حجم اشتراک شما مصرف می‌کند — نتیجه، بالاترین سرعت ثبت‌شده در همین بازه است";
@@ -101,15 +101,15 @@ public partial class SpeedTestDialog : Window
     {
         InitializeComponent();
         Loaded += (_, _) => Localization.Watch(this);
-        Title = string.Format(TitleFmt, AppConfig.BrandName); // نام برند از config.json
-        ViaText.Text = vpnConnected ? string.Format(ViaConnectedFmt, connectionName) : ViaDirect;
+        Title = string.Format(Localization.T(TitleFmt), AppConfig.BrandName); // نام برند از config.json
+        ViaText.Text = Localization.T(vpnConnected ? string.Format(ViaConnectedFmt, connectionName) : ViaDirect);
         ViaDot.Fill = new SolidColorBrush(vpnConnected ? Green : Color.FromRgb(0x64, 0x74, 0x8B));
-        PhaseText.Text = PhaseIdle;
-        BtnAll.Content = BtnAllText;
-        BtnDl.Content = BtnDlText;
-        BtnUl.Content = BtnUlText;
-        BtnCloseCancel.Content = BtnCloseText;
-        WarnText.Text = WarnTraffic;
+        PhaseText.Text = Localization.T(PhaseIdle);
+        BtnAll.Content = Localization.T(BtnAllText);
+        BtnDl.Content = Localization.T(BtnDlText);
+        BtnUl.Content = Localization.T(BtnUlText);
+        BtnCloseCancel.Content = Localization.T(BtnCloseText);
+        WarnText.Text = Localization.T(WarnTraffic);
         EngineCombo.SelectedIndex = 0; // پیش‌فرض: Cloudflare
         _uiTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
         _uiTimer.Tick += UiTimer_Tick;
@@ -151,7 +151,7 @@ public partial class SpeedTestDialog : Window
         var ct = _cts.Token;
         BtnAll.IsEnabled = BtnDl.IsEnabled = BtnUl.IsEnabled = false;
         EngineCombo.IsEnabled = false;
-        BtnCloseCancel.Content = BtnCancelText;
+        BtnCloseCancel.Content = Localization.T(BtnCancelText);
         ResetCards();
         SetGauge(0);
         SetProgress(0);
@@ -170,13 +170,13 @@ public partial class SpeedTestDialog : Window
                 (mlabDlUrl, mlabUlUrl) = await ResolveMLabServerAsync(ct);
                 if ((doDl && mlabDlUrl == null) || (doUl && mlabUlUrl == null))
                 {
-                    PhaseText.Text = PhaseErrorMLab;
+                    PhaseText.Text = Localization.T(PhaseErrorMLab);
                     return;
                 }
             }
 
             // ---- فاز ۱: پینگ و جیتر (۱۰ نمونه) ----
-            PhaseText.Text = PhasePing;
+            PhaseText.Text = Localization.T(PhasePing);
             var (ping, jitter) = await MeasurePingAsync(ct);
             PingVal.Text = ping < 0 ? "—" : N(ping, "0") + " ms";
             JitterVal.Text = jitter < 0 ? "—" : N(jitter, "0") + " ms";
@@ -185,7 +185,7 @@ public partial class SpeedTestDialog : Window
             // ---- فاز ۲: دانلود (اختیاری) ----
             if (doDl)
             {
-                PhaseText.Text = PhaseDownload;
+                PhaseText.Text = Localization.T(PhaseDownload);
                 SetPhaseVisual(upload: false);
                 double dl = useMLab
                     ? await MeasureDownloadMLabAsync(mlabDlUrl!, 0.10, dlSpan, ct)
@@ -198,7 +198,7 @@ public partial class SpeedTestDialog : Window
             // ---- فاز ۳: آپلود (اختیاری) ----
             if (doUl)
             {
-                PhaseText.Text = PhaseUpload;
+                PhaseText.Text = Localization.T(PhaseUpload);
                 SetPhaseVisual(upload: true);
                 double ul = useMLab
                     ? await MeasureUploadMLabAsync(mlabUlUrl!, ulStart, ulSpan, ct)
@@ -209,10 +209,10 @@ public partial class SpeedTestDialog : Window
             }
 
             SetProgress(1);
-            PhaseText.Text = PhaseDone;
+            PhaseText.Text = Localization.T(PhaseDone);
         }
-        catch (OperationCanceledException) { PhaseText.Text = PhaseCanceled; }
-        catch { PhaseText.Text = PhaseError; }
+        catch (OperationCanceledException) { PhaseText.Text = Localization.T(PhaseCanceled); }
+        catch { PhaseText.Text = Localization.T(PhaseError); }
         finally
         {
             _uiTimer.Stop();
@@ -223,7 +223,7 @@ public partial class SpeedTestDialog : Window
             _phaseCts = null;
             BtnAll.IsEnabled = BtnDl.IsEnabled = BtnUl.IsEnabled = true;
             EngineCombo.IsEnabled = true;
-            BtnCloseCancel.Content = BtnCloseText;
+            BtnCloseCancel.Content = Localization.T(BtnCloseText);
         }
     }
 
@@ -514,7 +514,7 @@ public partial class SpeedTestDialog : Window
     private static void SetChip(System.Windows.Controls.Border chip, System.Windows.Controls.TextBlock text, int level, bool great)
     {
         var c = level == 0 ? Green : level == 1 ? Amber : Red;
-        text.Text = level == 0 ? (great ? RateGreat : RateGood) : level == 1 ? RateMid : RateBad;
+        text.Text = Localization.T(level == 0 ? (great ? RateGreat : RateGood) : level == 1 ? RateMid : RateBad);
         text.Foreground = new SolidColorBrush(c);
         chip.Background = new SolidColorBrush(Color.FromArgb(0x26, c.R, c.G, c.B));
         chip.Visibility = Visibility.Visible;

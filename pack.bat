@@ -3,15 +3,15 @@ chcp 65001 >nul
 REM ============================================================
 REM  NETFASTVIP portable ZIP builder
 REM  Usage: pack.bat           (uses default version below)
-REM         pack.bat 3     (override version)
+REM         pack.bat 3.0.1    (override version)
 REM ============================================================
 setlocal
 cd /d "%~dp0"
-set VER=3
+set VER=3.0.1
 if not "%~1"=="" set VER=%~1
 set PUB=bin\Release\net10.0-windows\win-x64\publish
 set STAGE=stage
-set ZIP=netfastvip%VER%.zip
+set ZIP=netfastvip.v%VER%.zip
 
 echo [1/6] Cleaning old publish/staging output...
 rmdir /s /q "%PUB%" 2>nul

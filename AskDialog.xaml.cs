@@ -18,12 +18,28 @@ public partial class AskDialog : Window
     public AskDialog(string message, string btn0, string? btn1 = null, string? btn2 = null)
     {
         InitializeComponent();
-        Loaded += (_, _) => Localization.Watch(this);
+        Loaded += (_, _) =>
+        {
+            Localization.Watch(this);
+            FitToOwner();
+        };
         Title = AppConfig.BrandName; // نام برند از config.json
         MsgText.Text = message;
         Btn0.Content = btn0;
         if (btn1 != null) { Btn1.Content = btn1; Btn1.Visibility = Visibility.Visible; }
         if (btn2 != null) { Btn2.Content = btn2; Btn2.Visibility = Visibility.Visible; }
+    }
+
+    private void FitToOwner()
+    {
+        var ownerWidth = Owner?.ActualWidth ?? 0;
+        var availableWidth = ownerWidth > 0 ? ownerWidth - 24 : 460;
+        var maxWidth = Math.Max(280, Math.Min(460, availableWidth));
+
+        MaxWidth = maxWidth;
+        MinWidth = Math.Min(320, maxWidth);
+        MsgText.MaxWidth = Math.Max(240, maxWidth - 32);
+        MaxHeight = Math.Max(220, SystemParameters.WorkArea.Height - 48);
     }
 
     private void Btn0_Click(object sender, RoutedEventArgs e) { Choice = 0; DialogResult = true; }

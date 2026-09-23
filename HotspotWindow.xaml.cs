@@ -112,11 +112,10 @@ namespace SmartVpn
 
             foreach (string adp in adapters)
             {
-                if (adp.Contains("Local Area Connection*", StringComparison.OrdinalIgnoreCase) || 
-                    adp.Contains("Wi-Fi Direct", StringComparison.OrdinalIgnoreCase))
+                if (HotspotService.IsHotspotTargetAdapter(adp))
                 {
-                    if (searchForTarget) bestTgt = adp;
-                    continue; 
+                    if (searchForTarget && bestTgt == null) bestTgt = adp;
+                    continue;
                 }
 
                 if (exactMatchFound) continue;
@@ -134,17 +133,26 @@ namespace SmartVpn
                 
                 bool isAmnezia = activeConn.Contains("Amnezia", StringComparison.OrdinalIgnoreCase) && 
                                  (adp.Contains("Amnezia", StringComparison.OrdinalIgnoreCase) || adp.Contains("Wintun", StringComparison.OrdinalIgnoreCase));
-                
-                bool isExact = adp.Equals(activeConn, StringComparison.OrdinalIgnoreCase) || 
-                               adp.Contains(activeConn, StringComparison.OrdinalIgnoreCase) || 
-                               activeConn.Contains(adp, StringComparison.OrdinalIgnoreCase);
+
+                bool isLikelyVpn = HotspotService.IsLikelyVpnSourceAdapter(adp)
+                    || adp.Contains("VPN", StringComparison.OrdinalIgnoreCase)
+                    || adp.Contains("WireGuard", StringComparison.OrdinalIgnoreCase)
+                    || adp.Contains("OpenVPN", StringComparison.OrdinalIgnoreCase)
+                    || adp.Contains("Wintun", StringComparison.OrdinalIgnoreCase)
+                    || adp.Contains("TAP", StringComparison.OrdinalIgnoreCase)
+                    || adp.Contains("TUN", StringComparison.OrdinalIgnoreCase)
+                    || adp.Contains("ovpn", StringComparison.OrdinalIgnoreCase);
+
+                bool isExact = adp.Equals(activeConn, StringComparison.OrdinalIgnoreCase)
+                    || adp.Contains(activeConn, StringComparison.OrdinalIgnoreCase)
+                    || activeConn.Contains(adp, StringComparison.OrdinalIgnoreCase);
 
                 if (isExact)
                 {
                     bestSrc = adp;
-                    exactMatchFound = true; 
+                    exactMatchFound = true;
                 }
-                else if (bestSrc == null && (isL2TP || isSSTP || isIKEv2 || isPPTP || isOpenVPN || isWG || isAmnezia))
+                else if (bestSrc == null && (isL2TP || isSSTP || isIKEv2 || isPPTP || isOpenVPN || isWG || isAmnezia || isLikelyVpn))
                 {
                     bestSrc = adp;
                 }

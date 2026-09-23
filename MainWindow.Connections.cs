@@ -473,10 +473,9 @@ namespace SmartVpn
 
             var textStack = new StackPanel { Orientation = Orientation.Vertical, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
 
-            var _geoFlag = GeoFlagFromName(c.Name);
             var nameText = new TextBlock
             {
-                Text = _geoFlag.Length > 0 ? _geoFlag + " " + c.Name : c.Name,
+                Text = c.Name,
                 FontSize = 11.5,
                 FontWeight = FontWeights.Bold,
                 Foreground = new SolidColorBrush(light ? Color.FromRgb(0x0F, 0x17, 0x2A) : Color.FromRgb(0xF8, 0xFA, 0xFC)),
@@ -745,6 +744,7 @@ namespace SmartVpn
             // VpnEngine اینا رو خودش اضافه می‌کنه — از inline strip می‌شن
             s = Regex.Replace(s, @"^remote\s+.*\n?",       "", RegexOptions.Multiline | RegexOptions.IgnoreCase);
             s = Regex.Replace(s, @"^proto\s+.*\n?",        "", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+            s = Regex.Replace(s, @"^port\s+.*\n?",         "", RegexOptions.Multiline | RegexOptions.IgnoreCase);
             s = Regex.Replace(s, @"^auth-user-pass\s*\n?", "", RegexOptions.Multiline | RegexOptions.IgnoreCase);
             s = Regex.Replace(s, @"^mute\s+\d+\s*\n?",   "", RegexOptions.Multiline | RegexOptions.IgnoreCase);
             s = Regex.Replace(s, @"\n{3,}", "\n\n");
@@ -955,52 +955,6 @@ namespace SmartVpn
                 }
                 catch (Exception ex) { AppendConnLog("خطا در اکسپورت: " + ex.Message); }
             }
-        }
-
-
-        private static string GeoFlagFromName(string name)
-        {
-            var u = name.ToUpperInvariant();
-            if (u.Contains("USA") || u.Contains("AMERICA")) return "🇺🇸";
-            if (u.Contains("TURKEY") || u.Contains("TURK")) return "🇹🇷";
-            if (u.Contains("NETHERLANDS") || u.Contains("HOLLAND")) return "🇳🇱";
-            if (u.Contains("FINLAND")) return "🇫🇮";
-            if (u.Contains("POLAND")) return "🇵🇱";
-            if (u.Contains("GERMANY")) return "🇩🇪";
-            if (u.Contains("FRANCE")) return "🇫🇷";
-            if (u.Contains("CANADA")) return "🇨🇦";
-            if (u.Contains("JAPAN")) return "🇯🇵";
-            if (u.Contains("SINGAPORE")) return "🇸🇬";
-            if (u.Contains("AUSTRALIA")) return "🇦🇺";
-            if (u.Contains("SWEDEN")) return "🇸🇪";
-            if (u.Contains("NORWAY")) return "🇳🇴";
-            if (u.Contains("RUSSIA")) return "🇷🇺";
-            if (u.Contains("ITALY")) return "🇮🇹";
-            if (u.Contains("SPAIN")) return "🇪🇸";
-            // 2-letter code after NFV-
-            var m = Regex.Match(name, @"NFV-([A-Z]{2})\b", RegexOptions.IgnoreCase);
-            if (m.Success) switch (m.Groups[1].Value.ToUpperInvariant())
-            {
-                case "US": return "🇺🇸";
-                case "TR": return "🇹🇷";
-                case "DE": return "🇩🇪";
-                case "FR": return "🇫🇷";
-                case "NL": return "🇳🇱";
-                case "PL": return "🇵🇱";
-                case "FI": return "🇫🇮";
-                case "GB": return "🇬🇧";
-                case "CA": return "🇨🇦";
-                case "JP": return "🇯🇵";
-                case "SG": return "🇸🇬";
-                case "AU": return "🇦🇺";
-                case "SE": return "🇸🇪";
-                case "NO": return "🇳🇴";
-                case "CH": return "🇨🇭";
-                case "RU": return "🇷🇺";
-                case "IT": return "🇮🇹";
-                case "ES": return "🇪🇸";
-            }
-            return string.Empty;
         }
 
     }

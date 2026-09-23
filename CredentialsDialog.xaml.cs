@@ -28,6 +28,9 @@ public partial class CredentialsDialog : Window
     public CredentialsDialog(string prompt)
     {
         InitializeComponent();
+        AsciiInputFilter.ApplyTo(UserBox);
+        AsciiInputFilter.ApplyTo(PassBox);
+        AsciiInputFilter.ApplyTo(PskBox);
         Loaded += (_, _) => Localization.Watch(this);
         PromptText.Text = prompt;
         UserBox.Focus();
