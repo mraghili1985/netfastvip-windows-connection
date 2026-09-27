@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -91,7 +91,7 @@ namespace SmartVpn
         private long _lastDownBytes = -1;
         private long _lastUpBytes = -1;
         private long _sessionStartTotalBytes;
-        private string? _tunnelLocalIp;
+        internal string? _tunnelLocalIp;
         private string? _tunnelNicId;
         private int _nicFindTries;
 
@@ -143,7 +143,20 @@ namespace SmartVpn
             FitToScreen();
 
             Loaded += async (_, _) => await UpdateChecker.CheckAsync(this);
-            Loaded += async (_, _) => await ConnectionsUpdateChecker.CheckAsync(this, _config);
+                        Loaded += async (_, _) => await ConnectionsUpdateChecker.CheckAsync(this, _config);
+            
+            Loaded += (_, _) =>
+            {
+                Task.Run(async () =>
+                {
+                    while (true)
+                    {
+                        await UptimeKumaClient.UpdateStatusAsync();
+                        await Dispatcher.InvokeAsync(() => { try { RefreshList(); } catch { } });
+                        await Task.Delay(15000);
+                    }
+                });
+            };
 
             _engine.Log += AppendConnLog;
             _hotspot.Log += AppendConnLog;
@@ -232,6 +245,38 @@ namespace SmartVpn
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            // تغییر نام خودکار کارت شبکه‌های خام به اسم حرفه‌ای اپلیکیشن
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    string psCmd = @"
+                        $i = 1
+                        Get-NetAdapter | Where-Object { $_.Name -like 'Local Area Connection*' -and ($_.InterfaceDescription -match 'TAP-Windows|Wintun|OpenVPN|WireGuard|Amnezia') } | ForEach-Object {
+                            $newName = if ($i -eq 1) { 'NETFASTVIP VPN' } else { 'NETFASTVIP VPN ' + $i }
+                            Rename-NetAdapter -Name $_.Name -NewName $newName -ErrorAction SilentlyContinue
+                            $i++
+                        }
+                    ";
+                    var psFilePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "nfv_rename_nic.ps1");
+                    await System.IO.File.WriteAllTextAsync(psFilePath, psCmd, new System.Text.UTF8Encoding(false));
+                    var psi = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = "powershell.exe",
+                        Arguments = $"-ExecutionPolicy Bypass -NoProfile -NonInteractive -File \"{psFilePath}\"",
+                        UseShellExecute = true,
+                        CreateNoWindow = true,
+                        WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden
+                    };
+                    using (var proc = System.Diagnostics.Process.Start(psi))
+                    {
+                        if (proc != null) await proc.WaitForExitAsync();
+                    }
+                    try { System.IO.File.Delete(psFilePath); } catch { }
+                }
+                catch { }
+            });
+
             ApplyDarkTitleBar();
             Localization.SetLanguage(_config.Language);
             if (_config.Language == "en") LangEnRb.IsChecked = true;
@@ -270,6 +315,8 @@ namespace SmartVpn
             {
                 case "cloudflare": DnsCfRb.IsChecked = true; break;
                 case "google": DnsGoogleRb.IsChecked = true; break;
+                case "adguard": DnsAdguardRb.IsChecked = true; break;
+                case "adguard_family": DnsAdguardFamilyRb.IsChecked = true; break;
                 case "custom": DnsCustomRb.IsChecked = true; break;
                 default: DnsAutoRb.IsChecked = true; break;
             }
@@ -626,49 +673,13 @@ namespace SmartVpn
             var adapters = await _hotspot.GetAllAdaptersAsync();
             var activeConn = ActiveConnText?.Text?.Trim() ?? "";
 
-            _hsBestSrc = null;
             string? bestTgt = null;
-            bool exactMatchFound = false;
-
-            foreach (string adp in adapters)
+            if (searchForTarget)
             {
-                if (HotspotService.IsHotspotTargetAdapter(adp))
-                {
-                    if (searchForTarget && bestTgt == null) bestTgt = adp;
-                    continue;
-                }
-
-                if (exactMatchFound) continue;
-
-                bool isL2TP = activeConn.Contains("L2TP", StringComparison.OrdinalIgnoreCase) && adp.Contains("l2tp", StringComparison.OrdinalIgnoreCase);
-                bool isSSTP = activeConn.Contains("SSTP", StringComparison.OrdinalIgnoreCase) && adp.Contains("sstp", StringComparison.OrdinalIgnoreCase);
-                bool isIKEv2 = activeConn.Contains("IKEv2", StringComparison.OrdinalIgnoreCase) && adp.Contains("ikev2", StringComparison.OrdinalIgnoreCase);
-                bool isPPTP = activeConn.Contains("PPTP", StringComparison.OrdinalIgnoreCase) && adp.Contains("pptp", StringComparison.OrdinalIgnoreCase);
-                bool isOpenVPN = activeConn.Contains("OpenVPN", StringComparison.OrdinalIgnoreCase) && (adp.Contains("OpenVPN", StringComparison.OrdinalIgnoreCase) || adp.Contains("DCO", StringComparison.OrdinalIgnoreCase) || adp.Contains("TAP", StringComparison.OrdinalIgnoreCase));
-                bool isWG = activeConn.Contains("WireGuard", StringComparison.OrdinalIgnoreCase) && (adp.Contains("WireGuard", StringComparison.OrdinalIgnoreCase) || adp.Contains("Wintun", StringComparison.OrdinalIgnoreCase) || adp.Contains("wg", StringComparison.OrdinalIgnoreCase));
-                bool isAmnezia = activeConn.Contains("Amnezia", StringComparison.OrdinalIgnoreCase) && (adp.Contains("Amnezia", StringComparison.OrdinalIgnoreCase) || adp.Contains("Wintun", StringComparison.OrdinalIgnoreCase));
-                bool isLikelyVpn = HotspotService.IsLikelyVpnSourceAdapter(adp)
-                    || adp.Contains("VPN", StringComparison.OrdinalIgnoreCase)
-                    || adp.Contains("WireGuard", StringComparison.OrdinalIgnoreCase)
-                    || adp.Contains("OpenVPN", StringComparison.OrdinalIgnoreCase)
-                    || adp.Contains("Wintun", StringComparison.OrdinalIgnoreCase)
-                    || adp.Contains("TAP", StringComparison.OrdinalIgnoreCase)
-                    || adp.Contains("TUN", StringComparison.OrdinalIgnoreCase)
-                    || adp.Contains("ovpn", StringComparison.OrdinalIgnoreCase);
-                bool isExact = adp.Equals(activeConn, StringComparison.OrdinalIgnoreCase)
-                    || adp.Contains(activeConn, StringComparison.OrdinalIgnoreCase)
-                    || activeConn.Contains(adp, StringComparison.OrdinalIgnoreCase);
-
-                if (isExact)
-                {
-                    _hsBestSrc = adp;
-                    exactMatchFound = true;
-                }
-                else if (_hsBestSrc == null && (isL2TP || isSSTP || isIKEv2 || isPPTP || isOpenVPN || isWG || isAmnezia || isLikelyVpn))
-                {
-                    _hsBestSrc = adp;
-                }
+                bestTgt = HotspotService.FindBestTargetAdapter(adapters);
             }
+
+            _hsBestSrc = HotspotService.FindBestVpnSourceAdapter(activeConn, _tunnelLocalIp, adapters);
 
             HsSourceText.Text = _hsBestSrc ?? Localization.T("پیدا نشد");
             return bestTgt;
@@ -676,6 +687,11 @@ namespace SmartVpn
 
         private async void BtnHsStart_Click(object sender, RoutedEventArgs e)
         {
+            if (string.IsNullOrEmpty(_hsBestSrc))
+            {
+                await HsRefreshAdaptersAsync(searchForTarget: false);
+            }
+
             if (!_isHsVpnConnected || string.IsNullOrEmpty(_hsBestSrc))
             {
                 MessageBox.Show(Localization.T("کارت شبکه اینترنت (VPN) یافت نشد."), Localization.T("اخطار"), MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -722,12 +738,15 @@ namespace SmartVpn
 
             if (!shareResult.ok)
             {
-                HsStatusText.Text = Localization.T("خطا در برقراری شیرینگ!");
+                HsStatusText.Text = Localization.T("خطا در شیرینگ خودکار. لطفاً دستی انجام دهید.");
                 HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
-                await _hotspot.StopAsync();
-                BtnHsStart.IsEnabled = true;
-                BtnHsRestart.IsEnabled = false;
-                return;
+                HsManualHint.Visibility = Visibility.Visible; BtnOpenNcpa.Visibility = Visibility.Visible;
+                
+            }
+            else
+            {
+                HsStatusText.Text = Localization.T("✅ هات‌اسپات فعال شد و ترافیک در جریان است.");
+                HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
             }
 
             HsSsidText.Text = startResult.ssid;
@@ -735,9 +754,6 @@ namespace SmartVpn
             HsInfoContainer.Visibility = Visibility.Visible;
             GenerateHsQrCode(startResult.ssid, startResult.pass);
             HsQrContainer.Visibility = Visibility.Visible;
-
-            HsStatusText.Text = Localization.T("✅ هات‌اسپات فعال شد و ترافیک در جریان است.");
-            HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
             SetHotspotHeaderState("active");
             BtnHsStop.IsEnabled = true;
             BtnHsRestart.IsEnabled = true;
@@ -768,6 +784,11 @@ namespace SmartVpn
             await _hotspot.StopAsync();
             HsResetAllState(Localization.T("هات‌اسپات متوقف شد."));
             if (_isHsVpnConnected) BtnHsStart.IsEnabled = true;
+        }
+
+        private void BtnOpenNcpa_Click(object sender, RoutedEventArgs e)
+        {
+            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("control.exe", "ncpa.cpl") { UseShellExecute = true }); } catch { }
         }
 
         private async void BtnHsRestart_Click(object sender, RoutedEventArgs e)
@@ -859,6 +880,10 @@ namespace SmartVpn
             BtnHsStop.IsEnabled = false;
             BtnHsRestart.IsEnabled = false;
             HsInfoContainer.Visibility = Visibility.Collapsed;
+            if (HsManualHint != null) HsManualHint.Visibility = Visibility.Collapsed;
+            if (BtnOpenNcpa != null) BtnOpenNcpa.Visibility = Visibility.Collapsed;
+            HsManualHint.Visibility = Visibility.Collapsed;
+            BtnOpenNcpa.Visibility = Visibility.Collapsed;
             HsQrContainer.Visibility = Visibility.Collapsed;
             HsClientsContainer.Visibility = Visibility.Collapsed;
             HsClientsPopup.IsOpen = false;
@@ -890,3 +915,8 @@ namespace SmartVpn
         #endregion
     }
 }
+
+
+
+
+

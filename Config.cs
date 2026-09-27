@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Text.Encodings.Web;
@@ -22,7 +22,7 @@ public sealed class AppConfig
     public string BaseOvpn { get; set; } = "";    // base.ovpn content kept inside config (self-healing)
     public int PackageVersion { get; set; }       // version of last imported official package
     public bool MinimizeToTray { get; set; }
-    public bool KillSwitchEnabled { get; set; } = true; // Kill Switch (WFP) — وضعیت توگل بین اجراهای برنامه حفظ می‌شود
+    public bool KillSwitchEnabled { get; set; } = false; // Kill Switch (WFP) — پیش‌فرض خاموش (از تنظیمات قابل روشن‌شدن است)
 
     // آخرین کانکشنی که واقعاً وصل شده — بعد از بستن/باز کردن برنامه همین انتخاب‌شده نمایش داده می‌شود
     public string? LastConnectedName { get; set; }
@@ -386,7 +386,7 @@ public sealed class OpenVpnEndpoint
 public sealed class PackageFile
 {
     public int PackageVersion { get; set; } = 1;
-    public string Name { get; set; } = "SmartVPN";
+    public string Name { get; set; } = "NFV";
     public List<ConnectionProfile> Connections { get; set; } = [];
     public string BaseOvpn { get; set; } = "";
     public string Ca { get; set; } = ""; // گواهی CA به‌صورت Base64 — اختیاری (فقط برای SSTP/IKEv2)

@@ -1,4 +1,4 @@
-using QRCoder;
+﻿using QRCoder;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -106,62 +106,23 @@ namespace SmartVpn
             SourceCombo.Items.Clear();
             TargetCombo.Items.Clear();
 
-            string? bestSrc = null;
-            string? bestTgt = null;
-            bool exactMatchFound = false;
-
-            foreach (string adp in adapters)
-            {
-                if (HotspotService.IsHotspotTargetAdapter(adp))
-                {
-                    if (searchForTarget && bestTgt == null) bestTgt = adp;
-                    continue;
-                }
-
-                if (exactMatchFound) continue;
-
-                bool isL2TP = activeConn.Contains("L2TP", StringComparison.OrdinalIgnoreCase) && adp.Contains("l2tp", StringComparison.OrdinalIgnoreCase);
-                bool isSSTP = activeConn.Contains("SSTP", StringComparison.OrdinalIgnoreCase) && adp.Contains("sstp", StringComparison.OrdinalIgnoreCase);
-                bool isIKEv2 = activeConn.Contains("IKEv2", StringComparison.OrdinalIgnoreCase) && adp.Contains("ikev2", StringComparison.OrdinalIgnoreCase);
-                bool isPPTP = activeConn.Contains("PPTP", StringComparison.OrdinalIgnoreCase) && adp.Contains("pptp", StringComparison.OrdinalIgnoreCase);
-                
-                bool isOpenVPN = activeConn.Contains("OpenVPN", StringComparison.OrdinalIgnoreCase) && 
-                                 (adp.Contains("OpenVPN", StringComparison.OrdinalIgnoreCase) || adp.Contains("DCO", StringComparison.OrdinalIgnoreCase) || adp.Contains("TAP", StringComparison.OrdinalIgnoreCase));
-                
-                bool isWG = activeConn.Contains("WireGuard", StringComparison.OrdinalIgnoreCase) && 
-                            (adp.Contains("WireGuard", StringComparison.OrdinalIgnoreCase) || adp.Contains("Wintun", StringComparison.OrdinalIgnoreCase) || adp.Contains("wg", StringComparison.OrdinalIgnoreCase));
-                
-                bool isAmnezia = activeConn.Contains("Amnezia", StringComparison.OrdinalIgnoreCase) && 
-                                 (adp.Contains("Amnezia", StringComparison.OrdinalIgnoreCase) || adp.Contains("Wintun", StringComparison.OrdinalIgnoreCase));
-
-                bool isLikelyVpn = HotspotService.IsLikelyVpnSourceAdapter(adp)
-                    || adp.Contains("VPN", StringComparison.OrdinalIgnoreCase)
-                    || adp.Contains("WireGuard", StringComparison.OrdinalIgnoreCase)
-                    || adp.Contains("OpenVPN", StringComparison.OrdinalIgnoreCase)
-                    || adp.Contains("Wintun", StringComparison.OrdinalIgnoreCase)
-                    || adp.Contains("TAP", StringComparison.OrdinalIgnoreCase)
-                    || adp.Contains("TUN", StringComparison.OrdinalIgnoreCase)
-                    || adp.Contains("ovpn", StringComparison.OrdinalIgnoreCase);
-
-                bool isExact = adp.Equals(activeConn, StringComparison.OrdinalIgnoreCase)
-                    || adp.Contains(activeConn, StringComparison.OrdinalIgnoreCase)
-                    || activeConn.Contains(adp, StringComparison.OrdinalIgnoreCase);
-
-                if (isExact)
-                {
-                    bestSrc = adp;
-                    exactMatchFound = true;
-                }
-                else if (bestSrc == null && (isL2TP || isSSTP || isIKEv2 || isPPTP || isOpenVPN || isWG || isAmnezia || isLikelyVpn))
-                {
-                    bestSrc = adp;
-                }
-            }
+            string? bestSrc = HotspotService.FindBestVpnSourceAdapter(activeConn, _mainWin._tunnelLocalIp, adapters);
+            string? bestTgt = searchForTarget ? HotspotService.FindBestTargetAdapter(adapters) : null;
 
             if (bestSrc != null)
             {
                 SourceCombo.Items.Add(bestSrc);
                 SourceCombo.SelectedIndex = 0;
+                
+                string lowerSrc = bestSrc.ToLowerInvariant();
+                if (lowerSrc.Contains("ikev2") || lowerSrc.Contains("sstp") || lowerSrc.Contains("l2tp") || lowerSrc.Contains("pptp"))
+                {
+                    RasWarningBorder.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    RasWarningBorder.Visibility = Visibility.Collapsed;
+                }
             }
             else
             {
@@ -194,6 +155,11 @@ namespace SmartVpn
             {
                 MessageBox.Show(Localization.T("ابتدا به VPN متصل شوید."), Localization.T("اخطار"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
+            }
+
+            if (SourceCombo.SelectedItem == null || SourceCombo.SelectedItem.ToString()!.Contains(Localization.T("یافت نشد")))
+            {
+                await RefreshAdaptersAsync(searchForTarget: false);
             }
 
             if (SourceCombo.SelectedItem == null || SourceCombo.SelectedItem.ToString()!.Contains(Localization.T("یافت نشد")))
@@ -247,15 +213,18 @@ namespace SmartVpn
             StatusText.Text = Localization.T("مرحله ۳: برقراری پل ارتباطی با ") + $"({sourceName} ➔ {targetName})...";
             var shareResult = await _hotspot.ApplySharingOnlyAsync(sourceName, targetName);
 
-            if (!shareResult.ok)
+                        if (!shareResult.ok)
             {
-                StatusText.Text = Localization.T("خطا در برقراری شیرینگ!");
-                StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
-                _mainWin.AppendLog("[Hotspot] جزئیات خطای شیرینگ: " + shareResult.err);
-                await _hotspot.StopAsync();
-                BtnStart.IsEnabled = true;
-                MessageBox.Show(shareResult.err, Localization.T("خطا"), MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
+                StatusText.Text = Localization.T("هات‌اسپات روشن شد! (نیاز به اشتراک‌گذاری دستی در صورت قطعی اینترنت)");
+                StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B"));
+                _mainWin.AppendLog("[Hotspot] شیرینگ خودکار انجام نشد. آموزش دستی در دسترس قرار گرفت.");
+                
+                BtnTutorial.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                StatusText.Text = Localization.T("✅ هات‌اسپات با موفقیت فعال شد.");
+                StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
             }
 
             DisplaySsidText.Text = startResult.ssid;
@@ -263,9 +232,6 @@ namespace SmartVpn
             InfoContainer.Visibility = Visibility.Visible;
             GenerateQrCode(startResult.ssid, startResult.pass);
             QrContainer.Visibility = Visibility.Visible;
-
-            StatusText.Text = Localization.T("✅ هات‌اسپات با موفقیت فعال شد و ترافیک در جریان است.");
-            StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
             BtnStop.IsEnabled = true;
         }
 
@@ -286,6 +252,23 @@ namespace SmartVpn
             QrImage.Source = bitmap;
         }
 
+                private void BtnTutorial_Click(object sender, RoutedEventArgs e)
+        {
+            string src = SourceCombo.SelectedItem?.ToString() ?? "NETFASTVIP-ikev2";
+            string tgt = TargetCombo.SelectedItem?.ToString() ?? "Local Area Connection* X";
+            
+            var msg = "ویندوز شما اجازه اشتراک‌گذاری خودکار (شیرینگ) را روی این پروتکل نمی‌دهد، اما هات‌اسپات الان روشن است!\n\n" +
+                      "برای اینترنت‌دار کردنِ گوشی متصل به هات‌اسپات، این ۳ قدم ساده را انجام دهید:\n\n" +
+                      "۱. در پنجره باز شده (ncpa.cpl)، روی کارت شبکه با نام «" + src + "» کلیک راست کرده و Properties را بزنید.\n" +
+                      "۲. به تب Sharing بروید و تیک اول (Allow other network users...) را فعال کنید.\n" +
+                      "۳. از منوی کشویی زیر آن، نام کارت شبکه «" + tgt + "» را انتخاب کرده و OK بزنید.\n\n" +
+                      "تمام! اینترنت هات‌اسپات وصل شد.";
+                      
+            MessageBox.Show(msg, "راهنمای قدم به قدم اشتراک‌گذاری دستی", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.OK, MessageBoxOptions.RightAlign | MessageBoxOptions.RtlReading);
+            
+            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("control.exe", "ncpa.cpl") { UseShellExecute = true }); } catch { }
+        }
+
         private async void BtnStop_Click(object sender, RoutedEventArgs e)
         {
             await ForceStopAsync();
@@ -298,6 +281,7 @@ namespace SmartVpn
             BtnStop.IsEnabled = false;
             
             InfoContainer.Visibility = Visibility.Collapsed;
+            if (BtnTutorial != null) BtnTutorial.Visibility = Visibility.Collapsed;
             QrContainer.Visibility = Visibility.Collapsed;
             
             TargetCombo.Items.Clear();
@@ -346,3 +330,15 @@ namespace SmartVpn
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+

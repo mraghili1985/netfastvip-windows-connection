@@ -44,7 +44,6 @@ public partial class ConnectionDialog : Window
 
         if (isWg)
         {
-            // پر کردن فیلدهای WG از کانفیگ ذخیره‌شده
             if (_wgConf.Trim().Length > 0)
             {
                 WgStatusText.Text = Localization.T("کانفیگ: بارگذاری شده ✔");
@@ -58,7 +57,7 @@ public partial class ConnectionDialog : Window
             OverrideBox.Text = existing.ServerOverride;
             UserBox.Text     = existing.Username;
             PassBox.Password = existing.Password;
-            PskBox.Password  = existing.Psk;
+            PskBox.Text      = existing.Psk; // تغییر از Password به Text
 
             foreach (ComboBoxItem item in ProtoCombo.Items)
                 if ((string)item.Tag == existing.Proto) { ProtoCombo.SelectedItem = item; break; }
@@ -81,10 +80,7 @@ public partial class ConnectionDialog : Window
 
         var isWg = SelectedType == "wireguard" || SelectedType == "amneziawg";
 
-        // StandardPanel — فقط برای غیر WireGuard
         StandardPanel.Visibility = isWg ? Visibility.Collapsed : Visibility.Visible;
-
-        // WgPanel — فقط برای WireGuard / AmneziaWG
         WgPanel.Visibility = isWg ? Visibility.Visible : Visibility.Collapsed;
 
         if (!isWg)
@@ -103,10 +99,6 @@ public partial class ConnectionDialog : Window
         UserBox.IsEnabled = !certOnly;
         PassBox.IsEnabled = !certOnly;
     }
-
-    // =========================================================
-    //  WireGuard / AmneziaWG — import .conf و نمایش پارامترها
-    // =========================================================
 
     private void AwgCheckBox_Changed(object sender, RoutedEventArgs e)
     {
@@ -157,15 +149,14 @@ public partial class ConnectionDialog : Window
         sb.AppendLine("[Peer]");
         sb.AppendLine($"PublicKey = {pubKey}");
 
-        // PresharedKey اختیاری است؛ بعضی کانفیگ‌های WireGuard آن را دارند
-        // و بعضی ندارند. اگر خالی باشد، اصلاً این خط را تولید نمی‌کنیم.
-        var presharedKey = WgPresharedKeyBox.Password.Trim();
+        // تغییر از Password به Text
+        var presharedKey = WgPresharedKeyBox.Text.Trim();
         if (presharedKey.Length > 0 && presharedKey != "—")
             sb.AppendLine($"PresharedKey = {presharedKey}");
 
         sb.AppendLine($"Endpoint = {endpoint}");
         var ips = WgAllowedIPsBox.Text.Trim();
-        sb.AppendLine($"AllowedIPs = {(ips.Length > 0 && ips != "—" ? ips : "0.0.0.0/0, ::/0")}");
+        sb.AppendLine($"AllowedIPs = {(ips.Length > 0 && ips != "—" ? ips : "0.0.0.0/0")}");
         var kpa = WgKeepaliveBox.Text.Trim();
         if (kpa.Length > 0 && kpa != "—") sb.AppendLine($"PersistentKeepalive = {kpa}");
         return sb.ToString();
@@ -200,28 +191,23 @@ public partial class ConnectionDialog : Window
         WgFieldsPanel.Visibility = Visibility.Visible;
     }
 
-    /// <summary>
-    /// تجزیه .conf و پر کردن تمام فیلدهای قابل نمایش
-    /// </summary>
     private void PopulateWgFields(string conf)
     {
-        // ساختار conf: [Interface] ... [Peer] ...
         var iface = ParseSection(conf, "[Interface]");
         var peer  = ParseSection(conf, "[Peer]");
 
-        // ─── Interface ───
-        // PrivateKey قبلاً در Import خوانده نمی‌شد و به همین دلیل
-        // بعد از Import فرم آن را خالی نشان می‌داد.
         WgPrivateKeyBox.Text = iface.GetValueOrDefault("privatekey", "");
         WgAddressBox.Text    = iface.GetValueOrDefault("address",    "");
         WgDnsBox.Text        = iface.GetValueOrDefault("dns",        "");
         WgMtuBox.Text        = iface.GetValueOrDefault("mtu",        "");
 
-        // ─── Peer ───
-        WgEndpointBox.Text        = peer.GetValueOrDefault("endpoint",    "");
-        WgPublicKeyBox.Text       = peer.GetValueOrDefault("publickey",   "");
-        WgPresharedKeyBox.Password = peer.GetValueOrDefault("presharedkey", "");
-        WgAllowedIPsBox.Text      = peer.GetValueOrDefault("allowedips",  "0.0.0.0/0, ::/0");
+        WgEndpointBox.Text  = peer.GetValueOrDefault("endpoint",    "");
+        WgPublicKeyBox.Text = peer.GetValueOrDefault("publickey",   "");
+        
+        // تغییر از Password به Text
+        WgPresharedKeyBox.Text = peer.GetValueOrDefault("presharedkey", "");
+        
+        WgAllowedIPsBox.Text = peer.GetValueOrDefault("allowedips",  "0.0.0.0/0");
 
         var keepalive = peer.GetValueOrDefault("persistentkeepalive", "");
         if (keepalive.Length > 0)
@@ -236,10 +222,11 @@ public partial class ConnectionDialog : Window
             WgKeepaliveBox.Visibility = Visibility.Collapsed;
         }
 
-        // ─── تشخیص AmneziaWG ───
         var isAmnezia = iface.ContainsKey("jc") || iface.ContainsKey("h1") ||
-                        iface.ContainsKey("jmin") || conf.Contains("# amw");
+                        iface.ContainsKey("jmin") || iface.ContainsKey("headerprotectionkey") ||
+                        conf.Contains("# amw", StringComparison.OrdinalIgnoreCase);
 
+        AwgCheckBox.IsChecked = isAmnezia;
         AwgPanel.Visibility = isAmnezia ? Visibility.Visible : Visibility.Collapsed;
 
         if (isAmnezia)
@@ -256,7 +243,6 @@ public partial class ConnectionDialog : Window
             AwgH3Box.Text   = iface.GetValueOrDefault("h3",   "—");
             AwgH4Box.Text   = iface.GetValueOrDefault("h4",   "—");
 
-            // سایر پارامترهای amnezia — هر چیزی بجز پارامترهای مشترک
             var knownKeys = new HashSet<string>
             {
                 "privatekey","address","dns","mtu",
@@ -274,9 +260,6 @@ public partial class ConnectionDialog : Window
         WgFieldsPanel.Visibility = Visibility.Visible;
     }
 
-    /// <summary>
-    /// تجزیه یک Section از فایل conf — کلید lowercase
-    /// </summary>
     private static Dictionary<string, string> ParseSection(string conf, string header)
     {
         var result  = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -285,12 +268,12 @@ public partial class ConnectionDialog : Window
         foreach (var rawLine in conf.Split('\n'))
         {
             var line = rawLine.Trim();
-            if (line.StartsWith('#')) continue;          // comment
+            if (line.StartsWith('#')) continue;
 
             if (line.Equals(header, StringComparison.OrdinalIgnoreCase))
             { inSection = true; continue; }
 
-            if (line.StartsWith('[') && inSection) break; // next section
+            if (line.StartsWith('[') && inSection) break;
 
             if (inSection && line.Contains('='))
             {
@@ -302,10 +285,6 @@ public partial class ConnectionDialog : Window
         }
         return result;
     }
-
-    // =========================================================
-    //  OpenVPN import
-    // =========================================================
 
     private void ImportOvpn_Click(object sender, RoutedEventArgs e)
     {
@@ -366,10 +345,6 @@ public partial class ConnectionDialog : Window
             if ((string)item.Tag == proto) { ProtoCombo.SelectedItem = item; return; }
     }
 
-    // =========================================================
-    //  Ok / Cancel
-    // =========================================================
-
     private void Ok_Click(object sender, RoutedEventArgs e)
     {
         var name = NameBox.Text.Trim();
@@ -380,13 +355,15 @@ public partial class ConnectionDialog : Window
 
         if (isWg)
         {
-            // همیشه از مقادیر فعلی فرم کانفیگ را بساز؛
-            // تا تغییر Preshared Key یا سایر فیلدها بعد از Import هم ذخیره شود.
-            _wgConf = BuildWgConf();
+            var built = BuildWgConf();
+            if (string.IsNullOrWhiteSpace(_wgConf))
+                _wgConf = built;
+            else if (AwgCheckBox.IsChecked == true && !_wgConf.Contains("Jc =") && !_wgConf.Contains("jc =") && built.Length > 0)
+                _wgConf = built;
+
             if (_wgConf.Trim().Length == 0)
             { MessageBox.Show(this, Localization.T("لطفاً Private Key، Address، Public Key و Endpoint را پر کنید."), AppConfig.BrandName); return; }
 
-            // Server/Port را از Endpoint در conf می‌خوانیم
             var ep = WgEndpointBox.Text.Trim();
             var server = "";
             int? port  = null;
@@ -401,7 +378,6 @@ public partial class ConnectionDialog : Window
                 else server = ep;
             }
 
-            // تشخیص نوع واقعی از روی محتوای .conf
             var realType = AwgPanel.Visibility == Visibility.Visible ? "amneziawg" : "wireguard";
 
             Result = new ConnectionProfile
@@ -441,7 +417,7 @@ public partial class ConnectionDialog : Window
                 WireGuardConf  = "",
                 Username       = UserBox.Text.Trim(),
                 Password       = PassBox.Password,
-                Psk            = PskBox.Password,
+                Psk            = PskBox.Text, // تغییر از Password به Text
             };
         }
 

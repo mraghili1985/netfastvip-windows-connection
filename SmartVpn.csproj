@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -45,6 +45,10 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <TargetPath>Data\base.ovpn</TargetPath>
     </None>
+    <None Update="base-ikev2.pbk">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <TargetPath>Data\base-ikev2.pbk</TargetPath>
+    </None>
     <!-- ca.crt و README.txt عمدا کنار exe می‌مانند: README باید بلافاصله دیده شود -->
     <None Update="ca.crt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -83,3 +87,4 @@
   </ItemGroup>
 
 </Project>
+

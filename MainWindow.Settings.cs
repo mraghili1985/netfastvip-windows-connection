@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -202,6 +202,8 @@ namespace SmartVpn
         {
             "cloudflare" => ("1.1.1.1", "1.0.0.1"),
             "google" => ("8.8.8.8", "8.8.4.4"),
+            "adguard" => ("94.140.14.14", "94.140.15.15"),
+            "adguard_family" => ("94.140.14.15", "94.140.15.16"),
             "custom" when !string.IsNullOrWhiteSpace(_config.DnsPrimary) => (_config.DnsPrimary.Trim(), _config.DnsSecondary.Trim()),
             _ => null,
         };

@@ -164,7 +164,7 @@
 
             <StackPanel x:Name="PskPanel">
                 <TextBlock Text="کلید مشترک (PSK)" Style="{StaticResource Lbl}"/>
-                <PasswordBox x:Name="PskBox" Style="{StaticResource Pwd}" FlowDirection="LeftToRight"/>
+                <TextBox x:Name="PskBox" Style="{StaticResource Input}" FlowDirection="LeftToRight"/>
             </StackPanel>
 
         </StackPanel>
@@ -213,15 +213,15 @@
                          TextWrapping="Wrap"/>
 
                 <TextBlock Text="Preshared Key  (اختیاری)" Style="{StaticResource Lbl}"/>
-                <PasswordBox x:Name="WgPresharedKeyBox" Style="{StaticResource Pwd}"
-                             FlowDirection="LeftToRight"/>
+                <TextBox x:Name="WgPresharedKeyBox" Style="{StaticResource InputMono}"
+                         TextWrapping="Wrap"/>
 
                 <TextBlock Text="Endpoint  *  (host:port)" Style="{StaticResource Lbl}"/>
                 <TextBox x:Name="WgEndpointBox" Style="{StaticResource InputSmall}"/>
 
                 <TextBlock Text="Allowed IPs" Style="{StaticResource Lbl}"/>
                 <TextBox x:Name="WgAllowedIPsBox" Style="{StaticResource InputSmall}"
-                         Text="0.0.0.0/0, ::/0"/>
+                         Text="0.0.0.0/0"/>
 
                 <TextBlock x:Name="WgKeepaliveLbl" Text="Keepalive (ثانیه — اختیاری)" Style="{StaticResource Lbl}"/>
                 <TextBox x:Name="WgKeepaliveBox" Style="{StaticResource InputSmall}"/>

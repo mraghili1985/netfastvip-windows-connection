@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -610,7 +610,32 @@ namespace SmartVpn
             };
 
             // سه‌نقطه همیشه سمت راست کارت است؛ برچسب وضعیت (در صورت وجود) کنار آن می‌آید — کتگوری اینجا نیست، جایش ثابت در ستون چپ (۰) است
-            var rowRight = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+                        var rowRight = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            var kuma = UptimeKumaClient.GetStatusForProfile(c.Name);
+            if (kuma != null)
+            {
+                var pingColor = kuma.IsUp ? (kuma.Ping < 150 ? Color.FromRgb(0x22, 0xC5, 0x5E) : Color.FromRgb(0xF5, 0x9E, 0x0B)) : Color.FromRgb(0xEF, 0x44, 0x44);
+                var pingPill = new Border
+                {
+                    Background = new SolidColorBrush(Color.FromArgb(0x20, pingColor.R, pingColor.G, pingColor.B)),
+                    BorderBrush = new SolidColorBrush(pingColor),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(5),
+                    Padding = new Thickness(4, 1, 4, 1),
+                    Margin = new Thickness(0, 0, 6, 0),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Child = new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        Children = 
+                        {
+                            new Border { Background = new SolidColorBrush(pingColor), Width = 6, Height = 6, CornerRadius = new CornerRadius(3), Margin = new Thickness(0,0,4,0), VerticalAlignment = VerticalAlignment.Center },
+                            new TextBlock { Text = kuma.IsUp ? $"{kuma.Ping} ms" : "Down", FontSize = 9, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(pingColor), VerticalAlignment = VerticalAlignment.Center }
+                        }
+                    }
+                };
+                rowRight.Children.Add(pingPill);
+            }
             rowRight.Children.Add(dotsBtn);
             if (statusPill != null) rowRight.Children.Add(statusPill);
             Grid.SetColumn(rowRight, 2);

@@ -70,6 +70,31 @@ namespace SmartVpn
             return null;
         }
 
+        private static int? FindWireGuardInterfaceIndex(string confContent)
+        {
+            try
+            {
+                var isAmnezia = WireGuardProvider.IsAmneziaConf(confContent);
+                var tunnelName = WireGuardProvider.ParseTunnelName(confContent, isAmnezia);
+                foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    var name = ni.Name.ToLowerInvariant();
+                    var desc = ni.Description.ToLowerInvariant();
+
+                    if (name == tunnelName.ToLowerInvariant() ||
+                        desc.Contains("wireguard") ||
+                        desc.Contains("amnezia") ||
+                        desc.Contains("wintun"))
+                    {
+                        var v4 = ni.GetIPProperties()?.GetIPv4Properties();
+                        if (v4 != null) return v4.Index;
+                    }
+                }
+            }
+            catch { }
+            return null;
+        }
+
         // فعال‌سازی Kill Switch پس از اتصال موفق (یا بعد از هر اتصال مجدد پس از قطعی موقت) —
         // فیلترها را با آداپتور/سرور تازه به‌روز می‌کند (تا بعد از هر reconnect هم معتبر بماند).
         private async Task ApplyKillSwitchAsync(ConnectionProfile profile, string? tunnelLocalIp)
@@ -78,6 +103,31 @@ namespace SmartVpn
             try
             {
                 var serverIp = _tunnelPeerIp;
+                int? serverPort = profile.Port > 0 ? profile.Port : null;
+
+                if (profile.Type == "wireguard" || profile.Type == "amneziawg")
+                {
+                    var (wgHost, wgPort) = WireGuardProvider.ParseEndpoint(profile.WireGuardConf);
+                    if (wgPort.HasValue) serverPort = wgPort.Value;
+
+                    if (string.IsNullOrWhiteSpace(serverIp) && !string.IsNullOrWhiteSpace(wgHost))
+                    {
+                        if (IPAddress.TryParse(wgHost, out var parsedIp) && parsedIp.AddressFamily == AddressFamily.InterNetwork)
+                        {
+                            serverIp = wgHost;
+                        }
+                        else
+                        {
+                            try
+                            {
+                                var addrs = await Dns.GetHostAddressesAsync(wgHost);
+                                serverIp = addrs.FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork)?.ToString();
+                            }
+                            catch { }
+                        }
+                    }
+                }
+
                 if (string.IsNullOrWhiteSpace(serverIp))
                 {
                     try
@@ -99,13 +149,17 @@ namespace SmartVpn
                 for (int attempt = 0; attempt < 15; attempt++)
                 {
                     ifIndex = FindInterfaceIndexByIp(tunnelLocalIp);
+                    if (ifIndex == null && (profile.Type == "wireguard" || profile.Type == "amneziawg"))
+                    {
+                        ifIndex = FindWireGuardInterfaceIndex(profile.WireGuardConf);
+                    }
                     if (ifIndex != null) break;
                     await Task.Delay(200);
                 }
                 if (ifIndex == null)
                     AppendConnLog("killswitch: هشدار — بعد از چند تلاش هم آداپتور تانل پیدا نشد؛ ممکن است اتصال فعلی بلاک شود، دوباره قطع/وصل کنید");
 
-                var ok = await KillSwitch.EnableAsync(serverIp, profile.Port > 0 ? profile.Port : null, ifIndex);
+                var ok = await KillSwitch.EnableAsync(serverIp, serverPort, ifIndex);
                 if (!ok) AppendConnLog("killswitch: فعال‌سازی ناموفق بود — ترافیک مسدود نشد");
             }
             catch (Exception ex) { AppendConnLog("killswitch enable failed: " + ex.Message); }
@@ -285,6 +339,19 @@ namespace SmartVpn
                 _activeIsWg = isWg;
                 if (isWg)
                 {
+                    var (wgHost, _) = WireGuardProvider.ParseEndpoint(profile.WireGuardConf);
+                    if (!string.IsNullOrWhiteSpace(wgHost))
+                    {
+                        if (IPAddress.TryParse(wgHost, out _))
+                        {
+                            _tunnelPeerIp = wgHost;
+                            ServerIpText.Text = wgHost;
+                        }
+                        else
+                        {
+                            _ = ResolveServerIpAsync(wgHost);
+                        }
+                    }
                     WireGuardProvider.LastHandshake = null;
                     YouText.Text = "—";
                     YouLbl.Text = Localization.T("Last Handshake");
@@ -323,7 +390,8 @@ namespace SmartVpn
                 catch (Exception ex) { AppendConnLog("split-tunnel apply failed: " + ex.Message); }
             }
 
-            if (ResolveDnsChoice() is { } dns)
+            bool isWgProfile = profile.Type == "wireguard" || profile.Type == "amneziawg";
+            if (!isWgProfile && ResolveDnsChoice() is { } dns)
             {
                 try { await DnsManager.ApplyToTunnelAsync(localIp, dns.primary, dns.secondary); }
                 catch (Exception ex) { AppendConnLog("dns apply failed: " + ex.Message); }

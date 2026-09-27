@@ -1,3 +1,5 @@
+﻿using System;
+using System.IO;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -19,7 +21,7 @@ public class RasProvider : IConnectionProvider
     {
         _cfg = cfg;
         _creds = creds;
-        _entryName = $"SmartVpn-{cfg.Type}";
+        _entryName = $"NETFASTVIP-{cfg.Type}";
     }
 
     public string Type => _cfg.Type;
@@ -77,30 +79,85 @@ public class RasProvider : IConnectionProvider
 
         // ساخت (یا بازسازی) انتری VPN با پاورشل — پاک‌سازی در هر دو سطح user و all-user
         // کشف باگ: در Add-VpnConnection ویندوز، تانل IKEv2 فقط از Eap یا MachineCertificate پشتیبانی می‌کند؛ MSChapv2 فقط مال sstp/l2tp/pptp است و روی ikev2 خطای «WIN32 87 - The parameter is incorrect» می‌دهد
-        var authMethod = _cfg.Type == "ikev2" ? "Eap" : "MSChapv2";
-        var eapSetup = _cfg.Type == "ikev2" ? "$eap = New-EapConfiguration; " : "";
-        var eapArgument = _cfg.Type == "ikev2" ? " -EapConfigXmlStream $eap.EapConfigXmlStream" : "";
+                var pbkParam = "";
 
-        var ps =
-            eapSetup +
-            $"Remove-VpnConnection -Name '{_entryName}' -Force -ErrorAction SilentlyContinue; " +
-            $"Remove-VpnConnection -Name '{_entryName}' -AllUserConnection -Force -ErrorAction SilentlyContinue; " +
-            $"Add-VpnConnection -Name '{_entryName}' -ServerAddress '{server}' -TunnelType {TunnelType}{psk} " +
-            $"-AuthenticationMethod {authMethod}{eapArgument} -EncryptionLevel Optional -RememberCredential:$false";
-
-        var create = await RunAsync("powershell", $"-NoProfile -Command \"{ps}\"", ct);
-
-        if (create.ExitCode != 0)
+        if (_cfg.Type == "ikev2")
         {
-            Log?.Invoke($"[{Type}] entry create failed: {Squash(create.Output)}");
-            return false;
+            var templatePath = Path.Combine(AppContext.BaseDirectory, "Data", "base-ikev2.pbk");
+            // Fallback for user manually copying it to root during testing
+            if (!File.Exists(templatePath)) templatePath = Path.Combine(AppContext.BaseDirectory, "base-ikev2.pbk");
+            if (!File.Exists(templatePath)) 
+            {
+                Log?.Invoke($"[{Type}] Error: base-ikev2.pbk not found at {templatePath}. Please ensure it is placed in the Data folder.");
+                return false;
+            }
+            
+            var pbkContent = await File.ReadAllTextAsync(templatePath, ct);
+            
+            // Fix: Regex `.*` in .NET matches `\r` and destroys CRLF, breaking the Windows INI parser!
+            // We safely replace the entry name by finding the first bracket block.
+            pbkContent = Regex.Replace(pbkContent, @"^\[[^\]\r\n]+\]", $"[{_entryName}]", RegexOptions.Multiline);
+            
+            // Safely replace PhoneNumber without capturing \r
+            pbkContent = Regex.Replace(pbkContent, @"^PhoneNumber=[^\r\n]*", $"PhoneNumber={server}", RegexOptions.Multiline);
+            
+            // Force VpnStrategy to strictly IKEv2 (7) instead of Automatic (8)
+                        pbkContent = Regex.Replace(pbkContent, @"^VpnStrategy=\d+", "VpnStrategy=7", RegexOptions.Multiline);
+            
+            // FIX 703 for Certificates: Inject CustomAuthData for EAP-MSCHAPv2 with "Verify server identity" DISABLED.
+            // If it exists, replace it. Otherwise, add it after CustomAuthKey.
+            if (pbkContent.Contains("CustomAuthData=")) {
+                pbkContent = Regex.Replace(pbkContent, @"^CustomAuthData=.*", "CustomAuthData=314442431A00000008000000010000000000000000000000", RegexOptions.Multiline);
+            } else {
+                pbkContent = Regex.Replace(pbkContent, @"^CustomAuthKey=26", "CustomAuthKey=26\r\nCustomAuthData=314442431A00000008000000010000000000000000000000", RegexOptions.Multiline);
+            }
+
+            var globalPbkPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Microsoft", "Network", "Connections", "Pbk", "rasphone.pbk");
+            Directory.CreateDirectory(Path.GetDirectoryName(globalPbkPath)!);
+            
+            string globalPbk = "";
+            if (File.Exists(globalPbkPath))
+            {
+                globalPbk = await File.ReadAllTextAsync(globalPbkPath, ct);
+                // Remove existing entry to avoid duplicates
+                globalPbk = Regex.Replace(globalPbk, $@"^\[{Regex.Escape(_entryName)}\].*?(?=^\[|\z)", "", RegexOptions.Singleline | RegexOptions.Multiline);
+            }
+            
+            globalPbk = globalPbk.TrimEnd() + "\r\n\r\n" + pbkContent;
+            
+            // Write to the global Windows phonebook so it shows up in ncpa.cpl and works with Hotspot!
+            await File.WriteAllTextAsync(globalPbkPath, globalPbk, System.Text.Encoding.ASCII, ct);
+            
+            // Empty pbkParam means rasdial will use the global phonebook natively
+            pbkParam = "";
+        }
+        else
+        {
+            var authMethod = "MSChapv2";
+            var ps =
+                $"Remove-VpnConnection -Name '{_entryName}' -Force -ErrorAction SilentlyContinue; " +
+                $"Remove-VpnConnection -Name '{_entryName}' -AllUserConnection -Force -ErrorAction SilentlyContinue; " +
+                $"Add-VpnConnection -Name '{_entryName}' -ServerAddress '{server}' -TunnelType {TunnelType}{psk} " +
+                $"-AuthenticationMethod {authMethod} -EncryptionLevel Optional -RememberCredential:$false";
+
+            var create = await RunAsync("powershell", $"-NoProfile -Command \"{ps}\"", ct);
+            if (create.ExitCode != 0)
+            {
+                Log?.Invoke($"[{Type}] entry create failed: {Squash(create.Output)}");
+                return false;
+            }
         }
 
-        // شماره‌گیری با rasdial
-        // IKEv2+EAP: باید showWindow=true باشه تا EAP بتونه credential بگیره (بدون error 703)
-        var dial = _cfg.Type == "ikev2"
-            ? await RunAsync("rasdial", $"\"{_entryName}\" \"{_creds.Username}\" \"{_creds.Password}\"", ct, showWindow: true)
-            : await RunAsync("rasdial", $"\"{_entryName}\" \"{_creds.Username}\" \"{_creds.Password}\"", ct);
+        // FIX for Error 703 on first dial: rasdial cannot pass CLI credentials to EAPHost for IKEv2!
+        // We must manually inject them into the Windows Credential Manager before dialing.
+        await RunAsync("cmdkey", $"/add:\"{_entryName}\" /user:\"{_creds.Username}\" /pass:\"{_creds.Password}\"", ct);
+        await RunAsync("cmdkey", $"/generic:\"{_entryName}\" /user:\"{_creds.Username}\" /pass:\"{_creds.Password}\"", ct);
+
+        var dial = await RunAsync("rasdial", $"\"{_entryName}\" \"{_creds.Username}\" \"{_creds.Password}\"{pbkParam}", ct);
+
+        // Clean up injected credentials so they don't linger forever (optional, but good practice)
+        await RunAsync("cmdkey", $"/delete:\"{_entryName}\"", CancellationToken.None);
+        await RunAsync("cmdkey", $"/delete:LegacyGeneric:target=\"{_entryName}\"", CancellationToken.None);
 
         if (dial.ExitCode != 0)
         {
@@ -175,10 +232,12 @@ public class RasProvider : IConnectionProvider
         return null;
     }
 
-    public async Task DisconnectAsync(CancellationToken ct)
+        public async Task DisconnectAsync(CancellationToken ct)
     {
         LocalIp = null;
         await RunAsync("rasdial", $"\"{_entryName}\" /disconnect", ct);
+
+        await RunAsync("rasphone", $"-h \"{_entryName}\"", ct);
     }
 
     public async Task<bool> IsAliveAsync(CancellationToken ct)
@@ -205,3 +264,27 @@ public class RasProvider : IConnectionProvider
         return (proc.ExitCode, (stdout + "\n" + stderr).Trim());
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

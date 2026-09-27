@@ -16,50 +16,70 @@ internal class WireGuardProvider : IConnectionProvider
     private bool _authFailed;
     private string? _localIp;
 
-    private static readonly TimeSpan CommandTimeout = TimeSpan.FromSeconds(15);
-    private static readonly TimeSpan ServiceQueryTimeout = TimeSpan.FromSeconds(3);
-
-    public string Type      => _isAmnezia ? "amneziawg" : "wireguard";
-    public string Kind      => "vpn";
-    public bool   IsEnabled => FindMainExe() != null;
-    public bool   AuthFailed => _authFailed;
-    public string? LocalIp  => _localIp;
+    public string  Type      => _isAmnezia ? "amneziawg" : "wireguard";
+    public string  Kind      => "vpn";
+    public bool    IsEnabled => FindMainExe() != null;
+    public bool    AuthFailed => _authFailed;
+    public string? LocalIp   => _localIp;
+    public string? EndpointHost { get; }
+    public int? EndpointPort { get; }
 
     public static string? LastHandshake { get; internal set; }
 
-    public event Action<string>? Log;
+    public event Action<string>?          Log;
     public event Action<string?, string?>? Connected;
-    public event Action? Disconnected;
+    public event Action?                  Disconnected;
 
     public WireGuardProvider(string confContent)
     {
         _confContent = confContent;
-        _isAmnezia = IsAmneziaConf(confContent);
+        _isAmnezia   = IsAmneziaConf(confContent);
+        var (host, port) = ParseEndpoint(confContent);
+        EndpointHost = host;
+        EndpointPort = port;
     }
 
-    private static bool IsAmneziaConf(string conf) =>
-        conf.Contains("\nJc =") || conf.Contains("\nH1 =") ||
-        conf.Contains("\nJmin =") || conf.Contains("# amw");
+    public static bool IsAmneziaConf(string conf)
+    {
+        if (string.IsNullOrWhiteSpace(conf)) return false;
+        if (conf.Contains("# amw", StringComparison.OrdinalIgnoreCase)) return true;
+        if (conf.Contains("HeaderProtectionKey", StringComparison.OrdinalIgnoreCase)) return true;
+        return System.Text.RegularExpressions.Regex.IsMatch(conf, @"(?mi)^\s*(Jc|Jmin|Jmax|H[1-4]|S[1-4]|HeaderProtectionKey)\s*=");
+    }
 
     private string? FindMainExe()
     {
-        var folder = _isAmnezia ? "amneziawg" : "wireguard";
         var exe = _isAmnezia ? "amneziawg.exe" : "wireguard.exe";
-        var path = Path.Combine(AppContext.BaseDirectory, "Data", folder, exe);
-        return File.Exists(path) ? path : null;
+        var p = Path.Combine(AppContext.BaseDirectory, "Data", "wireguard", exe);
+        if (File.Exists(p)) return p;
+        p = Path.Combine(AppContext.BaseDirectory, "Data", _isAmnezia ? "amneziawg" : "wireguard", exe);
+        if (File.Exists(p)) return p;
+        p = Path.Combine(AppContext.BaseDirectory, "wireguard", exe);
+        if (File.Exists(p)) return p;
+        return null;
     }
 
     private string? FindWgCliExe()
     {
-        var folder = _isAmnezia ? "amneziawg" : "wireguard";
         var exe = _isAmnezia ? "awg.exe" : "wg.exe";
-        var path = Path.Combine(AppContext.BaseDirectory, "Data", folder, exe);
-        return File.Exists(path) ? path : null;
+        var p = Path.Combine(AppContext.BaseDirectory, "Data", "wireguard", exe);
+        if (File.Exists(p)) return p;
+        p = Path.Combine(AppContext.BaseDirectory, "Data", _isAmnezia ? "amneziawg" : "wireguard", exe);
+        if (File.Exists(p)) return p;
+        p = Path.Combine(AppContext.BaseDirectory, "wireguard", exe);
+        if (File.Exists(p)) return p;
+        return null;
     }
 
     private string SvcName => (_isAmnezia ? "AmneziaWGTunnel$" : "WireGuardTunnel$") + _tunnelName;
 
-    private static string ParseTunnelName(string conf)
+    private bool IsServiceInstalled()
+        => RunAndGetOutput("sc", $"query \"{SvcName}\"").Contains("SERVICE_NAME");
+
+    private bool IsServiceRunning()
+        => RunAndGetOutput("sc", $"query \"{SvcName}\"").Contains("RUNNING");
+
+    public static string ParseTunnelName(string conf, bool isAmnezia = false)
     {
         foreach (var line in conf.Split('\n'))
         {
@@ -67,18 +87,40 @@ internal class WireGuardProvider : IConnectionProvider
             if (l.StartsWith("# Name", StringComparison.OrdinalIgnoreCase))
             {
                 var eq = l.IndexOf('=');
-                if (eq >= 0)
-                {
-                    var name = l[(eq + 1)..].Trim();
-                    if (name.Length > 0) return name;
-                }
+                if (eq >= 0) return l.Substring(eq + 1).Trim();
             }
-
-            if (l.StartsWith("[Interface]", StringComparison.OrdinalIgnoreCase))
-                break;
+            if (l.StartsWith("[Interface]", StringComparison.OrdinalIgnoreCase)) break;
         }
+        return isAmnezia ? "awg0" : "wg0";
+    }
 
-        return "wg0";
+    public static (string? Host, int? Port) ParseEndpoint(string conf)
+    {
+        foreach (var line in conf.Split('\n'))
+        {
+            var l = line.Trim();
+            if (!l.StartsWith("Endpoint", StringComparison.OrdinalIgnoreCase)) continue;
+
+            var eq = l.IndexOf('=');
+            if (eq < 0) continue;
+
+            var value = l[(eq + 1)..].Trim();
+            if (string.IsNullOrEmpty(value)) continue;
+
+            var lastColon = value.LastIndexOf(':');
+            if (lastColon > 0)
+            {
+                var host = value[..lastColon].Trim('[', ']', ' ');
+                var portStr = value[(lastColon + 1)..].Trim();
+                if (int.TryParse(portStr, out var port))
+                {
+                    return (host, port);
+                }
+                return (host, null);
+            }
+            return (value, null);
+        }
+        return (null, null);
     }
 
     private static string? ParseAddress(string conf)
@@ -87,225 +129,121 @@ internal class WireGuardProvider : IConnectionProvider
         {
             var l = line.Trim();
             if (!l.StartsWith("Address", StringComparison.OrdinalIgnoreCase)) continue;
-
             var eq = l.IndexOf('=');
             if (eq < 0) continue;
-
-            var value = l[(eq + 1)..].Trim().Split(',')[0].Trim();
-            var slash = value.IndexOf('/');
-            return slash > 0 ? value[..slash] : value;
+            var val   = l.Substring(eq + 1).Trim().Split(',')[0].Trim();
+            var slash = val.IndexOf('/');
+            return slash > 0 ? val.Substring(0, slash) : val;
         }
-
         return null;
     }
 
-    /// <summary>
-    /// اجرای امن process. خروجی و خطا هم‌زمان خوانده می‌شوند تا pipe پر نشود
-    /// و wireguard.exe باعث deadlock یا هنگ برنامه نشود.
-    /// </summary>
-    private static async Task<(bool Completed, int ExitCode, string StdOut, string StdErr)> RunProcessAsync(
-        string exe,
-        string arguments,
-        CancellationToken cancellationToken,
-        TimeSpan timeout)
+    private static string RunAndGetOutput(string exe, string args)
     {
-        var psi = new ProcessStartInfo(exe, arguments)
-        {
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-        };
-
-        using var process = Process.Start(psi);
-        if (process == null)
-            return (false, -1, string.Empty, "process start failed");
-
-        // خواندن هر دو pipe قبل از انتظار برای خروج، جلوی deadlock را می‌گیرد.
-        var stdoutTask = process.StandardOutput.ReadToEndAsync();
-        var stderrTask = process.StandardError.ReadToEndAsync();
-
-        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(timeout);
-
-        var completed = false;
         try
         {
-            await process.WaitForExitAsync(timeoutCts.Token).ConfigureAwait(false);
-            completed = true;
-        }
-        catch (OperationCanceledException)
-        {
-            try
+            var psi = new ProcessStartInfo(exe, args)
             {
-                if (!process.HasExited)
-                    process.Kill(entireProcessTree: true);
-            }
-            catch { }
-
-            try { await process.WaitForExitAsync().ConfigureAwait(false); }
-            catch { }
+                UseShellExecute        = false,
+                CreateNoWindow         = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError  = true,
+            };
+            using var p = Process.Start(psi);
+            if (p == null) return string.Empty;
+            var output = p.StandardOutput.ReadToEnd();
+            p.WaitForExit(5000);
+            return output;
         }
-
-        string stdout;
-        string stderr;
-        try { stdout = await stdoutTask.ConfigureAwait(false); }
-        catch { stdout = string.Empty; }
-        try { stderr = await stderrTask.ConfigureAwait(false); }
-        catch { stderr = string.Empty; }
-
-        var exitCode = -1;
-        try
-        {
-            if (process.HasExited)
-                exitCode = process.ExitCode;
-        }
-        catch { }
-
-        return (completed, exitCode, stdout, stderr);
+        catch { return string.Empty; }
     }
 
-    private static async Task<string> RunAndGetOutputAsync(
-        string exe,
-        string arguments,
-        CancellationToken cancellationToken)
-    {
-        var result = await RunProcessAsync(
-            exe,
-            arguments,
-            cancellationToken,
-            ServiceQueryTimeout).ConfigureAwait(false);
-
-        return result.StdOut + Environment.NewLine + result.StdErr;
-    }
-
-    private async Task<bool> RunExeAsync(
-        string exe,
-        string arguments,
-        CancellationToken cancellationToken)
+    private async Task RunExeAsync(string exe, string arguments, CancellationToken ct)
     {
         Log?.Invoke($"[wg] {Path.GetFileName(exe)} {arguments}");
-
-        var result = await RunProcessAsync(
-            exe,
-            arguments,
-            cancellationToken,
-            CommandTimeout).ConfigureAwait(false);
-
-        if (!string.IsNullOrWhiteSpace(result.StdOut))
-            Log?.Invoke("[wg] " + result.StdOut.Trim());
-        if (!string.IsNullOrWhiteSpace(result.StdErr))
-            Log?.Invoke("[wg] err: " + result.StdErr.Trim());
-
-        if (!result.Completed)
+        var psi = new ProcessStartInfo(exe, arguments)
         {
-            Log?.Invoke($"[wg] command timeout or cancellation: {Path.GetFileName(exe)}");
-            return false;
-        }
-
-        if (result.ExitCode != 0)
-        {
-            Log?.Invoke($"[wg] command exited with code {result.ExitCode}");
-            return false;
-        }
-
-        return true;
+            UseShellExecute        = false,
+            CreateNoWindow         = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError  = true,
+        };
+        using var p = Process.Start(psi);
+        if (p == null) { Log?.Invoke("[wg] failed to start process"); return; }
+        var stdout = await p.StandardOutput.ReadToEndAsync();
+        var stderr = await p.StandardError.ReadToEndAsync();
+        await p.WaitForExitAsync(ct);
+        if (!string.IsNullOrWhiteSpace(stdout)) Log?.Invoke("[wg] " + stdout.Trim());
+        if (!string.IsNullOrWhiteSpace(stderr)) Log?.Invoke("[wg] err: " + stderr.Trim());
     }
 
-    private async Task<bool> IsServiceInstalledAsync(CancellationToken cancellationToken)
-    {
-        var output = await RunAndGetOutputAsync(
-            "sc",
-            $"query \"{SvcName}\"",
-            cancellationToken).ConfigureAwait(false);
-
-        return output.Contains("SERVICE_NAME", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private async Task<bool> IsServiceRunningAsync(CancellationToken cancellationToken)
-    {
-        var output = await RunAndGetOutputAsync(
-            "sc",
-            $"query \"{SvcName}\"",
-            cancellationToken).ConfigureAwait(false);
-
-        return output.Contains("RUNNING", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private async Task UpdateHandshakeAsync(CancellationToken cancellationToken)
+    private void UpdateHandshake()
     {
         try
         {
             var cli = FindWgCliExe();
-            if (cli == null)
-            {
-                LastHandshake = null;
-                return;
-            }
+            if (cli == null) { LastHandshake = null; return; }
 
-            var result = await RunProcessAsync(
-                cli,
-                $"show \"{_tunnelName}\" latest-handshakes",
-                cancellationToken,
-                ServiceQueryTimeout).ConfigureAwait(false);
+            var output = RunAndGetOutput(cli, $"show {_tunnelName} latest-handshakes");
+            if (string.IsNullOrWhiteSpace(output)) { LastHandshake = "—"; return; }
 
-            var output = result.StdOut;
-            if (!result.Completed || string.IsNullOrWhiteSpace(output))
-            {
-                LastHandshake = "—";
-                return;
-            }
-
-            long bestTimestamp = 0;
+            long bestTs = 0;
             foreach (var line in output.Split('\n'))
             {
-                var parts = line.Trim().Split('\t');
-                if (parts.Length >= 2 &&
-                    long.TryParse(parts[^1].Trim(), out var timestamp) &&
-                    timestamp > bestTimestamp)
-                {
-                    bestTimestamp = timestamp;
-                }
+                var parts = line.Trim().Split(new[] { '\t', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length >= 2 && long.TryParse(parts[^1].Trim(), out var ts) && ts > bestTs)
+                    bestTs = ts;
             }
 
-            if (bestTimestamp == 0)
-            {
-                LastHandshake = "never";
-                return;
-            }
+            if (bestTs == 0) { LastHandshake = "never"; return; }
 
-            var ago = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - bestTimestamp;
+            // همه انگلیسی — مثل بقیه status label ها
+            var ago = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - bestTs;
             LastHandshake = ago switch
             {
-                < 0 => "—",
-                < 60 => $"{ago}s ago",
+                < 0    => "—",
+                < 60   => $"{ago}s ago",
                 < 3600 => $"{ago / 60}m ago",
-                _ => $"{ago / 3600}h ago",
+                _      => $"{ago / 3600}h ago",
             };
         }
-        catch (OperationCanceledException)
+        catch { LastHandshake = "—"; }
+    }
+
+    private void EnsureNetworkCleanState()
+    {
+        try
         {
-            // توقف عادی اتصال است.
+            // ۱) غیرفعال‌سازی Forwarding و WeakHost روی تمام اینترفیس‌ها جهت جلوگیری از لوپ دیتای WireGuard/AmneziaWG
+            // ۲) حذف روت‌های باقیمانده‌ی 0.0.0.0/1 و 128.0.0.0/1 از VPNهای دیگر که ترافیک را می‌ربایند
+            var script = "$ErrorActionPreference = 'SilentlyContinue'; " +
+                         "Get-NetIPInterface -AddressFamily IPv4 | Where-Object { $_.Forwarding -eq 'Enabled' } | Set-NetIPInterface -Forwarding Disabled -WeakHostSend Disabled; " +
+                         "Get-NetRoute -DestinationPrefix '0.0.0.0/1','128.0.0.0/1' | Where-Object { $_.InterfaceAlias -notmatch '(?i)wireguard|amnezia|wintun' } | Remove-NetRoute -Confirm:$false";
+
+            var psi = new ProcessStartInfo("powershell", "-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"" + script + "\"")
+            {
+                CreateNoWindow = true,
+                UseShellExecute = false,
+            };
+            using var p = Process.Start(psi);
+            p?.WaitForExit(3000);
+            Log?.Invoke("[wg] network clean-up complete (forwarding disabled, lingering /1 routes cleared)");
         }
-        catch
+        catch (Exception ex)
         {
-            LastHandshake = "—";
+            Log?.Invoke("[wg] network clean-up notice: " + ex.Message);
         }
     }
 
-    public Task<bool> ProbeAsync(string host, CancellationToken cancellationToken)
+    public Task<bool> ProbeAsync(string host, CancellationToken ct)
         => Task.FromResult(IsEnabled);
 
-    public async Task<bool> ConnectAsync(string host, CancellationToken cancellationToken)
+    public async Task<bool> ConnectAsync(string host, CancellationToken ct)
     {
-        _authFailed = false;
-        _localIp = null;
+        _authFailed   = false;
+        _localIp      = null;
         LastHandshake = null;
-
-        _cts?.Cancel();
-        _cts?.Dispose();
-        _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var ct = _cts.Token;
+        _cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
 
         var mainExe = FindMainExe();
         if (mainExe == null)
@@ -315,127 +253,87 @@ internal class WireGuardProvider : IConnectionProvider
             return false;
         }
 
-        _tunnelName = ParseTunnelName(_confContent);
+        // پاک‌سازی تداخل‌های شبکه و جلوگیری از لوپ دیتا
+        EnsureNetworkCleanState();
+
+        _tunnelName = ParseTunnelName(_confContent, _isAmnezia);
         Log?.Invoke($"[wg] tunnel: {_tunnelName} | amnezia: {_isAmnezia}");
 
-        var dataDir = Path.Combine(
-            AppContext.BaseDirectory,
-            "Data",
-            _isAmnezia ? "amneziawg" : "wireguard");
+        var dataDir = Path.Combine(AppContext.BaseDirectory, "Data", "wireguard");
         Directory.CreateDirectory(dataDir);
-
         _confPath = Path.Combine(dataDir, $"{_tunnelName}.conf");
-        await File.WriteAllTextAsync(_confPath, _confContent, ct).ConfigureAwait(false);
+        await File.WriteAllTextAsync(_confPath, _confContent, ct);
         Log?.Invoke($"[wg] conf written: {_confPath}");
 
-        if (await IsServiceInstalledAsync(ct).ConfigureAwait(false))
+        // پاک‌سازی تانل قدیمی هم‌نام از هر دو سرویس wireguard و amneziawg جهت رفع کامل هرگونه تداخل
+        var wgExePath = Path.Combine(AppContext.BaseDirectory, "Data", "wireguard", "wireguard.exe");
+        var awgExePath = Path.Combine(AppContext.BaseDirectory, "Data", "wireguard", "amneziawg.exe");
+        if (File.Exists(wgExePath) && RunAndGetOutput("sc", $"query \"WireGuardTunnel${_tunnelName}\"").Contains("SERVICE_NAME"))
         {
-            Log?.Invoke("[wg] existing tunnel — uninstalling first");
-            await RunExeAsync(
-                mainExe,
-                $"/uninstalltunnelservice \"{_tunnelName}\"",
-                ct).ConfigureAwait(false);
-
-            // فرصت کوتاه برای آزادشدن سرویس و آداپتور Wintun.
-            await Task.Delay(1000, ct).ConfigureAwait(false);
+            Log?.Invoke($"[wg] removing existing WireGuardTunnel${_tunnelName}");
+            await RunExeAsync(wgExePath, $"/uninstalltunnelservice {_tunnelName}", _cts.Token);
+            await Task.Delay(1000, _cts.Token);
+        }
+        if (File.Exists(awgExePath) && RunAndGetOutput("sc", $"query \"AmneziaWGTunnel${_tunnelName}\"").Contains("SERVICE_NAME"))
+        {
+            Log?.Invoke($"[wg] removing existing AmneziaWGTunnel${_tunnelName}");
+            await RunExeAsync(awgExePath, $"/uninstalltunnelservice {_tunnelName}", _cts.Token);
+            await Task.Delay(1000, _cts.Token);
         }
 
         Log?.Invoke("[wg] installing tunnel service");
-        var installed = await RunExeAsync(
-            mainExe,
-            $"/installtunnelservice \"{_confPath}\"",
-            ct).ConfigureAwait(false);
+        await RunExeAsync(mainExe, $"/installtunnelservice \"{_confPath}\"", _cts.Token);
 
-        if (!installed)
+        bool started = false;
+        for (int i = 0; i < 20; i++)
         {
-            Log?.Invoke("[wg] tunnel service installation failed");
-            Disconnected?.Invoke();
-            return false;
-        }
-
-        var started = false;
-        for (var i = 0; i < 24; i++)
-        {
-            ct.ThrowIfCancellationRequested();
-            if (await IsServiceRunningAsync(ct).ConfigureAwait(false))
-            {
-                started = true;
-                break;
-            }
-
-            await Task.Delay(500, ct).ConfigureAwait(false);
+            await Task.Delay(500, _cts.Token);
+            if (IsServiceRunning()) { started = true; break; }
         }
 
         if (!started)
         {
             Log?.Invoke("[wg] service did not start in time");
-            await RunExeAsync(
-                mainExe,
-                $"/uninstalltunnelservice \"{_tunnelName}\"",
-                CancellationToken.None).ConfigureAwait(false);
             Disconnected?.Invoke();
             return false;
         }
 
         _localIp = ParseAddress(_confContent);
-        Log?.Invoke("[wg] tunnel service started; waiting for handshake");
+        Log?.Invoke("[wg] connected!");
         Connected?.Invoke(_localIp, null);
-        _ = Task.Run(() => MonitorAsync(ct), ct);
+        _ = Task.Run(() => MonitorAsync(_cts.Token), _cts.Token);
         return true;
     }
 
-    private async Task MonitorAsync(CancellationToken cancellationToken)
+    private async Task MonitorAsync(CancellationToken ct)
     {
-        try
+        while (!ct.IsCancellationRequested)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            await Task.Delay(5000, ct).ConfigureAwait(false);
+            if (ct.IsCancellationRequested) break;
+            UpdateHandshake();
+            if (!IsServiceRunning())
             {
-                await Task.Delay(5000, cancellationToken).ConfigureAwait(false);
-                if (cancellationToken.IsCancellationRequested) break;
-
-                await UpdateHandshakeAsync(cancellationToken).ConfigureAwait(false);
-                if (!await IsServiceRunningAsync(cancellationToken).ConfigureAwait(false))
-                {
-                    Log?.Invoke("[wg] service stopped unexpectedly");
-                    Disconnected?.Invoke();
-                    return;
-                }
+                Log?.Invoke("[wg] service stopped unexpectedly");
+                Disconnected?.Invoke();
+                return;
             }
         }
-        catch (OperationCanceledException)
-        {
-            // توقف عادی اتصال است.
-        }
-        catch (Exception ex)
-        {
-            Log?.Invoke("[wg] monitor error: " + ex.Message);
-        }
     }
 
-    public async Task DisconnectAsync(CancellationToken cancellationToken)
+    public async Task DisconnectAsync(CancellationToken ct)
     {
         _cts?.Cancel();
-        _authFailed = false;
-        _localIp = null;
+        _authFailed   = false;
+        _localIp      = null;
         LastHandshake = null;
-
         var mainExe = FindMainExe();
         if (mainExe == null) return;
-
         Log?.Invoke("[wg] uninstalling tunnel service");
-        await RunExeAsync(
-            mainExe,
-            $"/uninstalltunnelservice \"{_tunnelName}\"",
-            CancellationToken.None).ConfigureAwait(false);
-
-        try
-        {
-            if (_confPath != null && File.Exists(_confPath))
-                File.Delete(_confPath);
-        }
-        catch { }
+        await RunExeAsync(mainExe, $"/uninstalltunnelservice {_tunnelName}", CancellationToken.None);
+        try { if (_confPath != null && File.Exists(_confPath)) File.Delete(_confPath); } catch { }
     }
 
-    public async Task<bool> IsAliveAsync(CancellationToken cancellationToken)
-        => await IsServiceRunningAsync(cancellationToken).ConfigureAwait(false);
+    public Task<bool> IsAliveAsync(CancellationToken ct)
+        => Task.FromResult(IsServiceRunning());
 }

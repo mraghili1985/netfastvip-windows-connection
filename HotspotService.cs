@@ -2,7 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -30,8 +34,14 @@ namespace SmartVpn
         {
             if (string.IsNullOrWhiteSpace(adapterName)) return false;
 
-            var normalized = adapterName.Trim().Replace("*", " ");
-            normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"\s+", " ");
+            var raw = adapterName.Trim();
+
+            // الگوی Local Area Connection* به همراه هر شماره‌ای
+            if (Regex.IsMatch(raw, @"^Local Area Connection\s*\*\s*\d+", RegexOptions.IgnoreCase))
+                return true;
+
+            var normalized = raw.Replace("*", " ");
+            normalized = Regex.Replace(normalized, @"\s+", " ");
 
             bool hasWifi = normalized.Contains("Wi-Fi", StringComparison.OrdinalIgnoreCase)
                 || normalized.Contains("WiFi", StringComparison.OrdinalIgnoreCase)
@@ -50,16 +60,24 @@ namespace SmartVpn
             bool hasHosted = normalized.Contains("Hosted Network", StringComparison.OrdinalIgnoreCase)
                 || normalized.Contains("HostedNetwork", StringComparison.OrdinalIgnoreCase);
 
-            bool isLocalAreaConnectionTarget = normalized.Contains("Local Area Connection", StringComparison.OrdinalIgnoreCase)
-                && (normalized.Contains("*", StringComparison.Ordinal) || normalized.EndsWith(" 10", StringComparison.OrdinalIgnoreCase)
-                    || normalized.EndsWith(" 11", StringComparison.OrdinalIgnoreCase)
-                    || normalized.EndsWith(" 12", StringComparison.OrdinalIgnoreCase)
-                    || normalized.EndsWith(" 13", StringComparison.OrdinalIgnoreCase)
-                    || normalized.EndsWith(" 14", StringComparison.OrdinalIgnoreCase)
-                    || normalized.EndsWith(" 15", StringComparison.OrdinalIgnoreCase));
-
-            if (hasDirect || hasHosted || isLocalAreaConnectionTarget)
+            if (hasDirect || hasHosted)
                 return true;
+
+            try
+            {
+                var nic = NetworkInterface.GetAllNetworkInterfaces().FirstOrDefault(n => n.Name.Equals(raw, StringComparison.OrdinalIgnoreCase));
+                if (nic != null)
+                {
+                    var d = nic.Description ?? "";
+                    if (d.Contains("Wi-Fi Direct", StringComparison.OrdinalIgnoreCase) ||
+                        d.Contains("WiFi Direct", StringComparison.OrdinalIgnoreCase) ||
+                        d.Contains("Hosted Network", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+            catch { }
 
             return hasVirtual && hasWifi;
         }
@@ -68,8 +86,12 @@ namespace SmartVpn
         {
             if (string.IsNullOrWhiteSpace(adapterName)) return false;
 
-            var normalized = adapterName.Trim().Replace("*", " ");
-            normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"\s+", " ");
+            var raw = adapterName.Trim();
+            if (Regex.IsMatch(raw, @"^Local Area Connection\s*\*\s*\d+", RegexOptions.IgnoreCase))
+                return true;
+
+            var normalized = raw.Replace("*", " ");
+            normalized = Regex.Replace(normalized, @"\s+", " ");
 
             return normalized.Contains("Local Area Connection", StringComparison.OrdinalIgnoreCase)
                 && (normalized.EndsWith(" 10", StringComparison.OrdinalIgnoreCase)
@@ -85,7 +107,7 @@ namespace SmartVpn
             if (string.IsNullOrWhiteSpace(adapterName)) return false;
 
             var normalized = adapterName.Trim().Replace("*", " ");
-            normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"\s+", " ");
+            normalized = Regex.Replace(normalized, @"\s+", " ");
 
             bool isLocalArea = IsLocalAreaHotspotTargetAdapter(adapterName);
             if (isLocalArea)
@@ -120,11 +142,294 @@ namespace SmartVpn
                 || name.Contains("RAS", StringComparison.OrdinalIgnoreCase);
         }
 
+        public static bool IsPhysicalNic(NetworkInterface nic)
+        {
+            if (nic.NetworkInterfaceType is NetworkInterfaceType.Loopback
+                or NetworkInterfaceType.Ppp
+                or NetworkInterfaceType.Tunnel) return false;
+
+            var d = (nic.Description ?? "").ToLowerInvariant();
+            if (d.Contains("virtual") || d.Contains("vmware") || d.Contains("hyper-v") || d.Contains("vethernet")
+                || d.Contains("virtualbox") || d.Contains("tap") || d.Contains("tun") || d.Contains("openvpn")
+                || d.Contains("wireguard") || d.Contains("wintun") || d.Contains("wan miniport") || d.Contains("bluetooth"))
+                return false;
+
+            return true;
+        }
+
+        public static string? GetValidIpv4(NetworkInterface nic)
+        {
+            try
+            {
+                var ipProps = nic.GetIPProperties();
+                if (ipProps?.UnicastAddresses == null) return null;
+                foreach (var u in ipProps.UnicastAddresses)
+                {
+                    if (u.Address.AddressFamily == AddressFamily.InterNetwork)
+                    {
+                        var ipStr = u.Address.ToString();
+                        if (!ipStr.StartsWith("127.", StringComparison.Ordinal) &&
+                            !ipStr.StartsWith("169.254.", StringComparison.Ordinal) &&
+                            ipStr != "0.0.0.0")
+                        {
+                            return ipStr;
+                        }
+                    }
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        public static string? FindBestVpnSourceAdapter(string? activeConn, string? tunnelLocalIp, IEnumerable<string>? extraCandidateNames = null)
+        {
+            var nics = NetworkInterface.GetAllNetworkInterfaces();
+
+            // ۱. اولویت اول و قطعی: تطابق ۱۰۰٪ بر اساس آی‌پی تانل اختصاص داده شده
+            if (!string.IsNullOrWhiteSpace(tunnelLocalIp))
+            {
+                foreach (var nic in nics)
+                {
+                    if (nic.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
+                    if (nic.OperationalStatus == OperationalStatus.Down) continue;
+                    if (IsHotspotTargetAdapter(nic.Name)) continue;
+                    if (IsPhysicalNic(nic)) continue;
+
+                    var ip = GetValidIpv4(nic);
+                    if (ip == tunnelLocalIp)
+                    {
+                        return nic.Name;
+                    }
+                }
+            }
+
+            var conn = (activeConn ?? string.Empty).Trim();
+            bool isOvpn = conn.Contains("OpenVPN", StringComparison.OrdinalIgnoreCase);
+            bool isWg = conn.Contains("WireGuard", StringComparison.OrdinalIgnoreCase) || conn.Contains("Amnezia", StringComparison.OrdinalIgnoreCase);
+            bool isRas = conn.Contains("L2TP", StringComparison.OrdinalIgnoreCase) ||
+                        conn.Contains("SSTP", StringComparison.OrdinalIgnoreCase) ||
+                        conn.Contains("IKEv2", StringComparison.OrdinalIgnoreCase) ||
+                        conn.Contains("PPTP", StringComparison.OrdinalIgnoreCase);
+
+            string? candidateByProtocol = null;
+            string? candidateByLikelyVpn = null;
+            string? candidateNonPhysicalUp = null;
+
+            // ۲. اولویت دوم: تطابق بر اساس درایور، مشخصات اینترفیس (Description) و نام (Name)
+            // بسیار مهم: کارتی که وضعیتش Down است یا هیچ آدرس IPv4 فعالی ندارد یا فیزیکی است، رد می‌شود!
+            foreach (var nic in nics)
+            {
+                if (nic.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
+                if (nic.OperationalStatus == OperationalStatus.Down) continue;
+
+                var name = nic.Name;
+                if (IsHotspotTargetAdapter(name)) continue;
+                if (IsPhysicalNic(nic)) continue;
+
+                var ip = GetValidIpv4(nic);
+                if (string.IsNullOrEmpty(ip)) continue; // کارت‌های بدون IP فعال رد می‌شوند
+
+                var desc = nic.Description ?? "";
+
+                // تطابق نام کانکشن در اپ با نام آداپتور
+                if (!string.IsNullOrWhiteSpace(conn) &&
+                    (name.Equals(conn, StringComparison.OrdinalIgnoreCase) ||
+                     name.Contains(conn, StringComparison.OrdinalIgnoreCase) ||
+                     conn.Contains(name, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return name;
+                }
+
+                // درایورهای OpenVPN: DCO, TAP, Wintun
+                if (isOvpn)
+                {
+                    bool matchOvpn = desc.Contains("OpenVPN", StringComparison.OrdinalIgnoreCase)
+                                  || desc.Contains("TAP-Windows", StringComparison.OrdinalIgnoreCase)
+                                  || desc.Contains("Data Channel Offload", StringComparison.OrdinalIgnoreCase)
+                                  || desc.Contains("dco", StringComparison.OrdinalIgnoreCase)
+                                  || desc.Contains("wintun", StringComparison.OrdinalIgnoreCase)
+                                  || name.Contains("OpenVPN", StringComparison.OrdinalIgnoreCase)
+                                  || name.Contains("TAP", StringComparison.OrdinalIgnoreCase)
+                                  || name.Contains("DCO", StringComparison.OrdinalIgnoreCase);
+                    if (matchOvpn)
+                    {
+                        if (candidateByProtocol == null || (!name.StartsWith("Local Area", StringComparison.OrdinalIgnoreCase) && candidateByProtocol.StartsWith("Local Area", StringComparison.OrdinalIgnoreCase)))
+                        {
+                            candidateByProtocol = name;
+                        }
+                    }
+                }
+
+                // درایورهای WireGuard / Amnezia
+                if (isWg)
+                {
+                    bool matchWg = desc.Contains("WireGuard", StringComparison.OrdinalIgnoreCase)
+                                || desc.Contains("Amnezia", StringComparison.OrdinalIgnoreCase)
+                                || desc.Contains("Wintun", StringComparison.OrdinalIgnoreCase)
+                                || name.Contains("WireGuard", StringComparison.OrdinalIgnoreCase)
+                                || name.Contains("Amnezia", StringComparison.OrdinalIgnoreCase)
+                                || name.Contains("Wintun", StringComparison.OrdinalIgnoreCase)
+                                || name.Contains("wg", StringComparison.OrdinalIgnoreCase);
+
+                    if (matchWg)
+                    {
+                        if (candidateByProtocol == null || (!name.StartsWith("Local Area", StringComparison.OrdinalIgnoreCase) && candidateByProtocol.StartsWith("Local Area", StringComparison.OrdinalIgnoreCase)))
+                        {
+                            candidateByProtocol = name;
+                        }
+                    }
+                }
+
+                // پروتکل‌های RAS
+                if (isRas)
+                {
+                    bool matchRas = nic.NetworkInterfaceType == NetworkInterfaceType.Ppp
+                                 || desc.Contains("WAN Miniport", StringComparison.OrdinalIgnoreCase)
+                                 || desc.Contains("SSTP", StringComparison.OrdinalIgnoreCase)
+                                 || desc.Contains("L2TP", StringComparison.OrdinalIgnoreCase)
+                                 || desc.Contains("IKEv2", StringComparison.OrdinalIgnoreCase)
+                                 || desc.Contains("PPTP", StringComparison.OrdinalIgnoreCase)
+                                 || name.Contains("SSTP", StringComparison.OrdinalIgnoreCase)
+                                 || name.Contains("L2TP", StringComparison.OrdinalIgnoreCase)
+                                 || name.Contains("IKEv2", StringComparison.OrdinalIgnoreCase)
+                                 || name.Contains("PPTP", StringComparison.OrdinalIgnoreCase);
+
+                    if (matchRas)
+                    {
+                        if (candidateByProtocol == null || (!name.StartsWith("Local Area", StringComparison.OrdinalIgnoreCase) && candidateByProtocol.StartsWith("Local Area", StringComparison.OrdinalIgnoreCase)))
+                        {
+                            candidateByProtocol = name;
+                        }
+                    }
+                }
+
+                // امضای کلی VPN در نام یا توصیف
+                bool isLikely = IsLikelyVpnSourceAdapter(name) || IsLikelyVpnSourceAdapter(desc) ||
+                                desc.Contains("TAP", StringComparison.OrdinalIgnoreCase) ||
+                                desc.Contains("TUN", StringComparison.OrdinalIgnoreCase) ||
+                                desc.Contains("Wintun", StringComparison.OrdinalIgnoreCase) ||
+                                desc.Contains("OpenVPN", StringComparison.OrdinalIgnoreCase) ||
+                                desc.Contains("WireGuard", StringComparison.OrdinalIgnoreCase) ||
+                                desc.Contains("Data Channel Offload", StringComparison.OrdinalIgnoreCase) ||
+                                nic.NetworkInterfaceType == NetworkInterfaceType.Ppp ||
+                                nic.NetworkInterfaceType == NetworkInterfaceType.Tunnel;
+
+                if (isLikely && candidateByLikelyVpn == null)
+                {
+                    candidateByLikelyVpn = name;
+                }
+
+                if (candidateNonPhysicalUp == null)
+                {
+                    candidateNonPhysicalUp = name;
+                }
+            }
+
+            if (candidateByProtocol != null) return candidateByProtocol;
+            if (candidateByLikelyVpn != null) return candidateByLikelyVpn;
+
+            // ۳. بررسی اسامی لیست کاندیداها (مثلاً از PowerShell یا کش قبلی)
+            if (extraCandidateNames != null)
+            {
+                foreach (var adp in extraCandidateNames)
+                {
+                    if (IsHotspotTargetAdapter(adp)) continue;
+
+                    var matchNic = nics.FirstOrDefault(n => n.Name.Equals(adp, StringComparison.OrdinalIgnoreCase));
+                    if (matchNic != null)
+                    {
+                        if (matchNic.OperationalStatus == OperationalStatus.Down) continue;
+                        if (IsPhysicalNic(matchNic)) continue;
+                        if (string.IsNullOrEmpty(GetValidIpv4(matchNic))) continue;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(conn) &&
+                        (adp.Equals(conn, StringComparison.OrdinalIgnoreCase) ||
+                         adp.Contains(conn, StringComparison.OrdinalIgnoreCase) ||
+                         conn.Contains(adp, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return adp;
+                    }
+
+                    if (isOvpn && (adp.Contains("OpenVPN", StringComparison.OrdinalIgnoreCase) ||
+                                  adp.Contains("DCO", StringComparison.OrdinalIgnoreCase) ||
+                                  adp.Contains("TAP", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return adp;
+                    }
+
+                    if (isWg && (adp.Contains("WireGuard", StringComparison.OrdinalIgnoreCase) ||
+                                adp.Contains("Wintun", StringComparison.OrdinalIgnoreCase) ||
+                                adp.Contains("wg", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return adp;
+                    }
+
+                    if (IsLikelyVpnSourceAdapter(adp))
+                    {
+                        return adp;
+                    }
+                }
+            }
+
+            if (candidateNonPhysicalUp != null) return candidateNonPhysicalUp;
+
+            return null;
+        }
+
+        public static string? FindBestTargetAdapter(IEnumerable<string>? adapterNames = null)
+        {
+            // ۱. اولویت اول: از NetworkInterface کارت‌هایی که دارای توصیف Wi-Fi Direct هستند
+            try
+            {
+                foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    if (nic.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
+                    var d = nic.Description ?? "";
+                    if (d.Contains("Wi-Fi Direct", StringComparison.OrdinalIgnoreCase) ||
+                        d.Contains("WiFi Direct", StringComparison.OrdinalIgnoreCase) ||
+                        d.Contains("Hosted Network", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return nic.Name;
+                    }
+                }
+            }
+            catch { }
+
+            // ۲. اولویت دوم: بررسی از روی نام‌ها
+            if (adapterNames != null)
+            {
+                foreach (var adp in adapterNames)
+                {
+                    if (IsHotspotTargetAdapter(adp))
+                        return adp;
+                }
+            }
+
+            return null;
+        }
+
         private void L(string msg) => Log?.Invoke(msg);
         private static string PsQuote(string v) => v.Replace("'", "''");
 
         public async Task<List<string>> GetAllAdaptersAsync()
         {
+            var list = new List<string>();
+
+            // ۱. خواندن سریع بدون درنگ از سیستم .NET
+            try
+            {
+                foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    if (nic.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
+                    var name = nic.Name.Trim();
+                    if (!string.IsNullOrWhiteSpace(name) && !list.Contains(name, StringComparer.OrdinalIgnoreCase))
+                        list.Add(name);
+                }
+            }
+            catch { }
+
+            // ۲. خواندن کانکشن‌های اختصاصی ویندوز (Get-VpnConnection و ...)
             var lines = new[]
             {
                 "$ErrorActionPreference = 'SilentlyContinue'",
@@ -135,18 +440,22 @@ namespace SmartVpn
                 "$valid | Select-Object -Unique | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }"
             };
 
-            var ps1 = Path.Combine(Path.GetTempPath(), "nfv_get_adapters.ps1");
-            await File.WriteAllLinesAsync(ps1, lines, new UTF8Encoding(false));
-            var (_, output) = await RunPs1Async(ps1, 15);
-            try { File.Delete(ps1); } catch { }
-
-            var list = new List<string>();
-            foreach (var line in output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+            try
             {
-                var trimmed = line.Trim();
-                if (!string.IsNullOrWhiteSpace(trimmed) && !list.Contains(trimmed))
-                    list.Add(trimmed);
+                var ps1 = Path.Combine(Path.GetTempPath(), "nfv_get_adapters.ps1");
+                await File.WriteAllLinesAsync(ps1, lines, new UTF8Encoding(false));
+                var (_, output) = await RunPs1Async(ps1, 15);
+                try { File.Delete(ps1); } catch { }
+
+                foreach (var line in output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var trimmed = line.Trim();
+                    if (!string.IsNullOrWhiteSpace(trimmed) && !list.Contains(trimmed, StringComparer.OrdinalIgnoreCase))
+                        list.Add(trimmed);
+                }
             }
+            catch { }
+
             return list;
         }
 
@@ -166,6 +475,9 @@ namespace SmartVpn
                     "    $tethType = [Windows.Networking.NetworkOperators.NetworkOperatorTetheringManager, Windows.Networking.NetworkOperators, ContentType = WindowsRuntime]",
                     "    $profiles = @($netInfo::GetConnectionProfiles())",
                     "    $adapter = Get-NetAdapter -Name $preferred -IncludeHidden -ErrorAction SilentlyContinue | Select-Object -First 1",
+                    "    if ($null -eq $adapter) {",
+                    "        $adapter = Get-NetAdapter -IncludeHidden -ErrorAction SilentlyContinue | Where-Object { $_.InterfaceDescription -eq $preferred -or $_.Name -like ('*' + $preferred + '*') } | Select-Object -First 1",
+                    "    }",
                     "    $wantedGuid = $null",
                     "    if ($null -ne $adapter) { $wantedGuid = [Guid]$adapter.InterfaceGuid }",
                     "",
@@ -541,6 +853,9 @@ namespace SmartVpn
                     "            if ($cfg.SharingEnabled) { $cfg.DisableSharing() }",
                     "        } catch {}",
                     "    }",
+                    "} catch {}",
+                    "try {",
+                    "    Get-NetIPInterface -AddressFamily IPv4 | Where-Object { $_.Forwarding -eq 'Enabled' } | Set-NetIPInterface -Forwarding Disabled -WeakHostSend Disabled",
                     "} catch {}",
                     "Write-Output 'SUCCESS'"
                 };
