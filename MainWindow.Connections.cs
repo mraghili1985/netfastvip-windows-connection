@@ -703,6 +703,8 @@ namespace SmartVpn
             return row;
         }
 
+        
+        
         private void Add_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new ConnectionDialog { Owner = this, WindowStartupLocation = WindowStartupLocation.CenterOwner };
@@ -984,3 +986,6 @@ namespace SmartVpn
 
     }
 }
+
+
+

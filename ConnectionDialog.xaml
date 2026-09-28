@@ -1,4 +1,4 @@
-<Window x:Class="SmartVpn.ConnectionDialog"
+﻿<Window x:Class="SmartVpn.ConnectionDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="کانکشن" Width="400" SizeToContent="Height"
@@ -126,6 +126,7 @@
             <ComboBoxItem Content="IKEv2"                 Tag="ikev2"/>
             <ComboBoxItem Content="PPTP"                  Tag="pptp"/>
             <ComboBoxItem Content="WireGuard / AmneziaWG" Tag="wireguard"/>
+
         </ComboBox>
 
         <!-- ========================================================
@@ -169,7 +170,11 @@
 
         </StackPanel>
 
-        <!-- ========================================================
+        
+        
+
+
+<!-- ========================================================
              WgPanel — WireGuard / AmneziaWG
              فرم دستی — ایمپورت .conf اختیاری است
              ======================================================== -->
@@ -348,3 +353,5 @@
     </StackPanel>
     </ScrollViewer>
 </Window>
+
+

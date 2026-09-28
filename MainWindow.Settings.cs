@@ -170,15 +170,10 @@ namespace SmartVpn
             AppendConnLog("split-tunnel mode = " + tag + " (روی اتصال بعدی اعمال می‌شود)");
         }
 
-        private void StList_LostFocus(object sender, RoutedEventArgs e)
+                private void BtnManagePerApp_Click(object sender, RoutedEventArgs e)
         {
-            if (!_ready) return;
-            var lines = StListBox.Text.Split('\n')
-                .Select(l => l.Trim())
-                .Where(l => l.Length > 0)
-                .ToList();
-            _config.SplitTunnelList = lines;
-            _config.Save();
+            var dlg = new PerAppDialog(_config) { Owner = this };
+            dlg.ShowDialog();
         }
 
         // ================= DNS دلخواه =================
@@ -350,3 +345,4 @@ namespace SmartVpn
         }
     }
 }
+

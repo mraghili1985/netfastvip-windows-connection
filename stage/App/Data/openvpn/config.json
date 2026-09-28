@@ -1,0 +1,68 @@
+{
+  "packageVersion": 1,
+  "name": "NETFASTVIP",
+  "SmartSwitch": false,
+  "Credentials": null,
+  "Connections": [
+  
+    {
+      "Name": "Randomservers-UDP",
+      "Type": "openvpn",
+      "Server": "nfst.netfast.vip",
+      "Port": 1001,
+      "Proto": "udp",
+      "Psk": "",
+      "Username": "",
+      "Password": "",
+      "Source": "official",
+      "OvpnInline": ""
+    },
+    {
+      "Name": "Randomservers-TCP",
+      "Type": "openvpn",
+      "Server": "nfst.netfast.vip",
+      "Port": 1001,
+      "Proto": "udp",
+      "Psk": "",
+      "Username": "",
+      "Password": "",
+      "Source": "official",
+      "OvpnInline": ""
+    },
+    {
+      "Name": "L2TP-AllServer",
+      "Type": "l2tp",
+      "Server": "nfst.netfast.vip",
+      "Port": null,
+      "Proto": "udp",
+      "Psk": "123456789",
+      "Username": "",
+      "Password": "",
+      "Source": "official",
+      "OvpnInline": ""
+    },
+    {
+      "Name": "SSTP-AllServer",
+      "Type": "sstp",
+      "Server": "nfst.netfast.vip",
+      "Port": 443,
+      "Proto": "udp",
+      "Psk": "",
+      "Username": "",
+      "Password": "",
+      "Source": "official",
+      "OvpnInline": ""
+    }
+  ],
+  "TotalDownloadBytes": 0,
+  "TotalUploadBytes": 0,
+  "Theme": "system",
+  "SplitTunnelMode": "off",
+  "SplitTunnelList": [],
+  "BaseOvpn": "",
+  "PackageVersion": 1,
+  "MinimizeToTray": false,
+  "DnsMode": "auto",
+  "DnsPrimary": "",
+  "DnsSecondary": ""
+}

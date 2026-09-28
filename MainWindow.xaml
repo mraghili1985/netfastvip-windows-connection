@@ -466,6 +466,7 @@
                     <TextBlock Grid.Column="0" x:Name="ConnSectionLabel" Text="کانکشن‌ها" FontWeight="Bold" FontSize="13"
                                Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
                     <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,8,0,0">
+
                         <Button x:Name="AddBtn" Content="＋ Add" Style="{StaticResource ActionBtn}" FontSize="10.5" FontWeight="Bold"
                                 Padding="9,3" Margin="0,0,8,0" Foreground="White" Background="#3B82F6" BorderBrush="#3B82F6"
                                 ToolTip="افزودن کانکشن جدید" Click="Add_Click"/>
@@ -721,23 +722,35 @@
                         </StackPanel>
                     </Expander>
 
-                    <Expander x:Name="SplitExpander" Header="🔀 اسپلیت تانل (همه کانکشن‌ها)" Margin="0,0,0,6" Padding="8"
+                                        <Expander x:Name="SplitExpander" Header="تونل برنامه‌ها (Per-App VPN)" Margin="0,0,0,6" Padding="8"
                               Foreground="{DynamicResource TextBrush}" Background="{DynamicResource CardBrush}"
                               BorderBrush="{DynamicResource LineBrush}" BorderThickness="1">
                         <StackPanel Margin="2,8,2,2">
                             <RadioButton x:Name="StOffRb" GroupName="StMode" Tag="off"
-                                         Content="غیرفعال — همه ترافیک از VPN" Checked="StMode_Checked"/>
-                            <RadioButton x:Name="StDenyRb" GroupName="StMode" Tag="deny"
-                                         Content="Deny — همه از VPN به‌جز موارد لیست" Checked="StMode_Checked" Margin="0,5,0,0"/>
+                                         Content="تونل کل سیستم (همه برنامه‌ها)" Checked="StMode_Checked"/>
                             <RadioButton x:Name="StAllowRb" GroupName="StMode" Tag="allow"
-                                         Content="Allow — فقط موارد لیست از VPN" Checked="StMode_Checked" Margin="0,5,0,0"/>
-                            <TextBox x:Name="StListBox" Height="110" Margin="0,8,0,2"
-                                     AcceptsReturn="True" TextWrapping="NoWrap"
-                                     VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
-                                     FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="12"
-                                     Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}"
-                                     BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                                     LostFocus="StList_LostFocus"/>
+                                         Content="فقط برنامه‌های لیست (Allow)" Checked="StMode_Checked" Margin="0,5,0,0"/>
+                            <RadioButton x:Name="StDenyRb" GroupName="StMode" Tag="deny"
+                                         Content="همه به جز برنامه‌های لیست (Bypass)" Checked="StMode_Checked" Margin="0,5,0,0"/>
+                            <Button x:Name="BtnManagePerApp" Content="⚙️ مدیریت لیست برنامه‌ها" Click="BtnManagePerApp_Click"
+                                    Margin="0,10,0,2" Padding="0,8" Cursor="Hand">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Background" Value="{DynamicResource FieldBrush}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
                         </StackPanel>
                     </Expander>
 
@@ -962,6 +975,11 @@
     </Grid>
     </Border>
 </Window>
+
+
+
+
+
 
 
 

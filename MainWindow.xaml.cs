@@ -309,7 +309,7 @@ namespace SmartVpn
                 case "allow": StAllowRb.IsChecked = true; break;
                 default: StOffRb.IsChecked = true; break;
             }
-            StListBox.Text = string.Join(Environment.NewLine, _config.SplitTunnelList);
+            
 
             switch (_config.DnsMode)
             {
@@ -915,6 +915,7 @@ namespace SmartVpn
         #endregion
     }
 }
+
 
 
 
