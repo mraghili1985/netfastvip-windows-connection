@@ -275,6 +275,7 @@ namespace SmartVpn
             _selectedName = profile.Name;
             ActiveConnText.Text = $"{CategoryLabel(profile.Type)} {profile.Name}";
             ServerSubText.Text = profile.ServerLine;
+            if (ActiveServerBadgeText != null) ActiveServerBadgeText.Text = ExtractFlagOrIcon(profile.Name, profile.Type);
             RefreshList();
 
             await StopManuallyAsync();
@@ -350,6 +351,7 @@ namespace SmartVpn
                 ActiveConnText.Text = $"{CategoryLabel(profile.Type)} {profile.Name}";
                 HsVpnConnectionText.Text = ActiveConnText.Text;
                 ServerSubText.Text = profile.ServerLine;
+                if (ActiveServerBadgeText != null) ActiveServerBadgeText.Text = ExtractFlagOrIcon(profile.Name, profile.Type);
                 PrivateIpText.Text = string.IsNullOrEmpty(localIp) ? "—" : localIp;
                 ServerIpText.Text = _tunnelPeerIp ?? "—"; // sniff لاگ openvpn از قبل IP را گرفته — پاک نشود
                 // WireGuard/AmneziaWG: به‌جای User، هندشیک نشان داده می‌شود
@@ -746,6 +748,23 @@ namespace SmartVpn
                     headerGlow.Color = brush.Color;
                     headerGlow.Opacity = state == "off" ? 0.0 : 0.55;
                 }
+            }
+
+            if (SidebarNavDashboardSubtext != null)
+            {
+                SidebarNavDashboardSubtext.Text = state switch
+                {
+                    "connected" => Localization.T("متصل"),
+                    "connecting" or "reconnecting" => Localization.T("در حال اتصال..."),
+                    _ => Localization.T("آماده اتصال")
+                };
+                SidebarNavDashboardSubtext.Foreground = state switch
+                {
+                    "connected" => (Brush)FindResource("Accent2Brush"),
+                    "connecting" or "reconnecting" => new SolidColorBrush(Color.FromRgb(0x3B, 0x82, 0xF6)),
+                    "error" => (Brush)FindResource("DangerBrush"),
+                    _ => (Brush)FindResource("SubTextBrush")
+                };
             }
         }
 

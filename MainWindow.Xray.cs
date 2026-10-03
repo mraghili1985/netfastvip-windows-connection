@@ -251,6 +251,11 @@ namespace SmartVpn
                                 var geoStr = string.IsNullOrWhiteSpace(country) ? ip : $"{country} — {ip}";
                                 if (XrayTxtActiveGeoIP != null) XrayTxtActiveGeoIP.Text = geoStr;
                                 GeoIpText.Text = geoStr;
+                                if (ActiveServerBadgeText != null && !string.IsNullOrWhiteSpace(country))
+                                {
+                                    var flag = ExtractFlagOrIcon(country, _xrayActiveProfile?.Protocol ?? "");
+                                    if (flag != "⚡") ActiveServerBadgeText.Text = flag;
+                                }
                                 AppendConnLog($"[sing-box] موقعیت خروجی (GeoIP): {geoStr}");
                             });
 
@@ -445,6 +450,13 @@ namespace SmartVpn
             if (XrayServerIpText != null) XrayServerIpText.Text = $"{item.Address}:{item.Port}";
             if (XrayProtocolText != null) XrayProtocolText.Text = $"{item.Protocol.ToUpper()} / {item.Network.ToUpper()}";
             if (XrayYouText != null) XrayYouText.Text = !string.IsNullOrEmpty(item.UserId) ? (item.UserId.Length > 12 ? item.UserId.Substring(0, 10) + "..." : item.UserId) : "sing-box";
+
+            if (!_engine.IsRunning)
+            {
+                if (ActiveConnText != null) ActiveConnText.Text = item.Alias;
+                if (ServerSubText != null) ServerSubText.Text = $"{item.Protocol.ToUpper()} / {item.Network.ToUpper()}{sec}";
+                if (ActiveServerBadgeText != null) ActiveServerBadgeText.Text = ExtractFlagOrIcon(item.Alias, item.Protocol);
+            }
         }
 
         private static (Color bg, Color border, Color fg) XrayProtocolBadgeColors(string proto, bool light)
@@ -1070,6 +1082,16 @@ namespace SmartVpn
                     bool hasActive = XrayGroups.Any(g => g.Profiles.Count > 0);
                     XraySubActiveBadge.Visibility = hasActive ? Visibility.Visible : Visibility.Collapsed;
                 }
+
+                if (!_hasSubscriptionSummary && XrayGroups.Any(g => g.Profiles.Count > 0))
+                {
+                    if (SubDataLeftText != null) SubDataLeftText.Text = bestData;
+                    if (SubTimeLeftText != null) SubTimeLeftText.Text = bestDays;
+                    if (SubEmptyText != null) SubEmptyText.Visibility = Visibility.Collapsed;
+                    if (SubActiveBadge != null) SubActiveBadge.Visibility = Visibility.Visible;
+                    if (SubDetailPanel != null) SubDetailPanel.Visibility = Visibility.Visible;
+                    if (SubRefreshBtn != null) SubRefreshBtn.Visibility = Visibility.Visible;
+                }
             }
             catch { }
         }
@@ -1587,6 +1609,7 @@ namespace SmartVpn
             string protoFull = $"{item.Protocol.ToUpper()} {item.Network.ToUpper()}";
             ServerSubText.Text = protoFull;
             ActiveConnText.Text = item.Alias;
+            if (ActiveServerBadgeText != null) ActiveServerBadgeText.Text = ExtractFlagOrIcon(item.Alias, item.Protocol);
             GeoIpText.Text = $"Connected — {item.Address}";
             if (MiniConnectionText != null) MiniConnectionText.Text = item.Alias;
 

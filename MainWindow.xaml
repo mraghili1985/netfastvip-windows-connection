@@ -330,7 +330,7 @@
                                             <TextBlock Text="⌂" FontSize="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Width="24"/>
                                             <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="Dashboard" FontSize="13" FontWeight="SemiBold" Foreground="White"/>
-                                                <TextBlock Text="Connected" FontSize="9.5" Foreground="{DynamicResource AccentBrush}"/>
+                                                <TextBlock x:Name="SidebarNavDashboardSubtext" Text="Ready" FontSize="9.5" Foreground="{DynamicResource SubTextBrush}"/>
                                             </StackPanel>
                                         </StackPanel>
                                     </Grid>
@@ -432,84 +432,78 @@
                         </StackPanel>
 
                         <!-- ================= 1. DASHBOARD VIEW (CONCEPT 2 HIGH FIDELITY) ================= -->
+                        <!-- ================= 1. DASHBOARD VIEW (CONNECTED TO REAL PROGRAM) ================= -->
                         <Grid x:Name="HomePanel" Visibility="Visible">
                             <Grid.RenderTransform>
                                 <TranslateTransform x:Name="HomeTransform"/>
                             </Grid.RenderTransform>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="1.35*"/> <!-- Left Hero & Telemetry -->
-                                <ColumnDefinition Width="*"/>     <!-- Right Control & Top Servers -->
+                                <ColumnDefinition Width="340"/> <!-- Left Hero & Telemetry -->
+                                <ColumnDefinition Width="*"/>   <!-- Right Controls & Real Server List -->
                             </Grid.ColumnDefinitions>
 
-                            <!-- ================= LEFT COLUMN: HERO CARD + TELEMETRY ================= -->
+                            <!-- ================= LEFT COLUMN: HERO CARD + TELEMETRY + DETAILS ================= -->
                             <StackPanel Grid.Column="0" Margin="0,0,16,0" VerticalAlignment="Top">
 
                                 <!-- Hero Active Server Card with Sapphire Ambient Glow -->
                                 <Border Background="{DynamicResource GlassBrush}"
                                         BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"
-                                        CornerRadius="16" Padding="20,18" ClipToBounds="True">
+                                        CornerRadius="16" Padding="18,16" ClipToBounds="True">
                                     <Border.Effect>
                                         <DropShadowEffect Color="#38BDF8" BlurRadius="28" ShadowDepth="0" Opacity="0.32"/>
                                     </Border.Effect>
                                     <StackPanel>
-                                        <!-- Top Row: Country Flag + Server Name + Status Pill -->
+                                        <!-- Top Row: Location/Protocol Badge + Server Name + Status Pill -->
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto"/>
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <!-- Germany / Location Flag Container -->
-                                            <Border Grid.Column="0" Width="48" Height="34" CornerRadius="6" ClipToBounds="True" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Margin="0,0,14,0" VerticalAlignment="Center">
-                                                <Grid>
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="*"/>
-                                                        <RowDefinition Height="*"/>
-                                                        <RowDefinition Height="*"/>
-                                                    </Grid.RowDefinitions>
-                                                    <Border Grid.Row="0" Background="#18181B"/>
-                                                    <Border Grid.Row="1" Background="#DC2626"/>
-                                                    <Border Grid.Row="2" Background="#FBBF24"/>
-                                                </Grid>
+                                            <!-- Dynamic Location/Protocol Badge -->
+                                            <Border x:Name="ActiveServerBadge" Grid.Column="0" Width="44" Height="44" CornerRadius="12"
+                                                    Background="#1A253C" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"
+                                                    Margin="0,0,12,0" VerticalAlignment="Center">
+                                                <TextBlock x:Name="ActiveServerBadgeText" Text="⚡" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
 
                                             <!-- Active Server Title, Subtitle, & Status -->
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                <TextBlock x:Name="ActiveConnText" Text="FRANKFURT - FAST" FontSize="17" FontWeight="Bold" Foreground="White" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock x:Name="ServerSubText" Text="GERMANY" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0"/>
-                                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                <TextBlock x:Name="ActiveConnText" Text="یک کانکشن انتخاب کنید" FontSize="15" FontWeight="Bold" Foreground="White" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock x:Name="ServerSubText" Text="—" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                                                     <Border Background="#2038BDF8" BorderBrush="#3038BDF8" BorderThickness="1" CornerRadius="8" Padding="6,2">
                                                         <StackPanel Orientation="Horizontal">
-                                                            <Ellipse x:Name="StatusDot" Width="6" Height="6" Fill="#22C55E" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                                            <TextBlock x:Name="StatusText" Text="Connected" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
+                                                            <Ellipse x:Name="StatusDot" Width="6" Height="6" Fill="#64748B" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                            <TextBlock x:Name="StatusText" Text="آماده اتصال" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
                                                         </StackPanel>
                                                     </Border>
-                                                    <TextBlock x:Name="GeoIpText" Text="IP: 185.220.101.5" FontSize="11" Foreground="#64748B" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                                    <TextBlock x:Name="GeoIpText" Text="—" FontSize="10.5" Foreground="#64748B" Margin="8,0,0,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                                 </StackPanel>
                                             </StackPanel>
                                         </Grid>
 
                                         <!-- Card Footer: Duration -->
-                                        <Grid Margin="0,20,0,0">
-                                            <TextBlock Text="Connection duration" FontSize="12" Foreground="#64748B" VerticalAlignment="Center"/>
-                                            <TextBlock x:Name="DurationText" Text="01:42:18" FontSize="18" FontWeight="Bold"
+                                        <Grid Margin="0,18,0,0">
+                                            <TextBlock Text="مدت زمان اتصال" FontSize="11.5" Foreground="#64748B" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="DurationText" Text="00:00:00" FontSize="16" FontWeight="Bold"
                                                        Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                         </Grid>
                                     </StackPanel>
                                 </Border>
 
                                 <!-- Telemetry Widgets Area -->
-                                <StackPanel Margin="0,22,0,0">
+                                <StackPanel Margin="0,18,0,0">
                                     <!-- 1. Current Speed -->
-                                    <StackPanel Margin="0,0,0,16">
+                                    <StackPanel Margin="0,0,0,14">
                                         <TextBlock Text="Current Speed" FontSize="12" Foreground="{DynamicResource SubTextBrush}"/>
                                         <StackPanel Orientation="Horizontal" Margin="0,2,0,6">
-                                            <TextBlock x:Name="DlSpeedText" Text="48.9 Mbps" FontSize="22" FontWeight="Bold" Foreground="White"/>
-                                            <TextBlock x:Name="UlSpeedText" Text="↑ 12.4 Mbps" FontSize="11" Foreground="#22C55E" Margin="12,0,0,2" VerticalAlignment="Bottom"/>
+                                            <TextBlock x:Name="DlSpeedText" Text="↓ 0 B/s" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                                            <TextBlock x:Name="UlSpeedText" Text="↑ 0 B/s" FontSize="11" Foreground="#22C55E" Margin="12,0,0,2" VerticalAlignment="Bottom"/>
                                         </StackPanel>
                                         <!-- Glowing Gradient Progress Bar -->
                                         <Border Height="6" Background="#1E293B" CornerRadius="3" ClipToBounds="True">
-                                            <Border Width="240" HorizontalAlignment="Left" Background="{DynamicResource SpeedGradientBrush}" CornerRadius="3">
+                                            <Border Width="200" HorizontalAlignment="Left" Background="{DynamicResource SpeedGradientBrush}" CornerRadius="3">
                                                 <Border.Effect>
                                                     <DropShadowEffect Color="#06B6D4" BlurRadius="10" ShadowDepth="0" Opacity="0.55"/>
                                                 </Border.Effect>
@@ -518,7 +512,7 @@
                                     </StackPanel>
 
                                     <!-- 2. Latency with Live Waveform -->
-                                    <Grid Margin="0,0,0,16">
+                                    <Grid Margin="0,0,0,14">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
@@ -526,13 +520,13 @@
 
                                         <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                             <TextBlock Text="Latency" FontSize="12" Foreground="{DynamicResource SubTextBrush}"/>
-                                            <TextBlock x:Name="PingText" Text="28 ms" FontSize="20" FontWeight="Bold" Foreground="White" Margin="0,2,0,0"/>
+                                            <TextBlock x:Name="PingText" Text="—" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,2,0,0"/>
                                         </StackPanel>
 
                                         <!-- Latency Waveform Curve -->
-                                        <Canvas Grid.Column="1" Height="36" Margin="24,0,0,0" VerticalAlignment="Center">
+                                        <Canvas Grid.Column="1" Height="32" Margin="16,0,0,0" VerticalAlignment="Center">
                                             <Path Stroke="{DynamicResource AccentBrush}" StrokeThickness="2"
-                                                  Data="M 0,22 Q 15,10 30,24 T 60,8 T 90,26 T 120,4 T 150,20 T 180,12 T 210,18">
+                                                  Data="M 0,20 Q 12,8 25,22 T 50,6 T 75,24 T 100,4 T 125,18 T 150,10 T 175,16">
                                                 <Path.Effect>
                                                     <DropShadowEffect Color="#38BDF8" BlurRadius="10" ShadowDepth="0" Opacity="0.7"/>
                                                 </Path.Effect>
@@ -541,55 +535,104 @@
                                     </Grid>
 
                                     <!-- 3. Data Used -->
-                                    <StackPanel>
-                                        <TextBlock x:Name="SessionTrafficText" Text="128 GB" FontSize="22" FontWeight="Bold" Foreground="White"/>
-                                        <TextBlock Text="Data Used (This session)" FontSize="12" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0"/>
+                                    <StackPanel Margin="0,0,0,10">
+                                        <TextBlock x:Name="SessionTrafficText" Text="0 B" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                                        <TextBlock Text="Data Used (This session)" FontSize="11.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0"/>
                                     </StackPanel>
                                 </StackPanel>
+
+                                <!-- Details Toggle Button & Panel -->
+                                <Border Margin="0,4,0,0">
+                                    <StackPanel>
+                                        <Button x:Name="MoreInfoBtn" Click="MoreInfoToggle_Click" Background="Transparent" BorderThickness="0"
+                                                Foreground="{DynamicResource SubTextBrush}" Padding="0" Cursor="Hand" HorizontalAlignment="Left">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock x:Name="MoreInfoText" Text="جزئیات اتصال" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,0,4,0"/>
+                                                <TextBlock x:Name="MoreInfoArrow" Text="⌄" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource SubTextBrush}"/>
+                                            </StackPanel>
+                                        </Button>
+
+                                        <Border x:Name="MoreInfoPanel" Visibility="Collapsed" Margin="0,8,0,0" Padding="10,8"
+                                                Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" CornerRadius="10">
+                                            <StackPanel>
+                                                <!-- Mini Speed Graph -->
+                                                <Canvas x:Name="GraphCanvas" Height="40" Margin="0,0,0,6">
+                                                    <Polygon x:Name="DlArea" Fill="{StaticResource DlAreaBrush}"/>
+                                                    <Polygon x:Name="UlArea" Fill="{StaticResource UlAreaBrush}"/>
+                                                    <Polyline x:Name="DlLine" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.5"/>
+                                                    <Polyline x:Name="UlLine" Stroke="#22C55E" StrokeThickness="1.2"/>
+                                                </Canvas>
+                                                <Grid>
+                                                    <Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                                                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,4">
+                                                        <TextBlock Text="Tunnel IP" FontSize="9.5" Foreground="{DynamicResource SubTextBrush}"/>
+                                                        <TextBlock x:Name="PrivateIpText" Text="—" FontSize="11" FontWeight="SemiBold" Foreground="White" Cursor="Hand" MouseLeftButtonDown="CopyIpText_Click"/>
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,4">
+                                                        <TextBlock Text="Server IP" FontSize="9.5" Foreground="{DynamicResource SubTextBrush}"/>
+                                                        <TextBlock x:Name="ServerIpText" Text="—" FontSize="11" FontWeight="SemiBold" Foreground="White" Cursor="Hand" MouseLeftButtonDown="CopyIpText_Click"/>
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Row="1" Grid.Column="0">
+                                                        <TextBlock x:Name="ProtocolLbl" Text="Protocol" FontSize="9.5" Foreground="{DynamicResource SubTextBrush}"/>
+                                                        <TextBlock x:Name="ProtocolText" Text="—" FontSize="11" FontWeight="SemiBold" Foreground="White"/>
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Row="1" Grid.Column="1">
+                                                        <TextBlock x:Name="YouLbl" Text="User" FontSize="9.5" Foreground="{DynamicResource SubTextBrush}"/>
+                                                        <TextBlock x:Name="YouText" Text="—" FontSize="11" FontWeight="SemiBold" Foreground="White"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
 
-                            <!-- ================= RIGHT COLUMN: CONNECTION CONTROL + TOP SERVERS ================= -->
-                            <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Top">
+                            <!-- ================= RIGHT COLUMN: REAL SERVERS & SUBSCRIPTION ================= -->
+                            <Grid Grid.Column="1" Margin="8,0,0,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/> <!-- Connection Control Capsule Card -->
+                                    <RowDefinition Height="Auto"/> <!-- Segmented Switcher & Toolbar -->
+                                    <RowDefinition Height="*"/>    <!-- Real Connections List (ConnList) -->
+                                    <RowDefinition Height="Auto"/> <!-- Real Subscription Card (SubSummaryCard) -->
+                                </Grid.RowDefinitions>
 
-                                <!-- Connection Control Card -->
-                                <Border Background="{DynamicResource GlassBrush}"
+                                <!-- 1. Connection Control Card -->
+                                <Border Grid.Row="0" Background="{DynamicResource GlassBrush}"
                                         BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"
-                                        CornerRadius="16" Padding="20,18">
+                                        CornerRadius="16" Padding="14,10" Margin="0,0,0,10">
                                     <StackPanel HorizontalAlignment="Center">
-                                        <TextBlock Text="Connection Control" FontSize="13" Foreground="{DynamicResource SubTextBrush}"
-                                                   HorizontalAlignment="Center" Margin="0,0,0,14"/>
-
                                         <!-- Capsule Toggle Switch Button -->
-                                        <Button x:Name="PowerBtn" Width="136" Height="54" Cursor="Hand" Click="Power_Click"
+                                        <Button x:Name="PowerBtn" Width="136" Height="48" Cursor="Hand" Click="Power_Click"
                                                 RenderTransformOrigin="0.5,0.5">
                                             <Button.RenderTransform>
                                                 <ScaleTransform x:Name="PowerScale" ScaleX="1" ScaleY="1"/>
                                             </Button.RenderTransform>
                                             <Button.Effect>
-                                                <DropShadowEffect Color="#22C55E" BlurRadius="20" ShadowDepth="0" Opacity="0.45"/>
+                                                <DropShadowEffect Color="#22C55E" BlurRadius="18" ShadowDepth="0" Opacity="0.4"/>
                                             </Button.Effect>
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
                                                     <Border x:Name="CapsuleBorder" Background="{TemplateBinding Background}" BorderBrush="{DynamicResource GlassBorderBrush}"
-                                                            BorderThickness="1" CornerRadius="27" Padding="4">
+                                                            BorderThickness="1" CornerRadius="24" Padding="3">
                                                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                     </Border>
                                                 </ControlTemplate>
                                             </Button.Template>
-                                            <Grid Width="128" Height="46">
+                                            <Grid Width="128" Height="40">
                                                 <!-- Status Label "ON" / "OFF" -->
-                                                <TextBlock x:Name="PowerStateText" Text="ON" FontSize="15" FontWeight="Bold"
+                                                <TextBlock x:Name="PowerStateText" Text="OFF" FontSize="14" FontWeight="Bold"
                                                            Foreground="White" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="18,0,0,0"/>
 
                                                 <!-- Glowing Circular Knob with Ring -->
-                                                <Border Width="38" Height="38" HorizontalAlignment="Right" CornerRadius="19"
+                                                <Border Width="34" Height="34" HorizontalAlignment="Right" CornerRadius="17"
                                                         Background="#0B1120" BorderBrush="#F59E0B" BorderThickness="2.5" Margin="0,0,3,0">
                                                     <Border.Effect>
-                                                        <DropShadowEffect Color="#F59E0B" BlurRadius="16" ShadowDepth="0" Opacity="0.8"/>
+                                                        <DropShadowEffect Color="#F59E0B" BlurRadius="14" ShadowDepth="0" Opacity="0.8"/>
                                                     </Border.Effect>
                                                     <Grid>
                                                         <!-- Power Glyph inside Knob -->
-                                                        <Path x:Name="PowerGlyph" Width="18" Height="18" Stretch="Uniform"
+                                                        <Path x:Name="PowerGlyph" Width="16" Height="16" Stretch="Uniform"
                                                               Data="M 12,2.5 L 12,11.5 M 7.05,5.6 A 8.5,8.5 0 1 0 16.95,5.6"
                                                               Stroke="#F8FAFC" StrokeThickness="2"
                                                               StrokeStartLineCap="Round" StrokeEndLineCap="Round"
@@ -603,95 +646,100 @@
                                             </Grid>
                                         </Button>
 
-                                        <TextBlock x:Name="PowerHintText" Text="Click to Disconnect" FontSize="10.5"
-                                                   Foreground="{DynamicResource SubTextBrush}" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                                        <TextBlock x:Name="PowerHintText" Text="روشن/خاموش اتصال" FontSize="10"
+                                                   Foreground="{DynamicResource SubTextBrush}" HorizontalAlignment="Center" Margin="0,5,0,0"/>
                                     </StackPanel>
                                 </Border>
 
-                                <!-- Top Servers Preview List -->
-                                <StackPanel Margin="0,20,0,0">
-                                    <Grid Margin="0,0,0,10">
-                                        <TextBlock Text="Top Servers" FontSize="14" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
-                                        <Button Content="See All →" Style="{StaticResource NavBtn}" HorizontalAlignment="Right" Padding="0"
-                                                Foreground="{DynamicResource AccentBrush}" FontSize="12" Click="SidebarNavServers_Click"/>
-                                    </Grid>
+                                <!-- 2. Segmented Switcher & Toolbar -->
+                                <Grid Grid.Row="1" Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
 
-                                    <!-- Server 1 (Selected Frankfurt) -->
-                                    <Border Background="#1C2840" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1"
-                                            CornerRadius="10" Padding="14,10" Margin="0,0,0,8" Cursor="Hand">
-                                        <Grid>
-                                            <Border Width="3" Height="18" HorizontalAlignment="Left" Background="{DynamicResource AccentBrush}" CornerRadius="1.5"/>
-                                            <TextBlock Text="Frankfurt" FontSize="13.5" FontWeight="SemiBold" Foreground="White" Margin="12,0,0,0" VerticalAlignment="Center"/>
-                                            <TextBlock Text="28 ms" FontSize="11" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                                        </Grid>
+                                    <!-- Switcher VPN / Xray -->
+                                    <Border Background="{DynamicResource FieldBrush}" CornerRadius="8" Padding="2" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" HorizontalAlignment="Left">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button x:Name="HomeSwitchToVpnBtn" Content="VPN (سنتی)" Click="SwitchToVpnBtn_Click"
+                                                    Background="{DynamicResource AccentBrush}" Foreground="White" BorderThickness="0" Cursor="Hand" Padding="8,4" FontSize="11" FontWeight="SemiBold" Style="{StaticResource ActionBtn}"/>
+                                            <Button x:Name="HomeSwitchToXrayBtn" Content="Xray (پروکسی)" Click="SwitchToXrayBtn_Click"
+                                                    Background="Transparent" Foreground="{DynamicResource SubTextBrush}" BorderThickness="0" Cursor="Hand" Padding="8,4" FontSize="11" FontWeight="SemiBold" Style="{StaticResource ActionBtn}"/>
+                                        </StackPanel>
                                     </Border>
+                                    <TextBlock x:Name="ConnSectionLabel" Text="" Visibility="Collapsed"/>
 
-                                    <!-- Server 2 (London) -->
-                                    <Border Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"
-                                            CornerRadius="10" Padding="14,10" Margin="0,0,0,8" Cursor="Hand">
-                                        <Grid>
-                                            <TextBlock Text="London" FontSize="13" Foreground="{DynamicResource SubTextBrush}" Margin="12,0,0,0" VerticalAlignment="Center"/>
-                                            <TextBlock Text="38 ms" FontSize="11" Foreground="{DynamicResource SubTextBrush}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                    <!-- Action Buttons -->
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Button x:Name="AddBtn" Content="＋ Add" Style="{StaticResource PrimaryActionBtn}" FontSize="10.5" Padding="8,3" Margin="0,0,6,0" Click="Add_Click"/>
+                                        <Button x:Name="FilterDropdownBtn" Style="{StaticResource ActionBtn}" FontSize="10.5" Padding="8,3" Click="FilterDropdownBtn_Click">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock x:Name="FilterDropdownLabel" Text="همه" FontSize="10.5"/>
+                                                <TextBlock Text=" ⌄" FontSize="10" Margin="3,0,0,0"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- 3. Real Scrollable Connections List (ConnList) -->
+                                <Border Grid.Row="2" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="6,6" Margin="0,0,0,8">
+                                    <ScrollViewer Height="180" MaxHeight="210" VerticalScrollBarVisibility="Auto">
+                                        <StackPanel x:Name="ConnList"/>
+                                    </ScrollViewer>
+                                </Border>
+
+                                <!-- 4. Real Subscription Summary Card (SubSummaryCard) -->
+                                <Border Grid.Row="3" x:Name="SubSummaryCard"
+                                        Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}"
+                                        BorderThickness="1" CornerRadius="12" Padding="10,8" Cursor="Hand" MouseLeftButtonUp="SubSummaryCard_Click">
+                                    <StackPanel>
+                                        <Grid FlowDirection="LeftToRight">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <Button Grid.Column="0" x:Name="SubRefreshBtn" Width="28" Height="28" Padding="0" Style="{StaticResource ActionBtn}" Margin="0,0,8,0" Click="SubRefreshBtn_Click" ToolTip="بروزرسانی اشتراک">
+                                                <TextBlock Text="🔄" FontSize="11" RenderTransformOrigin="0.5,0.5">
+                                                    <TextBlock.RenderTransform><RotateTransform x:Name="SubRefreshRotate"/></TextBlock.RenderTransform>
+                                                </TextBlock>
+                                            </Button>
+
+                                            <StackPanel Grid.Column="1" x:Name="SubSummaryPanel" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock x:Name="SubSectionLabel" Text="🎫 اشتراک من" FontSize="11.5" FontWeight="SemiBold" Foreground="White"/>
+                                                    <Border x:Name="SubActiveBadge" Background="#2022C55E" CornerRadius="6" Padding="5,1" Margin="6,0,0,0" Visibility="Collapsed">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Ellipse x:Name="SubActiveDot" Width="5" Height="5" Fill="#22C55E" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                                            <TextBlock x:Name="SubActiveText" Text="فعال" FontSize="8.5" Foreground="#22C55E"/>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </StackPanel>
+                                                <TextBlock x:Name="SubEmptyText" Text="برای مشاهده وضعیت اشتراک کلیک کنید" FontSize="9.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,1,0,0"/>
+                                            </StackPanel>
+
+                                            <Border Grid.Column="2" x:Name="SubDetailPanel" Visibility="Collapsed" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <StackPanel Margin="0,0,12,0">
+                                                        <TextBlock x:Name="SubTimeLbl" Text="زمان باقی‌مانده" FontSize="8.5" Foreground="{DynamicResource SubTextBrush}"/>
+                                                        <TextBlock x:Name="SubTimeLeftText" Text="—" FontSize="11" FontWeight="SemiBold" Foreground="White"/>
+                                                    </StackPanel>
+                                                    <StackPanel>
+                                                        <TextBlock x:Name="SubDataLbl" Text="حجم باقی‌مانده" FontSize="8.5" Foreground="{DynamicResource SubTextBrush}"/>
+                                                        <TextBlock x:Name="SubDataLeftText" Text="—" FontSize="11" FontWeight="SemiBold" Foreground="White"/>
+                                                    </StackPanel>
+                                                    <TextBlock x:Name="SubUpdatedText" Text="" Visibility="Collapsed"/>
+                                                </StackPanel>
+                                            </Border>
                                         </Grid>
-                                    </Border>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
 
-                                    <!-- Server 3 (New York) -->
-                                    <Border Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"
-                                            CornerRadius="10" Padding="14,10" Margin="0,0,0,8" Cursor="Hand">
-                                        <Grid>
-                                            <TextBlock Text="New York" FontSize="13" Foreground="{DynamicResource SubTextBrush}" Margin="12,0,0,0" VerticalAlignment="Center"/>
-                                            <TextBlock Text="112 ms" FontSize="11" Foreground="{DynamicResource SubTextBrush}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                                        </Grid>
-                                    </Border>
-
-                                    <TextBlock Text="Recent Locations" FontSize="11" Foreground="#64748B" Margin="4,4,0,0"/>
-                                </StackPanel>
-                            </StackPanel>
-
-                            <!-- Hidden Stubs to satisfy all legacy C# bindings in MainWindow.Home.cs -->
+                            <!-- Hidden Stubs (any remaining items) -->
                             <StackPanel Visibility="Collapsed">
                                 <StackPanel x:Name="ActiveConnSummaryPanel"/>
-                                <Button x:Name="MoreInfoBtn" Click="MoreInfoToggle_Click"/>
-                                <TextBlock x:Name="MoreInfoText"/>
-                                <TextBlock x:Name="MoreInfoArrow"/>
-                                <Border x:Name="MoreInfoPanel"/>
-                                <Canvas x:Name="GraphCanvas">
-                                    <Polygon x:Name="DlArea"/>
-                                    <Polygon x:Name="UlArea"/>
-                                    <Polyline x:Name="DlLine"/>
-                                    <Polyline x:Name="UlLine"/>
-                                </Canvas>
-                                <TextBlock x:Name="PrivateIpText" MouseLeftButtonDown="CopyIpText_Click"/>
-                                <TextBlock x:Name="ServerIpText" MouseLeftButtonDown="CopyIpText_Click"/>
-                                <TextBlock x:Name="YouLbl"/>
-                                <TextBlock x:Name="YouText"/>
-                                <TextBlock x:Name="ProtocolLbl"/>
-                                <TextBlock x:Name="ProtocolText"/>
-                                <Button x:Name="HomeSwitchToVpnBtn" Click="SwitchToVpnBtn_Click"/>
-                                <Button x:Name="HomeSwitchToXrayBtn" Click="SwitchToXrayBtn_Click"/>
-                                <TextBlock x:Name="ConnSectionLabel"/>
-                                <Button x:Name="AddBtn" Click="Add_Click"/>
-                                <Button x:Name="FilterDropdownBtn" Click="FilterDropdownBtn_Click"/>
-                                <TextBlock x:Name="FilterDropdownLabel"/>
-                                <StackPanel x:Name="ConnList"/>
-                                <Border x:Name="SubSummaryCard" MouseLeftButtonUp="SubSummaryCard_Click"/>
-                                <Button x:Name="SubRefreshBtn" Click="SubRefreshBtn_Click">
-                                    <TextBlock x:Name="SubRefreshRotateDummy" RenderTransformOrigin="0.5,0.5">
-                                        <TextBlock.RenderTransform><RotateTransform x:Name="SubRefreshRotate"/></TextBlock.RenderTransform>
-                                    </TextBlock>
-                                </Button>
-                                <StackPanel x:Name="SubSummaryPanel"/>
-                                <TextBlock x:Name="SubSectionLabel"/>
-                                <Border x:Name="SubActiveBadge"/>
-                                <Ellipse x:Name="SubActiveDot"/>
-                                <TextBlock x:Name="SubActiveText"/>
-                                <TextBlock x:Name="SubEmptyText"/>
-                                <Border x:Name="SubDetailPanel"/>
-                                <TextBlock x:Name="SubTimeLbl"/>
-                                <TextBlock x:Name="SubTimeLeftText"/>
-                                <TextBlock x:Name="SubDataLbl"/>
-                                <TextBlock x:Name="SubDataLeftText"/>
-                                <TextBlock x:Name="SubUpdatedText"/>
                             </StackPanel>
                         </Grid>
 

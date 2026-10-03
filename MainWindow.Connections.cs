@@ -280,6 +280,45 @@ namespace SmartVpn
             }
         }
 
+        internal static string ExtractFlagOrIcon(string name, string protocol)
+        {
+            if (string.IsNullOrEmpty(name)) return "⚡";
+            for (int i = 0; i < name.Length - 1; i++)
+            {
+                if (char.IsSurrogatePair(name, i))
+                {
+                    int codePoint = char.ConvertToUtf32(name, i);
+                    if (codePoint >= 0x1F1E6 && codePoint <= 0x1F1FF)
+                    {
+                        if (i + 3 < name.Length && char.IsSurrogatePair(name, i + 2))
+                        {
+                            int second = char.ConvertToUtf32(name, i + 2);
+                            if (second >= 0x1F1E6 && second <= 0x1F1FF)
+                                return name.Substring(i, 4);
+                        }
+                    }
+                }
+            }
+            var upper = name.ToUpperInvariant();
+            if (upper.Contains("GERMAN") || upper.Contains("FRANKFURT") || upper.Contains(" DE ") || upper.Contains("[DE]")) return "🇩🇪";
+            if (upper.Contains("NETHERLAND") || upper.Contains("AMSTERDAM") || upper.Contains(" NL ") || upper.Contains("[NL]")) return "🇳🇱";
+            if (upper.Contains("UNITED KINGDOM") || upper.Contains("LONDON") || upper.Contains(" GB ") || upper.Contains("[GB]") || upper.Contains("[UK]")) return "🇬🇧";
+            if (upper.Contains("UNITED STATES") || upper.Contains("USA") || upper.Contains(" US ") || upper.Contains("[US]")) return "🇺🇸";
+            if (upper.Contains("TURKEY") || upper.Contains("ISTANBUL") || upper.Contains(" TR ") || upper.Contains("[TR]")) return "🇹🇷";
+            if (upper.Contains("FRANCE") || upper.Contains("PARIS") || upper.Contains(" FR ") || upper.Contains("[FR]")) return "🇫🇷";
+            if (upper.Contains("FINLAND") || upper.Contains(" FI ") || upper.Contains("[FI]")) return "🇫🇮";
+            if (upper.Contains("CANADA") || upper.Contains(" CA ") || upper.Contains("[CA]")) return "🇨🇦";
+            if (upper.Contains("RUSSIA") || upper.Contains("MOSCOW") || upper.Contains(" RU ") || upper.Contains("[RU]")) return "🇷🇺";
+            if (upper.Contains("POLAND") || upper.Contains("WARSAW") || upper.Contains(" PL ") || upper.Contains("[PL]")) return "🇵🇱";
+            if (upper.Contains("SWEDEN") || upper.Contains("STOCKHOLM") || upper.Contains(" SE ") || upper.Contains("[SE]")) return "🇸🇪";
+            if (upper.Contains("SINGAPORE") || upper.Contains(" SG ") || upper.Contains("[SG]")) return "🇸🇬";
+
+            var p = (protocol ?? "").ToLowerInvariant();
+            if (p.Contains("wireguard") || p.Contains("amnezia")) return "🛡️";
+            if (p.Contains("openvpn")) return "🔒";
+            return "⚡";
+        }
+
         // رنگ بج کتگوری برای هر پروتکل — دقیقاً مطابق طرح موکاپ تاییدشده (آبی=OpenVPN، بنفش=SSTP، کهربایی=L2TP، فیروزه‌ای=IKEv2)
         private static (Color bg, Color border, Color fg) CategoryBadgeColors(string type, bool light)
         {
@@ -456,6 +495,7 @@ namespace SmartVpn
                 _selectedName = c.Name;
                 ActiveConnText.Text = $"{CategoryLabel(c.Type)} {c.Name}";
                 ServerSubText.Text = c.ServerLine;
+                if (ActiveServerBadgeText != null) ActiveServerBadgeText.Text = ExtractFlagOrIcon(c.Name, c.Type);
                 RefreshList();
                 ConnectSelected();
             };
@@ -698,6 +738,7 @@ namespace SmartVpn
                 _selectedName = c.Name;
                 ActiveConnText.Text = $"{CategoryLabel(c.Type)} {c.Name}";
                 ServerSubText.Text = c.ServerLine;
+                if (ActiveServerBadgeText != null) ActiveServerBadgeText.Text = ExtractFlagOrIcon(c.Name, c.Type);
                 RefreshList();
             };
             card.MouseLeftButtonDown += async (_, e) =>
@@ -716,6 +757,7 @@ namespace SmartVpn
                 _selectedName = c.Name;
                 ActiveConnText.Text = $"{CategoryLabel(c.Type)} {c.Name}";
                 ServerSubText.Text = c.ServerLine;
+                if (ActiveServerBadgeText != null) ActiveServerBadgeText.Text = ExtractFlagOrIcon(c.Name, c.Type);
                 RefreshList();
                 ConnectSelected();
             };

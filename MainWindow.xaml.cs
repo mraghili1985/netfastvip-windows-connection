@@ -342,7 +342,30 @@ namespace SmartVpn
             _connListExpanded = _config.ConnListExpanded;
             if (!string.IsNullOrEmpty(_config.LastConnectedName) &&
                 _config.Connections.Any(c => c.Name == _config.LastConnectedName))
+            {
                 _selectedName = _config.LastConnectedName;
+            }
+            else if (_config.Connections.Count > 0)
+            {
+                _selectedName = _config.Connections[0].Name;
+            }
+
+            if (!string.IsNullOrEmpty(_selectedName))
+            {
+                var selConn = _config.Connections.FirstOrDefault(c => c.Name == _selectedName);
+                if (selConn != null)
+                {
+                    ActiveConnText.Text = $"{CategoryLabel(selConn.Type)} {selConn.Name}";
+                    ServerSubText.Text = selConn.ServerLine;
+                    if (ActiveServerBadgeText != null) ActiveServerBadgeText.Text = ExtractFlagOrIcon(selConn.Name, selConn.Type);
+                }
+            }
+            else if (_xraySelectedProfile != null)
+            {
+                ActiveConnText.Text = _xraySelectedProfile.Alias;
+                ServerSubText.Text = $"{_xraySelectedProfile.Protocol.ToUpper()} {_xraySelectedProfile.Network.ToUpper()}";
+                if (ActiveServerBadgeText != null) ActiveServerBadgeText.Text = ExtractFlagOrIcon(_xraySelectedProfile.Alias, _xraySelectedProfile.Protocol);
+            }
 
             RefreshList();
             TryAutoCheckSubscriptionSummaryOnce();
