@@ -275,7 +275,7 @@ namespace SmartVpn
             _selectedName = profile.Name;
             ActiveConnText.Text = $"{CategoryLabel(profile.Type)} {profile.Name}";
             ServerSubText.Text = profile.ServerLine;
-            if (ActiveServerBadgeText != null) ActiveServerBadgeText.Text = ExtractFlagOrIcon(profile.Name, profile.Type);
+            UpdateActiveBadge(profile.Name, profile.Type);
             RefreshList();
 
             await StopManuallyAsync();
@@ -351,7 +351,7 @@ namespace SmartVpn
                 ActiveConnText.Text = $"{CategoryLabel(profile.Type)} {profile.Name}";
                 HsVpnConnectionText.Text = ActiveConnText.Text;
                 ServerSubText.Text = profile.ServerLine;
-                if (ActiveServerBadgeText != null) ActiveServerBadgeText.Text = ExtractFlagOrIcon(profile.Name, profile.Type);
+                UpdateActiveBadge(profile.Name, profile.Type);
                 PrivateIpText.Text = string.IsNullOrEmpty(localIp) ? "—" : localIp;
                 ServerIpText.Text = _tunnelPeerIp ?? "—"; // sniff لاگ openvpn از قبل IP را گرفته — پاک نشود
                 // WireGuard/AmneziaWG: به‌جای User، هندشیک نشان داده می‌شود
@@ -524,7 +524,28 @@ namespace SmartVpn
             {
                 case "home": AnimatePanelIn(HomePanel, HomeTransform); break;
                 case "vpn": if (VpnPanel != null) AnimatePanelIn(VpnPanel, VpnTransform); break;
-                case "tools": AnimatePanelIn(ToolboxPanel, ToolsTransform); LogBox.CaretIndex = LogBox.Text.Length; LogBox.ScrollToEnd(); break;
+                case "tools":
+                    AnimatePanelIn(ToolboxPanel, ToolsTransform);
+                    if (LogBox.Text.Length == 0 && ConnLogBox.Text.Length > 0)
+                    {
+                        LogBox.Text = ConnLogBox.Text;
+                    }
+                    else if (LogBox.Text.Length == 0)
+                    {
+                        try
+                        {
+                            var p = System.IO.Path.Combine(AppContext.BaseDirectory, "Data", "app.log");
+                            if (System.IO.File.Exists(p))
+                            {
+                                var lines = System.IO.File.ReadLines(p).TakeLast(80);
+                                LogBox.Text = string.Join(Environment.NewLine, lines) + Environment.NewLine;
+                            }
+                        }
+                        catch { }
+                    }
+                    LogBox.CaretIndex = LogBox.Text.Length;
+                    LogBox.ScrollToEnd();
+                    break;
                 case "connlog": AnimatePanelIn(ConnLogPanel, ConnLogTransform); ConnLogBox.CaretIndex = ConnLogBox.Text.Length; ConnLogBox.ScrollToEnd(); break;
                 case "settings": AnimatePanelIn(SettingsPanel, SettingsTransform); break;
                 case "xray": if (XrayPanel != null) AnimatePanelIn(XrayPanel, XrayTransform); break;

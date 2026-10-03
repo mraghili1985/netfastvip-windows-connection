@@ -370,8 +370,7 @@ public sealed class OpenVpnProvider : IConnectionProvider
         const string hardening =
             "\n# --- client hardening: IPv6 leak block + DNS leak block (mirror OpenVPN Connect) ---\n" +
             "block-outside-dns\n" +
-            "block-ipv6\n" +
-            "ifconfig-ipv6 fd15:53b6:dead::2/64 fd15:53b6:dead::1\n";
+            "block-ipv6\n";
         // نکته: ping-restart را دستکاری نکن! هر سرور تایمر ضربان خودش را push می‌کند (مثلا ping 10 یا ping 20)
         // و مقدار ثابت کوتاه‌تر از ضربان سرور باعث قطع/وصل مداوم در حالت idle می‌شود (باگ ۱۸ اوت).
         // تشخیص سریع قطعی به عهده نگهبان پینگ برنامه است (MainWindow.Stats.cs) که پروتکل-مستقل است.

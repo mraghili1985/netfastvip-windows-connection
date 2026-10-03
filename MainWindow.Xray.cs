@@ -251,10 +251,9 @@ namespace SmartVpn
                                 var geoStr = string.IsNullOrWhiteSpace(country) ? ip : $"{country} — {ip}";
                                 if (XrayTxtActiveGeoIP != null) XrayTxtActiveGeoIP.Text = geoStr;
                                 GeoIpText.Text = geoStr;
-                                if (ActiveServerBadgeText != null && !string.IsNullOrWhiteSpace(country))
+                                if (!string.IsNullOrWhiteSpace(country))
                                 {
-                                    var flag = ExtractFlagOrIcon(country, _xrayActiveProfile?.Protocol ?? "");
-                                    if (flag != "⚡") ActiveServerBadgeText.Text = flag;
+                                    UpdateActiveBadge(_xrayActiveProfile?.Alias, _xrayActiveProfile?.Protocol, country);
                                 }
                                 AppendConnLog($"[sing-box] موقعیت خروجی (GeoIP): {geoStr}");
                             });
@@ -455,7 +454,7 @@ namespace SmartVpn
             {
                 if (ActiveConnText != null) ActiveConnText.Text = item.Alias;
                 if (ServerSubText != null) ServerSubText.Text = $"{item.Protocol.ToUpper()} / {item.Network.ToUpper()}{sec}";
-                if (ActiveServerBadgeText != null) ActiveServerBadgeText.Text = ExtractFlagOrIcon(item.Alias, item.Protocol);
+                UpdateActiveBadge(item.Alias, item.Protocol);
             }
         }
 
@@ -1611,7 +1610,7 @@ namespace SmartVpn
             string protoFull = $"{item.Protocol.ToUpper()} {item.Network.ToUpper()}";
             ServerSubText.Text = protoFull;
             ActiveConnText.Text = item.Alias;
-            if (ActiveServerBadgeText != null) ActiveServerBadgeText.Text = ExtractFlagOrIcon(item.Alias, item.Protocol);
+            UpdateActiveBadge(item.Alias, item.Protocol);
             GeoIpText.Text = $"Connected — {item.Address}";
             if (MiniConnectionText != null) MiniConnectionText.Text = item.Alias;
 
@@ -1633,8 +1632,12 @@ namespace SmartVpn
             if (PowerStateText != null) PowerStateText.Text = "ON";
 
             // Populate all 6 detail cards
-            if (XrayProtocolText != null) XrayProtocolText.Text = $"{item.Protocol.ToUpper()} / {item.Network.ToUpper()}{sec}";
-            if (XrayYouText != null) XrayYouText.Text = !string.IsNullOrEmpty(item.UserId) ? (item.UserId.Length > 12 ? item.UserId.Substring(0, 10) + "..." : item.UserId) : "sing-box";
+            string protoTextVal = $"{item.Protocol.ToUpper()} / {item.Network.ToUpper()}{sec}";
+            string userVal = !string.IsNullOrEmpty(item.UserId) ? (item.UserId.Length > 12 ? item.UserId.Substring(0, 10) + "..." : item.UserId) : "sing-box";
+            if (XrayProtocolText != null) XrayProtocolText.Text = protoTextVal;
+            if (ProtocolText != null) ProtocolText.Text = protoTextVal;
+            if (XrayYouText != null) XrayYouText.Text = userVal;
+            if (YouText != null) YouText.Text = userVal;
 
             var tun = FindSingBoxTunInterface();
             string tunIp = "172.19.0.1 (TUN)";
@@ -1654,7 +1657,9 @@ namespace SmartVpn
                 catch { }
             }
             if (XrayPrivateIpText != null) XrayPrivateIpText.Text = tunIp;
+            if (PrivateIpText != null) PrivateIpText.Text = tunIp;
             if (XrayServerIpText != null) XrayServerIpText.Text = $"{item.Address}:{item.Port}";
+            if (ServerIpText != null) ServerIpText.Text = $"{item.Address}:{item.Port}";
 
             // Resolve server destination IP asynchronously
             _ = ResolveXrayServerIpAsync(item);
@@ -1727,6 +1732,10 @@ namespace SmartVpn
                 if (XrayYouText != null) XrayYouText.Text = "—";
             }
 
+            if (PrivateIpText != null) PrivateIpText.Text = "—";
+            if (ServerIpText != null) ServerIpText.Text = "—";
+            if (ProtocolText != null) ProtocolText.Text = "—";
+            if (YouText != null) YouText.Text = "—";
             if (XrayPrivateIpText != null) XrayPrivateIpText.Text = "—";
             if (XrayStatusText != null) { XrayStatusText.Text = Localization.T("آماده اتصال"); XrayStatusText.Visibility = Visibility.Collapsed; }
             if (StatusText != null) { StatusText.Text = Localization.T("آماده اتصال"); }

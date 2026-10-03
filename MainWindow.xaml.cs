@@ -418,15 +418,23 @@ namespace SmartVpn
                 {
                     ActiveConnText.Text = $"{CategoryLabel(selConn.Type)} {selConn.Name}";
                     ServerSubText.Text = selConn.ServerLine;
-                    if (ActiveServerBadgeText != null) ActiveServerBadgeText.Text = ExtractFlagOrIcon(selConn.Name, selConn.Type);
+                    UpdateActiveBadge(selConn.Name, selConn.Type);
                 }
             }
             else if (_xraySelectedProfile != null)
             {
                 ActiveConnText.Text = _xraySelectedProfile.Alias;
                 ServerSubText.Text = $"{_xraySelectedProfile.Protocol.ToUpper()} {_xraySelectedProfile.Network.ToUpper()}";
-                if (ActiveServerBadgeText != null) ActiveServerBadgeText.Text = ExtractFlagOrIcon(_xraySelectedProfile.Alias, _xraySelectedProfile.Protocol);
+                UpdateActiveBadge(_xraySelectedProfile.Alias, _xraySelectedProfile.Protocol);
             }
+
+            FlagHelper.FlagDownloaded += (_, _) =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    UpdateActiveBadge(ActiveConnText.Text, ServerSubText.Text, GeoIpText?.Text);
+                });
+            };
 
             RefreshList();
             TryAutoCheckSubscriptionSummaryOnce();
@@ -436,6 +444,15 @@ namespace SmartVpn
             SetPowerState("off");
 
             _ready = true;
+        }
+
+        public void UpdateActiveBadge(string? name, string? protocol, string? countryText = null)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                FlagHelper.ApplyFlagOrIcon(ActiveServerBadgeImg, ActiveServerBadgeText, name, protocol, countryText);
+                FlagHelper.ApplyFlagOrIcon(TargetConnBadgeImg, TargetConnBadgeText, name, protocol, countryText);
+            });
         }
 
         private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -725,9 +742,18 @@ namespace SmartVpn
         {
             Dispatcher.Invoke(() =>
             {
-                LogBox.AppendText("[" + DateTime.Now.ToString("HH:mm:ss") + "] " + line + Environment.NewLine);
-                LogBox.CaretIndex = LogBox.Text.Length;
-                LogBox.ScrollToEnd();
+                var entry = "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + line + Environment.NewLine;
+                if (LogBox != null)
+                {
+                    LogBox.AppendText(entry);
+                    LogBox.CaretIndex = LogBox.Text.Length;
+                    LogBox.ScrollToEnd();
+                }
+                if (ConnLogBox != null)
+                {
+                    ConnLogBox.AppendText(entry);
+                    ConnLogBox.ScrollToEnd();
+                }
             });
             LogWriter.Write(line);
         }
@@ -736,8 +762,17 @@ namespace SmartVpn
         {
             Dispatcher.Invoke(() =>
             {
-                ConnLogBox.AppendText("[" + DateTime.Now.ToString("HH:mm:ss") + "] " + line + Environment.NewLine);
-                ConnLogBox.ScrollToEnd();
+                var entry = "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + line + Environment.NewLine;
+                if (ConnLogBox != null)
+                {
+                    ConnLogBox.AppendText(entry);
+                    ConnLogBox.ScrollToEnd();
+                }
+                if (LogBox != null)
+                {
+                    LogBox.AppendText(entry);
+                    LogBox.ScrollToEnd();
+                }
 
                 try
                 {
@@ -761,8 +796,10 @@ namespace SmartVpn
                             if (System.Net.IPAddress.TryParse(ipStr, out _))
                             {
                                 _tunnelPeerIp = ipStr;
-                                ServerIpText.Text = ipStr;
-                                ConnLogBox.AppendText("[" + DateTime.Now.ToString("HH:mm:ss") + "] [ip] server from openvpn log: " + ipStr + Environment.NewLine);
+                                if (ServerIpText != null) ServerIpText.Text = ipStr;
+                                var sniffEntry = "[" + DateTime.Now.ToString("HH:mm:ss") + "] [ip] server from openvpn log: " + ipStr + Environment.NewLine;
+                                if (ConnLogBox != null) ConnLogBox.AppendText(sniffEntry);
+                                if (LogBox != null) LogBox.AppendText(sniffEntry);
                             }
                         }
                         break;
@@ -770,8 +807,16 @@ namespace SmartVpn
                 }
                 catch { }
 
-                ConnLogBox.CaretIndex = ConnLogBox.Text.Length;
-                ConnLogBox.ScrollToEnd();
+                if (ConnLogBox != null)
+                {
+                    ConnLogBox.CaretIndex = ConnLogBox.Text.Length;
+                    ConnLogBox.ScrollToEnd();
+                }
+                if (LogBox != null)
+                {
+                    LogBox.CaretIndex = LogBox.Text.Length;
+                    LogBox.ScrollToEnd();
+                }
             });
             LogWriter.Write(line);
         }

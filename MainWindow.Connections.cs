@@ -496,7 +496,7 @@ namespace SmartVpn
                 _selectedName = c.Name;
                 ActiveConnText.Text = $"{CategoryLabel(c.Type)} {c.Name}";
                 ServerSubText.Text = c.ServerLine;
-                if (ActiveServerBadgeText != null) ActiveServerBadgeText.Text = ExtractFlagOrIcon(c.Name, c.Type);
+                UpdateActiveBadge(c.Name, c.Type);
                 RefreshList();
                 ConnectSelected();
                 ShowPanel("home");
@@ -740,7 +740,7 @@ namespace SmartVpn
                 _selectedName = c.Name;
                 ActiveConnText.Text = $"{CategoryLabel(c.Type)} {c.Name}";
                 ServerSubText.Text = c.ServerLine;
-                if (ActiveServerBadgeText != null) ActiveServerBadgeText.Text = ExtractFlagOrIcon(c.Name, c.Type);
+                UpdateActiveBadge(c.Name, c.Type);
                 RefreshList();
             };
             card.MouseLeftButtonDown += async (_, e) =>
@@ -760,7 +760,7 @@ namespace SmartVpn
                 _selectedName = c.Name;
                 ActiveConnText.Text = $"{CategoryLabel(c.Type)} {c.Name}";
                 ServerSubText.Text = c.ServerLine;
-                if (ActiveServerBadgeText != null) ActiveServerBadgeText.Text = ExtractFlagOrIcon(c.Name, c.Type);
+                UpdateActiveBadge(c.Name, c.Type);
                 RefreshList();
                 ConnectSelected();
                 ShowPanel("home");

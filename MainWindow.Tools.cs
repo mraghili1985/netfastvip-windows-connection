@@ -415,7 +415,35 @@ namespace SmartVpn
 
         private void ClearLog_Click(object sender, RoutedEventArgs e)
         {
-            LogBox.Clear();
+            LogBox?.Clear();
+            ConnLogBox?.Clear();
+        }
+
+        private void CopyLog_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var text = LogBox?.Text;
+                if (!string.IsNullOrEmpty(text))
+                {
+                    Clipboard.SetText(text);
+                    Notify(Localization.T("لاگ در کلیپ‌بورد کپی شد"));
+                }
+            }
+            catch { }
+        }
+
+        private void OpenLogFile_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var logFile = System.IO.Path.Combine(AppContext.BaseDirectory, "Data", "app.log");
+                if (System.IO.File.Exists(logFile))
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(logFile) { UseShellExecute = true });
+                }
+            }
+            catch { }
         }
     }
 }

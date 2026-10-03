@@ -59,6 +59,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="Data\flags\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <TargetPath>Data\flags\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- OpenVPN - copy to Data\openvpn\ on build -->
     <None Include="openvpn\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
