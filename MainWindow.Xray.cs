@@ -122,6 +122,8 @@ namespace SmartVpn
 
                 if (XrayDlSpeedText != null) XrayDlSpeedText.Text = "↓ " + Fmt(dl) + "/s";
                 if (XrayUlSpeedText != null) XrayUlSpeedText.Text = "↑ " + Fmt(ul) + "/s";
+                if (DlSpeedText != null) DlSpeedText.Text = "↓ " + Fmt(dl) + "/s";
+                if (UlSpeedText != null) UlSpeedText.Text = "↑ " + Fmt(ul) + "/s";
 
                 _xrayDlHistory.Add(dl);
                 _xrayUlHistory.Add(ul);
@@ -135,7 +137,9 @@ namespace SmartVpn
             var totalNow = down + up;
             if (XraySessionTrafficText != null)
             {
-                XraySessionTrafficText.Text = Fmt(Math.Max(0, totalNow - _xraySessionStartTotalBytes));
+                var st = Fmt(Math.Max(0, totalNow - _xraySessionStartTotalBytes));
+                XraySessionTrafficText.Text = st;
+                if (SessionTrafficText != null) SessionTrafficText.Text = st;
             }
 
             _xrayPingTick++;
@@ -1596,8 +1600,12 @@ namespace SmartVpn
             _ = FetchXrayGeoIpAsync();
 
             if (XrayStatusText != null) { XrayStatusText.Text = Localization.T("متصل"); XrayStatusText.Visibility = Visibility.Visible; }
+            if (StatusText != null) { StatusText.Text = Localization.T("متصل"); StatusText.Visibility = Visibility.Visible; }
             if (XrayStatusDot != null) { XrayStatusDot.Visibility = Visibility.Visible; XrayStatusDot.Fill = new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E)); }
+            if (StatusDot != null) { StatusDot.Visibility = Visibility.Visible; StatusDot.Fill = new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E)); }
             if (XrayBtnPower != null) XrayBtnPower.Background = new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E));
+            if (PowerBtn != null) PowerBtn.Background = new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E));
+            if (PowerStateText != null) PowerStateText.Text = "ON";
 
             // Populate all 6 detail cards
             if (XrayProtocolText != null) XrayProtocolText.Text = $"{item.Protocol.ToUpper()} / {item.Network.ToUpper()}{sec}";
@@ -1696,8 +1704,12 @@ namespace SmartVpn
 
             if (XrayPrivateIpText != null) XrayPrivateIpText.Text = "—";
             if (XrayStatusText != null) { XrayStatusText.Text = Localization.T("آماده اتصال"); XrayStatusText.Visibility = Visibility.Collapsed; }
+            if (StatusText != null) { StatusText.Text = Localization.T("آماده اتصال"); }
             if (XrayStatusDot != null) XrayStatusDot.Visibility = Visibility.Collapsed;
+            if (StatusDot != null) StatusDot.Visibility = Visibility.Collapsed;
             if (XrayBtnPower != null) XrayBtnPower.Background = new SolidColorBrush(Color.FromRgb(0x33, 0x41, 0x55));
+            if (PowerBtn != null) PowerBtn.Background = new SolidColorBrush(Color.FromRgb(0x33, 0x41, 0x55));
+            if (PowerStateText != null) PowerStateText.Text = "OFF";
 
             DurationText.Text = "00:00:00";
             if (XrayTxtDuration != null) XrayTxtDuration.Text = "00:00:00";
@@ -1709,7 +1721,10 @@ namespace SmartVpn
             }
             if (XrayDlSpeedText != null) XrayDlSpeedText.Text = "↓ 0 B/s";
             if (XrayUlSpeedText != null) XrayUlSpeedText.Text = "↑ 0 B/s";
+            if (DlSpeedText != null) DlSpeedText.Text = "↓ 0 B/s";
+            if (UlSpeedText != null) UlSpeedText.Text = "↑ 0 B/s";
             if (XraySessionTrafficText != null) XraySessionTrafficText.Text = "0 B";
+            if (SessionTrafficText != null) SessionTrafficText.Text = "0 B";
 
             _xrayDlHistory.Clear();
             _xrayUlHistory.Clear();

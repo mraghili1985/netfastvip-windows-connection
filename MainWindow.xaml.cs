@@ -127,13 +127,13 @@ namespace SmartVpn
         private void FitToScreen()
         {
             var wa = SystemParameters.WorkArea;
-            var scale = Math.Min(1.0, Math.Min(wa.Width / 420.0, (wa.Height - 6) / 790.0));
+            var scale = Math.Min(1.0, Math.Min(wa.Width / 880.0, (wa.Height - 6) / 580.0));
             if (scale >= 0.999) return;
             _uiScale = scale;
             RootScale.ScaleX = scale;
             RootScale.ScaleY = scale;
-            Width = Math.Round(420 * scale);
-            Height = Math.Round(790 * scale);
+            Width = Math.Round(880 * scale);
+            Height = Math.Round(580 * scale);
         }
 
         public MainWindow()
@@ -393,6 +393,70 @@ namespace SmartVpn
             _ = HsRefreshAdaptersAsync(searchForTarget: false);
         }
 
+        private void SidebarNavDashboard_Click(object sender, RoutedEventArgs e)
+        {
+            ShowPanel("home");
+            UpdateSidebarState("dashboard");
+        }
+
+        private void SidebarNavServers_Click(object sender, RoutedEventArgs e)
+        {
+            ShowPanel("xray");
+            UpdateSidebarState("servers");
+        }
+
+        private void SidebarNavHotspot_Click(object sender, RoutedEventArgs e)
+        {
+            SetPanelFromHotspotNavigation("hotspot");
+            UpdateSidebarState("hotspot");
+        }
+
+        private void SidebarNavSpeedTest_Click(object sender, RoutedEventArgs e)
+        {
+            SpeedTest_Click(sender, e);
+        }
+
+        private void SidebarNavSettings_Click(object sender, RoutedEventArgs e)
+        {
+            ShowPanel("settings");
+            UpdateSidebarState("settings");
+        }
+
+        private void SidebarNavTools_Click(object sender, RoutedEventArgs e)
+        {
+            ShowPanel("tools");
+            UpdateSidebarState("tools");
+        }
+
+        private void TitleMaximizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+        }
+
+        public void UpdateSidebarState(string current)
+        {
+            try
+            {
+                var activeBg = (Brush)FindResource("CardHoverBrush");
+                var transparent = Brushes.Transparent;
+
+                void SetBtn(Button? btn, Border? indicator, bool isActive)
+                {
+                    if (btn == null) return;
+                    btn.Background = isActive ? activeBg : transparent;
+                    if (indicator != null) indicator.Visibility = isActive ? Visibility.Visible : Visibility.Collapsed;
+                }
+
+                SetBtn(NavDashboardBtn, NavDashboardIndicator, current == "dashboard" || current == "home");
+                SetBtn(NavServersBtn, NavServersIndicator, current == "servers" || current == "xray");
+                SetBtn(NavHotspotBtn, NavHotspotIndicator, current == "hotspot");
+                SetBtn(NavSpeedTestBtn, NavSpeedTestIndicator, current == "speedtest");
+                SetBtn(NavSettingsBtn, NavSettingsIndicator, current == "settings");
+                SetBtn(NavToolsBtn, NavToolsIndicator, current == "tools" || current == "logs" || current == "connlog");
+            }
+            catch { }
+        }
+
         // این handlerها نام‌های اختصاصی دارند تا با handlerهای قبلی پروژه
         // مثل ShowPanel، Nav_Click یا HeaderLogBtn_Click تداخل نداشته باشند.
         private void HotspotNavHome_Click(object sender, RoutedEventArgs e)
@@ -422,6 +486,7 @@ namespace SmartVpn
 
         private void SetPanelFromHotspotNavigation(string page)
         {
+            UpdateSidebarState(page);
             if (DrawerOverlay != null) DrawerOverlay.Visibility = Visibility.Collapsed;
             // ابتدا همه پنل‌ها را مخفی کن؛ این خط مانع باقی‌ماندن هات‌اسپات می‌شود.
             HomePanel.Visibility = Visibility.Collapsed;

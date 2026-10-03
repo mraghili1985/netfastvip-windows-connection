@@ -29,9 +29,19 @@ namespace SmartVpn
         // ================= Power / Engine =================
         private async void Power_Click(object sender, RoutedEventArgs e)
         {
+            if (_xrayIsConnected)
+            {
+                XrayBtnPower_Click(sender, e);
+                return;
+            }
             if (_engine.IsRunning)
             {
                 await StopManuallyAsync();
+                return;
+            }
+            if (_xrayActiveProfile != null && string.IsNullOrEmpty(_selectedName))
+            {
+                XrayBtnPower_Click(sender, e);
                 return;
             }
             ConnectSelected();
@@ -493,6 +503,7 @@ namespace SmartVpn
 
         private void ShowPanel(string tag)
         {
+            UpdateSidebarState(tag == "home" ? "dashboard" : tag == "xray" ? "servers" : tag);
             if (DrawerOverlay != null) DrawerOverlay.Visibility = Visibility.Collapsed;
             HomePanel.Visibility = tag == "home" ? Visibility.Visible : Visibility.Collapsed;
             ToolboxPanel.Visibility = tag == "tools" ? Visibility.Visible : Visibility.Collapsed;
@@ -677,6 +688,15 @@ namespace SmartVpn
             if (XrayBtnPower != null) XrayBtnPower.Background = brush;
             PowerHintText.Text = Localization.T(state == "connected"
                 ? "برای قطع اتصال کلیک کنید" : "روشن/خاموش اتصال");
+            if (PowerStateText != null)
+            {
+                PowerStateText.Text = state switch
+                {
+                    "connected" => "ON",
+                    "connecting" or "reconnecting" => "...",
+                    _ => "OFF"
+                };
+            }
             // نقطه وضعیت کنار متن هم همان پیام رنگی را می‌دهد
             if (StatusDot != null)
                 StatusDot.Fill = state == "off" ? new SolidColorBrush(Color.FromRgb(0x64, 0x74, 0x8B)) : brush;
