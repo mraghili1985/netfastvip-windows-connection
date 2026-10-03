@@ -336,17 +336,39 @@
                                     </Grid>
                                 </Button>
 
-                                <!-- Servers Tab -->
-                                <Button x:Name="NavServersBtn" Style="{StaticResource SidebarTabBtn}" Click="SidebarNavServers_Click">
+                                <!-- VPN Core Tab -->
+                                <Button x:Name="NavVpnCoreBtn" Style="{StaticResource SidebarTabBtn}" Click="SidebarNavVpnCore_Click">
                                     <Grid>
-                                        <Border x:Name="NavServersIndicator" Width="3" Height="22" HorizontalAlignment="Left"
+                                        <Border x:Name="NavVpnCoreIndicator" Width="3" Height="22" HorizontalAlignment="Left"
                                                 Background="{DynamicResource AccentBrush}" CornerRadius="1.5" Visibility="Collapsed"/>
                                         <StackPanel Orientation="Horizontal" Margin="14,0,0,0" VerticalAlignment="Center">
-                                            <TextBlock Text="🌐" FontSize="15" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" Width="24"/>
-                                            <TextBlock Text="Servers" FontSize="13" FontWeight="Medium" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="🛡️" FontSize="14" VerticalAlignment="Center" Width="24"/>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="VPN Core" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                                                <TextBlock Text="WireGuard / OVPN" FontSize="9" Foreground="{DynamicResource SubTextBrush}"/>
+                                            </StackPanel>
                                         </StackPanel>
                                     </Grid>
                                 </Button>
+
+                                <!-- Xray Core Tab -->
+                                <Button x:Name="NavXrayCoreBtn" Style="{StaticResource SidebarTabBtn}" Click="SidebarNavXrayCore_Click">
+                                    <Grid>
+                                        <Border x:Name="NavXrayCoreIndicator" Width="3" Height="22" HorizontalAlignment="Left"
+                                                Background="{DynamicResource AccentBrush}" CornerRadius="1.5" Visibility="Collapsed"/>
+                                        <StackPanel Orientation="Horizontal" Margin="14,0,0,0" VerticalAlignment="Center">
+                                            <TextBlock Text="⚡" FontSize="15" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Width="24"/>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Xray Core" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                                                <TextBlock Text="sing-box / VLESS" FontSize="9" Foreground="{DynamicResource SubTextBrush}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Grid>
+                                </Button>
+
+                                <!-- Legacy stub for compilation safety -->
+                                <Button x:Name="NavServersBtn" Visibility="Collapsed"/>
+                                <Border x:Name="NavServersIndicator" Visibility="Collapsed"/>
 
                                 <!-- Hotspot Tab -->
                                 <Button x:Name="NavHotspotBtn" Style="{StaticResource SidebarTabBtn}" Click="SidebarNavHotspot_Click">
@@ -588,51 +610,53 @@
                                 </Border>
                             </StackPanel>
 
-                            <!-- ================= RIGHT COLUMN: REAL SERVERS & SUBSCRIPTION ================= -->
+                            <!-- ================= RIGHT COLUMN: CONNECTION CONTROL & SELECTED TARGET ================= -->
                             <Grid Grid.Column="1" Margin="8,0,0,0">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/> <!-- Connection Control Capsule Card -->
-                                    <RowDefinition Height="Auto"/> <!-- Segmented Switcher & Toolbar -->
-                                    <RowDefinition Height="*"/>    <!-- Real Connections List (ConnList) -->
+                                    <RowDefinition Height="*"/>    <!-- Selected Server Target & Quick Switch Card -->
                                     <RowDefinition Height="Auto"/> <!-- Real Subscription Card (SubSummaryCard) -->
                                 </Grid.RowDefinitions>
 
                                 <!-- 1. Connection Control Card -->
                                 <Border Grid.Row="0" Background="{DynamicResource GlassBrush}"
                                         BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"
-                                        CornerRadius="16" Padding="14,10" Margin="0,0,0,10">
+                                        CornerRadius="16" Padding="14,14" Margin="0,0,0,10">
                                     <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="کنترل اتصال (Connection Control)" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource SubTextBrush}" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+
                                         <!-- Capsule Toggle Switch Button -->
-                                        <Button x:Name="PowerBtn" Width="136" Height="48" Cursor="Hand" Click="Power_Click"
+                                        <Button x:Name="PowerBtn" Width="144" Height="50" Cursor="Hand" Click="Power_Click"
                                                 RenderTransformOrigin="0.5,0.5">
                                             <Button.RenderTransform>
                                                 <ScaleTransform x:Name="PowerScale" ScaleX="1" ScaleY="1"/>
                                             </Button.RenderTransform>
                                             <Button.Effect>
-                                                <DropShadowEffect Color="#22C55E" BlurRadius="18" ShadowDepth="0" Opacity="0.4"/>
+                                                <DropShadowEffect Color="#22C55E" BlurRadius="20" ShadowDepth="0" Opacity="0.4"/>
                                             </Button.Effect>
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
                                                     <Border x:Name="CapsuleBorder" Background="{TemplateBinding Background}" BorderBrush="{DynamicResource GlassBorderBrush}"
-                                                            BorderThickness="1" CornerRadius="24" Padding="3">
+                                                            BorderThickness="1" CornerRadius="25" Padding="4">
                                                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                     </Border>
                                                 </ControlTemplate>
                                             </Button.Template>
-                                            <Grid Width="128" Height="40">
+                                            <Grid Width="136" Height="42">
                                                 <!-- Status Label "ON" / "OFF" -->
-                                                <TextBlock x:Name="PowerStateText" Text="OFF" FontSize="14" FontWeight="Bold"
-                                                           Foreground="White" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="18,0,0,0"/>
+                                                <TextBlock x:Name="PowerStateText" Text="OFF" FontSize="15" FontWeight="Bold"
+                                                           Foreground="White" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,0,0,0"/>
 
                                                 <!-- Glowing Circular Knob with Ring -->
-                                                <Border Width="34" Height="34" HorizontalAlignment="Right" CornerRadius="17"
+                                                <Border Width="36" Height="36" HorizontalAlignment="Right" CornerRadius="18"
                                                         Background="#0B1120" BorderBrush="#F59E0B" BorderThickness="2.5" Margin="0,0,3,0">
                                                     <Border.Effect>
-                                                        <DropShadowEffect Color="#F59E0B" BlurRadius="14" ShadowDepth="0" Opacity="0.8"/>
+                                                        <DropShadowEffect Color="#F59E0B" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
                                                     </Border.Effect>
                                                     <Grid>
                                                         <!-- Power Glyph inside Knob -->
-                                                        <Path x:Name="PowerGlyph" Width="16" Height="16" Stretch="Uniform"
+                                                        <Path x:Name="PowerGlyph" Width="17" Height="17" Stretch="Uniform"
                                                               Data="M 12,2.5 L 12,11.5 M 7.05,5.6 A 8.5,8.5 0 1 0 16.95,5.6"
                                                               Stroke="#F8FAFC" StrokeThickness="2"
                                                               StrokeStartLineCap="Round" StrokeEndLineCap="Round"
@@ -646,52 +670,70 @@
                                             </Grid>
                                         </Button>
 
-                                        <TextBlock x:Name="PowerHintText" Text="روشن/خاموش اتصال" FontSize="10"
-                                                   Foreground="{DynamicResource SubTextBrush}" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                                        <TextBlock x:Name="PowerHintText" Text="روشن/خاموش اتصال" FontSize="11"
+                                                   Foreground="{DynamicResource SubTextBrush}" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                                     </StackPanel>
                                 </Border>
 
-                                <!-- 2. Segmented Switcher & Toolbar -->
-                                <Grid Grid.Row="1" Margin="0,0,0,8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
+                                <!-- 2. Selected Target & Quick Switch Card (Clean, Spacious, No crammed list!) -->
+                                <Border Grid.Row="1" Background="{DynamicResource GlassBrush}"
+                                        BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"
+                                        CornerRadius="16" Padding="16,14" Margin="0,0,0,10">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
 
-                                    <!-- Switcher VPN / Xray -->
-                                    <Border Background="{DynamicResource FieldBrush}" CornerRadius="8" Padding="2" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" HorizontalAlignment="Left">
-                                        <StackPanel Orientation="Horizontal">
-                                            <Button x:Name="HomeSwitchToVpnBtn" Content="VPN (سنتی)" Click="SwitchToVpnBtn_Click"
-                                                    Background="{DynamicResource AccentBrush}" Foreground="White" BorderThickness="0" Cursor="Hand" Padding="8,4" FontSize="11" FontWeight="SemiBold" Style="{StaticResource ActionBtn}"/>
-                                            <Button x:Name="HomeSwitchToXrayBtn" Content="Xray (پروکسی)" Click="SwitchToXrayBtn_Click"
-                                                    Background="Transparent" Foreground="{DynamicResource SubTextBrush}" BorderThickness="0" Cursor="Hand" Padding="8,4" FontSize="11" FontWeight="SemiBold" Style="{StaticResource ActionBtn}"/>
+                                        <!-- Card Header -->
+                                        <StackPanel Grid.Row="0">
+                                            <TextBlock Text="سرور انتخاب شده برای اتصال" FontSize="12.5" FontWeight="Bold" Foreground="White"/>
+                                            <TextBlock Text="با کلیک روی کلید پاور، به این سرور متصل خواهید شد" FontSize="10.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0"/>
                                         </StackPanel>
-                                    </Border>
-                                    <TextBlock x:Name="ConnSectionLabel" Text="" Visibility="Collapsed"/>
 
-                                    <!-- Action Buttons -->
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <Button x:Name="AddBtn" Content="＋ Add" Style="{StaticResource PrimaryActionBtn}" FontSize="10.5" Padding="8,3" Margin="0,0,6,0" Click="Add_Click"/>
-                                        <Button x:Name="FilterDropdownBtn" Style="{StaticResource ActionBtn}" FontSize="10.5" Padding="8,3" Click="FilterDropdownBtn_Click">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock x:Name="FilterDropdownLabel" Text="همه" FontSize="10.5"/>
-                                                <TextBlock Text=" ⌄" FontSize="10" Margin="3,0,0,0"/>
-                                            </StackPanel>
-                                        </Button>
-                                    </StackPanel>
-                                </Grid>
+                                        <!-- Selected Server Preview Box -->
+                                        <Border Grid.Row="1" Background="{DynamicResource CardBrush}"
+                                                BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"
+                                                CornerRadius="12" Padding="14,12" Margin="0,10,0,10" VerticalAlignment="Center">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Width="42" Height="42" CornerRadius="12" Background="#2038BDF8" BorderBrush="#3538BDF8" BorderThickness="1" Margin="0,0,12,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Text, ElementName=ActiveServerBadgeText}" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock x:Name="TargetConnNameText" Text="{Binding Text, ElementName=ActiveConnText}" FontSize="13.5" FontWeight="Bold" Foreground="White" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock x:Name="TargetConnSubText" Text="{Binding Text, ElementName=ServerSubText}" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
 
-                                <!-- 3. Real Scrollable Connections List (ConnList) -->
-                                <Border Grid.Row="2" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="6,6" Margin="0,0,0,8">
-                                    <ScrollViewer Height="180" MaxHeight="210" VerticalScrollBarVisibility="Auto">
-                                        <StackPanel x:Name="ConnList"/>
-                                    </ScrollViewer>
+                                        <!-- Quick Navigation Buttons to Core Panels -->
+                                        <StackPanel Grid.Row="2">
+                                            <TextBlock Text="برای انتخاب یا تغییر سرور:" FontSize="10.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,0,0,6"/>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Button Grid.Column="0" x:Name="HomeSwitchToVpnBtn" Content="🛡️ سرورهای VPN Core"
+                                                        Click="SidebarNavVpnCore_Click" Style="{StaticResource ActionBtn}"
+                                                        FontSize="11" FontWeight="SemiBold" Margin="0,0,4,0" Padding="8,8"/>
+                                                <Button Grid.Column="1" x:Name="HomeSwitchToXrayBtn" Content="⚡ سرورهای Xray Core"
+                                                        Click="SidebarNavXrayCore_Click" Style="{StaticResource ActionBtn}"
+                                                        FontSize="11" FontWeight="SemiBold" Margin="4,0,0,0" Padding="8,8"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Grid>
                                 </Border>
 
-                                <!-- 4. Real Subscription Summary Card (SubSummaryCard) -->
-                                <Border Grid.Row="3" x:Name="SubSummaryCard"
+                                <!-- 3. Real Subscription Summary Card (SubSummaryCard) -->
+                                <Border Grid.Row="2" x:Name="SubSummaryCard"
                                         Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}"
-                                        BorderThickness="1" CornerRadius="12" Padding="10,8" Cursor="Hand" MouseLeftButtonUp="SubSummaryCard_Click">
+                                        BorderThickness="1" CornerRadius="14" Padding="12,10" Cursor="Hand" MouseLeftButtonUp="SubSummaryCard_Click">
                                     <StackPanel>
                                         <Grid FlowDirection="LeftToRight">
                                             <Grid.ColumnDefinitions>
@@ -740,7 +782,52 @@
                             <!-- Hidden Stubs (any remaining items) -->
                             <StackPanel Visibility="Collapsed">
                                 <StackPanel x:Name="ActiveConnSummaryPanel"/>
+                                <TextBlock x:Name="ConnSectionLabel"/>
                             </StackPanel>
+                        </Grid>
+
+                        <!-- ================= 2. VPN CORE PANEL (WIREGUARD, OPENVPN, RAS) ================= -->
+                        <Grid x:Name="VpnPanel" Visibility="Collapsed">
+                            <Grid.RenderTransform>
+                                <TranslateTransform x:Name="VpnTransform"/>
+                            </Grid.RenderTransform>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/> <!-- Action Toolbar -->
+                                <RowDefinition Height="*"/>    <!-- Server List -->
+                            </Grid.RowDefinitions>
+
+                            <!-- Toolbar with Title, Add, Filter, Import, Export, and Dashboard Back -->
+                            <Grid Grid.Row="0" Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="🛡️ VPN Core" FontSize="16" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                    <TextBlock Text="سرورهای WireGuard, OpenVPN, Amnezia, L2TP, SSTP" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <Button x:Name="AddBtn" Content="＋ Add" Style="{StaticResource PrimaryActionBtn}" Click="Add_Click" Margin="0,0,6,0"/>
+                                    <Button x:Name="FilterDropdownBtn" Style="{StaticResource ActionBtn}" Click="FilterDropdownBtn_Click" Margin="0,0,6,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock x:Name="FilterDropdownLabel" Text="همه" FontSize="11"/>
+                                            <TextBlock Text=" ⌄" FontSize="10" Margin="4,0,0,0"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Content="📁 Import" Style="{StaticResource ActionBtn}" Click="Import_Click" Margin="0,0,6,0"/>
+                                    <Button Content="💾 Export" Style="{StaticResource ActionBtn}" Click="Export_Click" Margin="0,0,6,0"/>
+                                    <Button Content="⌂ داشبورد" Style="{StaticResource ActionBtn}" Click="SidebarNavDashboard_Click"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Full-Height Scrollable Connections List (ConnList) -->
+                            <Border Grid.Row="1" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}"
+                                    BorderThickness="1" CornerRadius="14" Padding="8,8">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel x:Name="ConnList"/>
+                                </ScrollViewer>
+                            </Border>
                         </Grid>
 
                         <!-- ================= 2. SERVERS PANEL (XRAY & VPN CONNECTIONS) ================= -->
@@ -761,10 +848,11 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock x:Name="XrayConnSectionLabel" Text="Server Management" FontSize="16" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                                    <!-- Mode Switcher Buttons -->
-                                    <Button x:Name="XraySwitchToVpnBtn" Content="VPN" Click="SwitchToVpnBtn_Click" Style="{StaticResource ActionBtn}" Margin="16,0,4,0" Padding="10,4"/>
-                                    <Button x:Name="XraySwitchToXrayBtn" Content="Xray Proxy" Click="SwitchToXrayBtn_Click" Style="{StaticResource PrimaryActionBtn}" Margin="0,0,8,0" Padding="10,4"/>
+                                    <TextBlock x:Name="XrayConnSectionLabel" Text="⚡ Xray Core" FontSize="16" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                    <TextBlock Text="هسته sing-box (VLESS / VMess / Trojan)" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                                    <!-- Hidden Mode Switcher Stubs for code-behind compatibility -->
+                                    <Button x:Name="XraySwitchToVpnBtn" Click="SwitchToVpnBtn_Click" Visibility="Collapsed"/>
+                                    <Button x:Name="XraySwitchToXrayBtn" Click="SwitchToXrayBtn_Click" Visibility="Collapsed"/>
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="1" Orientation="Horizontal">
@@ -781,7 +869,8 @@
                                             <TextBlock x:Name="XrayPingAllLabel" Text=" Ping All" Margin="4,0,0,0"/>
                                         </StackPanel>
                                     </Button>
-                                    <Button x:Name="XrayClearServersBtn" Content="🗑" Style="{StaticResource ActionBtn}" Click="XrayClearServers_Click" ToolTip="Clear Servers"/>
+                                    <Button x:Name="XrayClearServersBtn" Content="🗑" Style="{StaticResource ActionBtn}" Click="XrayClearServers_Click" Margin="0,0,6,0" ToolTip="Clear Servers"/>
+                                    <Button Content="⌂ داشبورد" Style="{StaticResource ActionBtn}" Click="SidebarNavDashboard_Click"/>
                                 </StackPanel>
                             </Grid>
 

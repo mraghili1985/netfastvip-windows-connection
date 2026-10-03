@@ -488,6 +488,7 @@ namespace SmartVpn
                     var q = string.Format(MsgSwitchConfirm, ActiveConnText.Text, c.Name);
                     if (!AskDialog.Confirm(this, q)) return;
                     await SwitchToConnectionAsync(c);
+                    ShowPanel("home");
                     return;
                 }
                 var qConnect = string.Format(MsgConnectConfirm, c.Name);
@@ -498,6 +499,7 @@ namespace SmartVpn
                 if (ActiveServerBadgeText != null) ActiveServerBadgeText.Text = ExtractFlagOrIcon(c.Name, c.Type);
                 RefreshList();
                 ConnectSelected();
+                ShowPanel("home");
             };
             menuStack.Children.Add(menuConnectRow);
             menuStack.Children.Add(new Border { Height = 1, Margin = new Thickness(6, 2, 6, 2), Background = menuSepBrush });
@@ -750,6 +752,7 @@ namespace SmartVpn
                     var q = string.Format(MsgSwitchConfirm, ActiveConnText.Text, c.Name);
                     if (!AskDialog.Confirm(this, q)) return;
                     await SwitchToConnectionAsync(c);
+                    ShowPanel("home");
                     return;
                 }
                 var qConnect = string.Format(MsgConnectConfirm, c.Name);
@@ -760,6 +763,7 @@ namespace SmartVpn
                 if (ActiveServerBadgeText != null) ActiveServerBadgeText.Text = ExtractFlagOrIcon(c.Name, c.Type);
                 RefreshList();
                 ConnectSelected();
+                ShowPanel("home");
             };
 
             return row;

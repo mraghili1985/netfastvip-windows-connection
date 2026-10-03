@@ -152,18 +152,22 @@ public partial class App : Application
 
         if (dark)
         {
-            SetBrush("BgBrush", "#020817");
-            SetBrush("CardBrush", "#0F172A");
-            SetBrush("FieldBrush", "#1E293B");
-            SetBrush("LineBrush", "#1E293B");
-            SetBrush("TextBrush", "#F8FAFC");
+            SetBrush("BgBrush", "#80090E1A");
+            SetBrush("SidebarBrush", "#8D080D18");
+            SetBrush("CardBrush", "#45111B2E");
+            SetBrush("CardHoverBrush", "#6018263F");
+            SetBrush("FieldBrush", "#40142136");
+            SetBrush("LineBrush", "#253554");
+            SetBrush("TextBrush", "#FFFFFF");
             SetBrush("SubTextBrush", "#94A3B8");
-            SetBrush("AccentBrush", "#3B82F6");
+            SetBrush("AccentBrush", "#38BDF8");
             SetBrush("Accent2Brush", "#22C55E");
-            SetBrush("DangerBrush", "#DC2626");
-            SetBrush("HoverBrush", "#28354A");
-            SetBrush("RowCardBrush", "#701E293B");
-            SetBrush("RowLineBrush", "#001E293B");
+            SetBrush("DangerBrush", "#EF4444");
+            SetBrush("HoverBrush", "#3020304D");
+            SetBrush("RowCardBrush", "#40162339");
+            SetBrush("RowLineBrush", "#152033");
+            SetBrush("GlassBrush", "#38101A2D");
+            SetBrush("GlassBorderBrush", "#304A70");
         }
         else
         {

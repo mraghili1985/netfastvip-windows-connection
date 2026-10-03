@@ -747,6 +747,7 @@ namespace SmartVpn
                 _xraySelectedProfile = profile;
                 XrayProxyList.SelectedItem = profile;
                 XrayConnectBtn_Click(this, new RoutedEventArgs());
+                ShowPanel("home");
             };
             menuStack.Children.Add(menuConnectRow);
 
@@ -868,6 +869,7 @@ namespace SmartVpn
                     _xraySelectedProfile = profile;
                     XrayProxyList.SelectedItem = profile;
                     XrayConnectBtn_Click(this, new RoutedEventArgs());
+                    ShowPanel("home");
                 }
             };
 

@@ -201,11 +201,70 @@ namespace SmartVpn
         [DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
 
+        [DllImport("user32.dll")]
+        private static extern int SetWindowCompositionAttribute(IntPtr hwnd, ref WindowCompositionAttributeData data);
+
         private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
         private const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
         private const int DWMWCP_ROUND = 2;
         private const int DWMWA_CAPTION_COLOR = 35;
         private const int DWMWA_TEXT_COLOR = 36;
+        private const int DWMWA_SYSTEMBACKDROP_TYPE = 38;
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct AccentPolicy
+        {
+            public int AccentState;
+            public int AccentFlags;
+            public int GradientColor;
+            public int AnimationId;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct WindowCompositionAttributeData
+        {
+            public int Attribute;
+            public IntPtr Data;
+            public int SizeOfData;
+        }
+
+        private void EnableAcrylicBlur(IntPtr hwnd)
+        {
+            try
+            {
+                // 1. Windows 11 22H2+ System Backdrop (Acrylic = 3, Mica = 2)
+                int backdrop = 3;
+                if (DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, ref backdrop, sizeof(int)) != 0)
+                {
+                    backdrop = 2;
+                    DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, ref backdrop, sizeof(int));
+                }
+
+                // 2. Windows 10 & 11 Acrylic BlurBehind
+                var accent = new AccentPolicy
+                {
+                    AccentState = 4, // ACCENT_ENABLE_ACRYLICBLURBEHIND
+                    AccentFlags = 2,
+                    GradientColor = unchecked((int)0x99090E1A),
+                    AnimationId = 0
+                };
+
+                int accentSize = Marshal.SizeOf(accent);
+                IntPtr accentPtr = Marshal.AllocHGlobal(accentSize);
+                Marshal.StructureToPtr(accent, accentPtr, false);
+
+                var data = new WindowCompositionAttributeData
+                {
+                    Attribute = 19, // WCA_ACCENT_POLICY
+                    Data = accentPtr,
+                    SizeOfData = accentSize
+                };
+
+                SetWindowCompositionAttribute(hwnd, ref data);
+                Marshal.FreeHGlobal(accentPtr);
+            }
+            catch { }
+        }
 
         private void ApplyDarkTitleBar()
         {
@@ -224,6 +283,8 @@ namespace SmartVpn
                 DwmSetWindowAttribute(hwnd, DWMWA_TEXT_COLOR, ref text, sizeof(int));
                 int cornerPreference = DWMWCP_ROUND;
                 DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerPreference, sizeof(int));
+
+                EnableAcrylicBlur(hwnd);
             }
             catch { }
         }
@@ -422,10 +483,22 @@ namespace SmartVpn
             UpdateSidebarState("dashboard");
         }
 
+        private void SidebarNavVpnCore_Click(object sender, RoutedEventArgs e)
+        {
+            ShowPanel("vpn");
+            UpdateSidebarState("vpn");
+        }
+
+        private void SidebarNavXrayCore_Click(object sender, RoutedEventArgs e)
+        {
+            ShowPanel("xray");
+            UpdateSidebarState("xray");
+        }
+
         private void SidebarNavServers_Click(object sender, RoutedEventArgs e)
         {
             ShowPanel("xray");
-            UpdateSidebarState("servers");
+            UpdateSidebarState("xray");
         }
 
         private void SidebarNavHotspot_Click(object sender, RoutedEventArgs e)
@@ -471,7 +544,9 @@ namespace SmartVpn
                 }
 
                 SetBtn(NavDashboardBtn, NavDashboardIndicator, current == "dashboard" || current == "home");
-                SetBtn(NavServersBtn, NavServersIndicator, current == "servers" || current == "xray");
+                SetBtn(NavVpnCoreBtn, NavVpnCoreIndicator, current == "vpn");
+                SetBtn(NavXrayCoreBtn, NavXrayCoreIndicator, current == "xray");
+                SetBtn(NavServersBtn, NavServersIndicator, current == "servers");
                 SetBtn(NavHotspotBtn, NavHotspotIndicator, current == "hotspot");
                 SetBtn(NavSpeedTestBtn, NavSpeedTestIndicator, current == "speedtest");
                 SetBtn(NavSettingsBtn, NavSettingsIndicator, current == "settings");

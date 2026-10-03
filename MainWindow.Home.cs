@@ -505,7 +505,7 @@ namespace SmartVpn
 
         private void ShowPanel(string tag)
         {
-            UpdateSidebarState(tag == "home" ? "dashboard" : tag == "xray" ? "servers" : tag);
+            UpdateSidebarState(tag == "home" ? "dashboard" : tag == "xray" ? "xray" : tag == "vpn" ? "vpn" : tag);
             if (DrawerOverlay != null) DrawerOverlay.Visibility = Visibility.Collapsed;
             HomePanel.Visibility = tag == "home" ? Visibility.Visible : Visibility.Collapsed;
             ToolboxPanel.Visibility = tag == "tools" ? Visibility.Visible : Visibility.Collapsed;
@@ -513,15 +513,17 @@ namespace SmartVpn
             ConnLogPanel.Visibility = tag == "connlog" ? Visibility.Visible : Visibility.Collapsed;
             if (HotspotPanel != null) HotspotPanel.Visibility = tag == "hotspot" ? Visibility.Visible : Visibility.Collapsed;
             if (XrayPanel != null) XrayPanel.Visibility = tag == "xray" ? Visibility.Visible : Visibility.Collapsed;
+            if (VpnPanel != null) VpnPanel.Visibility = tag == "vpn" ? Visibility.Visible : Visibility.Collapsed;
 
             // هدر: صفحه خانه = برند و آیکون‌ها، بقیه صفحات = فلش برگشت + عنوان صفحه
             HeaderBrandPanel.Visibility = tag == "home" ? Visibility.Visible : Visibility.Collapsed;
             HeaderPagePanel.Visibility = tag == "home" ? Visibility.Collapsed : Visibility.Visible;
-            HeaderTitleText.Text = tag == "tools" ? Localization.T("ابزارها و گزارش") : tag == "settings" ? Localization.T("تنظیمات") : tag == "connlog" ? Localization.T("گزارش کانکشن‌ها") : "";
+            HeaderTitleText.Text = tag == "vpn" ? "VPN Core" : tag == "xray" ? "Xray Core" : tag == "tools" ? Localization.T("ابزارها و گزارش") : tag == "settings" ? Localization.T("تنظیمات") : tag == "connlog" ? Localization.T("گزارش کانکشن‌ها") : "";
 
             switch (tag)
             {
                 case "home": AnimatePanelIn(HomePanel, HomeTransform); break;
+                case "vpn": if (VpnPanel != null) AnimatePanelIn(VpnPanel, VpnTransform); break;
                 case "tools": AnimatePanelIn(ToolboxPanel, ToolsTransform); LogBox.CaretIndex = LogBox.Text.Length; LogBox.ScrollToEnd(); break;
                 case "connlog": AnimatePanelIn(ConnLogPanel, ConnLogTransform); ConnLogBox.CaretIndex = ConnLogBox.Text.Length; ConnLogBox.ScrollToEnd(); break;
                 case "settings": AnimatePanelIn(SettingsPanel, SettingsTransform); break;
