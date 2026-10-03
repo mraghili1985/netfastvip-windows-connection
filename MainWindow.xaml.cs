@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -19,6 +19,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Microsoft.Win32;
+using SmartVpn.XrayCore;
 
 namespace SmartVpn
 {
@@ -141,6 +142,7 @@ namespace SmartVpn
             Title = AppConfig.BrandName;
             BrandTitleText.Text = AppConfig.BrandName;
             FitToScreen();
+            InitXrayPanel();
 
             Loaded += async (_, _) => await UpdateChecker.CheckAsync(this);
                         Loaded += async (_, _) => await ConnectionsUpdateChecker.CheckAsync(this, _config);
@@ -279,8 +281,17 @@ namespace SmartVpn
 
             ApplyDarkTitleBar();
             Localization.SetLanguage(_config.Language);
-            if (_config.Language == "en") LangEnRb.IsChecked = true;
-            else LangFaRb.IsChecked = true;
+            if (_config.Language == "en")
+            {
+                LangEnRb.IsChecked = true;
+                FlowDirection = FlowDirection.LeftToRight;
+            }
+            else
+            {
+                LangFaRb.IsChecked = true;
+                FlowDirection = FlowDirection.RightToLeft;
+            }
+            ApplyLocalizationToNamedElements();
             ApplyThemeChoice(_config.Theme);
             InitStartupToggle();
 
@@ -357,19 +368,21 @@ namespace SmartVpn
                 return;
             }
 
-            if (_engine.IsRunning && !_reallyExit && !AskDialog.Confirm(this, MsgExitConfirm))
+            if ((_engine.IsRunning || _xrayIsConnected) && !_reallyExit && !AskDialog.Confirm(this, MsgExitConfirm))
             {
                 e.Cancel = true;
                 return;
             }
 
             _geoGen++;
+            _xrayGeoGen++;
             try { _tray?.Dispose(); } catch { }
             try { _trayIcon?.Dispose(); } catch { }
             try { HsForceStopAsync().Wait(2000); } catch { }
             try { SplitTunnel.ClearAsync().Wait(2000); } catch { }
             try { KillSwitch.DisableAsync().Wait(2000); } catch { }
             try { _engine.StopAsync().Wait(4000); } catch { }
+            try { XrayEngine.Stop(); } catch { }
         }
 
         private void OpenHotspotWindow_Click(object sender, RoutedEventArgs e)
@@ -385,6 +398,11 @@ namespace SmartVpn
         private void HotspotNavHome_Click(object sender, RoutedEventArgs e)
         {
             SetPanelFromHotspotNavigation("home");
+        }
+
+        private void HotspotNavXray_Click(object sender, RoutedEventArgs e)
+        {
+            SetPanelFromHotspotNavigation("xray");
         }
 
         private void HotspotNavTools_Click(object sender, RoutedEventArgs e)
@@ -404,8 +422,10 @@ namespace SmartVpn
 
         private void SetPanelFromHotspotNavigation(string page)
         {
+            if (DrawerOverlay != null) DrawerOverlay.Visibility = Visibility.Collapsed;
             // ابتدا همه پنل‌ها را مخفی کن؛ این خط مانع باقی‌ماندن هات‌اسپات می‌شود.
             HomePanel.Visibility = Visibility.Collapsed;
+            if (XrayPanel != null) XrayPanel.Visibility = Visibility.Collapsed;
             ToolboxPanel.Visibility = Visibility.Collapsed;
             SettingsPanel.Visibility = Visibility.Collapsed;
             ConnLogPanel.Visibility = Visibility.Collapsed;
@@ -417,11 +437,18 @@ namespace SmartVpn
             ResetNavigationTransform(SettingsTransform);
             ResetNavigationTransform(ConnLogTransform);
             ResetNavigationTransform(HotspotTransform);
+            if (XrayTransform != null) ResetNavigationTransform(XrayTransform);
 
             switch (page)
             {
                 case "home":
                     HomePanel.Visibility = Visibility.Visible;
+                    HeaderBrandPanel.Visibility = Visibility.Visible;
+                    HeaderPagePanel.Visibility = Visibility.Collapsed;
+                    break;
+
+                case "xray":
+                    if (XrayPanel != null) XrayPanel.Visibility = Visibility.Visible;
                     HeaderBrandPanel.Visibility = Visibility.Visible;
                     HeaderPagePanel.Visibility = Visibility.Collapsed;
                     break;
@@ -625,13 +652,25 @@ namespace SmartVpn
 
         private void HsCheckVpnState()
         {
+            bool isXray = _xrayIsConnected && XrayEngine.IsRunning;
             var activeConn = ActiveConnText?.Text?.Trim();
-            _isHsVpnConnected = !string.IsNullOrEmpty(activeConn) && activeConn != "—" && activeConn != Localization.T("قطع شده");
-            HsVpnConnectionText.Text = _isHsVpnConnected ? activeConn : Localization.T("عدم اتصال");
+            bool isTrad = _engine.IsRunning && _currentPowerState == "connected" && !string.IsNullOrEmpty(activeConn) && activeConn != "—" && activeConn != Localization.T("قطع شده");
 
-            if (!_isHsVpnConnected)
+            _isHsVpnConnected = isXray || isTrad;
+
+            if (isXray)
             {
-                HsResetAllState(Localization.T("برای استفاده از هات‌اسپات ابتدا به VPN متصل شوید."));
+                string pName = _xrayActiveProfile?.Alias ?? "sing-box";
+                HsVpnConnectionText.Text = $"Xray ({pName})";
+            }
+            else if (isTrad)
+            {
+                HsVpnConnectionText.Text = activeConn!;
+            }
+            else
+            {
+                HsVpnConnectionText.Text = Localization.T("عدم اتصال");
+                HsResetAllState(Localization.T("برای استفاده از هات‌اسپات ابتدا به VPN یا Xray متصل شوید."));
                 HsSourceText.Text = Localization.T("عدم اتصال");
             }
         }
@@ -640,7 +679,16 @@ namespace SmartVpn
         {
             _isHsVpnConnected = true;
             SetHotspotHeaderState("busy");
-            HsVpnConnectionText.Text = ActiveConnText?.Text?.Trim() ?? Localization.T("اتصال VPN");
+            bool isXray = _xrayIsConnected && XrayEngine.IsRunning;
+            if (isXray)
+            {
+                string pName = _xrayActiveProfile?.Alias ?? "sing-box";
+                HsVpnConnectionText.Text = $"Xray ({pName})";
+            }
+            else
+            {
+                HsVpnConnectionText.Text = ActiveConnText?.Text?.Trim() ?? Localization.T("اتصال VPN");
+            }
             HsCheckVpnState();
             _hsStabilizationTimer?.Stop();
             _hsSecondsRemaining = 5;
@@ -671,7 +719,9 @@ namespace SmartVpn
         private async Task<string?> HsRefreshAdaptersAsync(bool searchForTarget)
         {
             var adapters = await _hotspot.GetAllAdaptersAsync();
-            var activeConn = ActiveConnText?.Text?.Trim() ?? "";
+            bool isXray = _xrayIsConnected && XrayEngine.IsRunning;
+            var activeConn = isXray ? "sing-box" : (ActiveConnText?.Text?.Trim() ?? "");
+            string? tunnelIp = isXray ? "172.19.0.1" : _tunnelLocalIp;
 
             string? bestTgt = null;
             if (searchForTarget)
@@ -679,7 +729,7 @@ namespace SmartVpn
                 bestTgt = HotspotService.FindBestTargetAdapter(adapters);
             }
 
-            _hsBestSrc = HotspotService.FindBestVpnSourceAdapter(activeConn, _tunnelLocalIp, adapters);
+            _hsBestSrc = HotspotService.FindBestVpnSourceAdapter(activeConn, tunnelIp, adapters);
 
             HsSourceText.Text = _hsBestSrc ?? Localization.T("پیدا نشد");
             return bestTgt;
@@ -694,7 +744,7 @@ namespace SmartVpn
 
             if (!_isHsVpnConnected || string.IsNullOrEmpty(_hsBestSrc))
             {
-                MessageBox.Show(Localization.T("کارت شبکه اینترنت (VPN) یافت نشد."), Localization.T("اخطار"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                ShowInAppMessage(Localization.T("کارت شبکه اینترنت (VPN) یافت نشد."), Localization.T("اخطار"));
                 return;
             }
 
@@ -882,8 +932,6 @@ namespace SmartVpn
             HsInfoContainer.Visibility = Visibility.Collapsed;
             if (HsManualHint != null) HsManualHint.Visibility = Visibility.Collapsed;
             if (BtnOpenNcpa != null) BtnOpenNcpa.Visibility = Visibility.Collapsed;
-            HsManualHint.Visibility = Visibility.Collapsed;
-            BtnOpenNcpa.Visibility = Visibility.Collapsed;
             HsQrContainer.Visibility = Visibility.Collapsed;
             HsClientsContainer.Visibility = Visibility.Collapsed;
             HsClientsPopup.IsOpen = false;
@@ -913,7 +961,29 @@ namespace SmartVpn
             await _hotspot.StopAsync();
         }
         #endregion
-    }
+    
+        public static string LastConnectionType = "home";
+
+        private void HamburgerBtn_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if (DrawerOverlay != null) DrawerOverlay.Visibility = System.Windows.Visibility.Visible;
+        }
+
+        private void DrawerClose_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if (DrawerOverlay != null) DrawerOverlay.Visibility = System.Windows.Visibility.Collapsed;
+        }
+
+        private void DrawerOverlay_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (DrawerOverlay != null) DrawerOverlay.Visibility = System.Windows.Visibility.Collapsed;
+        }
+
+        private void DrawerMenuPanel_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            e.Handled = true;
+        }
+}
 }
 
 

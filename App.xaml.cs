@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.Win32;
+using SmartVpn.XrayCore;
 
 namespace SmartVpn;
 
@@ -77,11 +78,17 @@ public partial class App : Application
         // نسخه پورتابل: بررسی‌های اولین اجرا (هشدار اجرا از ZIP، مجوز نوشتن، میان‌بر دسکتاپ)
         try { FirstRunSetup.Run(); } catch { }
         SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
+
+        AppDomain.CurrentDomain.ProcessExit += (_, __) =>
+        {
+            try { XrayEngine.Stop(); } catch { }
+        };
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
         SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
+        try { XrayEngine.Stop(); } catch { }
         try { _singleInstanceMutex?.ReleaseMutex(); } catch { }
         _singleInstanceMutex?.Dispose();
         base.OnExit(e);

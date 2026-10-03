@@ -130,6 +130,9 @@ namespace SmartVpn
             var name = adapterName.Trim();
             return name.Contains("OpenVPN", StringComparison.OrdinalIgnoreCase)
                 || name.Contains("WireGuard", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("sing-box", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("singbox", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("xray", StringComparison.OrdinalIgnoreCase)
                 || name.Contains("Wintun", StringComparison.OrdinalIgnoreCase)
                 || name.Contains("TAP", StringComparison.OrdinalIgnoreCase)
                 || name.Contains("TUN", StringComparison.OrdinalIgnoreCase)
@@ -204,6 +207,16 @@ namespace SmartVpn
             }
 
             var conn = (activeConn ?? string.Empty).Trim();
+            bool isXray = conn.Contains("sing-box", StringComparison.OrdinalIgnoreCase) ||
+                          conn.Contains("singbox", StringComparison.OrdinalIgnoreCase) ||
+                          conn.Contains("xray", StringComparison.OrdinalIgnoreCase) ||
+                          conn.Contains("vless", StringComparison.OrdinalIgnoreCase) ||
+                          conn.Contains("vmess", StringComparison.OrdinalIgnoreCase) ||
+                          conn.Contains("trojan", StringComparison.OrdinalIgnoreCase) ||
+                          conn.Contains("shadowsocks", StringComparison.OrdinalIgnoreCase) ||
+                          conn.Contains("tuic", StringComparison.OrdinalIgnoreCase) ||
+                          conn.Contains("hysteria", StringComparison.OrdinalIgnoreCase) ||
+                          (tunnelLocalIp != null && tunnelLocalIp.StartsWith("172.19."));
             bool isOvpn = conn.Contains("OpenVPN", StringComparison.OrdinalIgnoreCase);
             bool isWg = conn.Contains("WireGuard", StringComparison.OrdinalIgnoreCase) || conn.Contains("Amnezia", StringComparison.OrdinalIgnoreCase);
             bool isRas = conn.Contains("L2TP", StringComparison.OrdinalIgnoreCase) ||
@@ -230,6 +243,20 @@ namespace SmartVpn
                 if (string.IsNullOrEmpty(ip)) continue; // کارت‌های بدون IP فعال رد می‌شوند
 
                 var desc = nic.Description ?? "";
+
+                // تطابق مستقیم برای sing-box
+                if (isXray)
+                {
+                    bool matchXray = desc.Contains("sing-box", StringComparison.OrdinalIgnoreCase)
+                                  || desc.Contains("singbox", StringComparison.OrdinalIgnoreCase)
+                                  || name.Contains("sing-box", StringComparison.OrdinalIgnoreCase)
+                                  || name.Contains("singbox", StringComparison.OrdinalIgnoreCase)
+                                  || (ip != null && ip.StartsWith("172.19."));
+                    if (matchXray)
+                    {
+                        return name;
+                    }
+                }
 
                 // تطابق نام کانکشن در اپ با نام آداپتور
                 if (!string.IsNullOrWhiteSpace(conn) &&
@@ -576,6 +603,7 @@ namespace SmartVpn
             {
                 _activeTgt = targetName;
                 L($"[Hotspot] نیازی به اعمال زورکی COM ICS نیست؛ ترافیک به طور نیتیو از {sourceName} در جریان است.");
+                await EnableHotspotRoutingAndDnsAsync(sourceName, targetName);
                 return (true, "");
             }
 
@@ -586,6 +614,7 @@ namespace SmartVpn
                 _activeSrc = sourceName;
                 _activeTgt = targetName;
                 L($"[Hotspot] target Wi‑Fi Direct نام پشتیبانی‌نشده دارد؛ از اعمال غیرضروری ICS چشم‌پوشی می‌شود تا ویندوز آداپتور مجازی را غیرفعال نکند.");
+                await EnableHotspotRoutingAndDnsAsync(sourceName, targetName);
                 return (true, "");
             }
 
@@ -683,6 +712,13 @@ namespace SmartVpn
                     "        }",
                     "    }",
                     "    if (-not $success) { throw ('ERR_SHARING_FAILED|' + $lastErr) }",
+                    "    try {",
+                    "        Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters' -Name 'IPEnableRouter' -Value 1 -ErrorAction SilentlyContinue",
+                    "        Set-NetIPInterface -InterfaceAlias $src -Forwarding Enabled -WeakHostSend Enabled -WeakHostReceive Enabled -ErrorAction SilentlyContinue",
+                    "        Set-NetIPInterface -InterfaceAlias $tgt -Forwarding Enabled -WeakHostSend Enabled -WeakHostReceive Enabled -ErrorAction SilentlyContinue",
+                    "        Get-NetIPInterface -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -like '*sing*' -or $_.InterfaceAlias -like '*Local Area*' } | Set-NetIPInterface -Forwarding Enabled -WeakHostSend Enabled -WeakHostReceive Enabled -ErrorAction SilentlyContinue",
+                    "        if ($src -like '*sing*') { Set-DnsClientServerAddress -InterfaceAlias $src -ServerAddresses @('1.1.1.1', '8.8.8.8') -ErrorAction SilentlyContinue }",
+                    "    } catch {}",
                     "    Write-Output 'SUCCESS'",
                     "} catch {",
                     "    Write-Output ('ERROR|' + $_.Exception.Message)",
@@ -707,6 +743,7 @@ namespace SmartVpn
                 {
                     _activeSrc = sourceName;
                     _activeTgt = targetName;
+                    await EnableHotspotRoutingAndDnsAsync(sourceName, targetName);
                     return (true, "");
                 }
 
@@ -855,7 +892,10 @@ namespace SmartVpn
                     "    }",
                     "} catch {}",
                     "try {",
-                    "    Get-NetIPInterface -AddressFamily IPv4 | Where-Object { $_.Forwarding -eq 'Enabled' } | Set-NetIPInterface -Forwarding Disabled -WeakHostSend Disabled",
+                    "    Get-NetIPInterface -AddressFamily IPv4 | Where-Object { $_.Forwarding -eq 'Enabled' } | Set-NetIPInterface -Forwarding Disabled -WeakHostSend Disabled -WeakHostReceive Disabled",
+                    "    Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters' -Name 'IPEnableRouter' -Value 0 -ErrorAction SilentlyContinue",
+                    "    Remove-NetFirewallRule -DisplayName 'SmartVpn Hotspot DNS' -ErrorAction SilentlyContinue",
+                    "    Remove-NetFirewallRule -DisplayName 'SmartVpn Hotspot Proxy' -ErrorAction SilentlyContinue",
                     "} catch {}",
                     "Write-Output 'SUCCESS'"
                 };
@@ -873,6 +913,44 @@ namespace SmartVpn
             finally
             {
                 _lock.Release();
+            }
+        }
+
+        public async Task EnableHotspotRoutingAndDnsAsync(string sourceName, string targetName)
+        {
+            try
+            {
+                var lines = new List<string>
+                {
+                    "$ErrorActionPreference = 'SilentlyContinue'",
+                    "$src = '" + PsQuote(sourceName) + "'",
+                    "$tgt = '" + PsQuote(targetName) + "'",
+                    "Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters' -Name 'IPEnableRouter' -Value 1 -ErrorAction SilentlyContinue",
+                    "Set-NetIPInterface -InterfaceAlias $src -Forwarding Enabled -WeakHostSend Enabled -WeakHostReceive Enabled -ErrorAction SilentlyContinue",
+                    "Set-NetIPInterface -InterfaceAlias $tgt -Forwarding Enabled -WeakHostSend Enabled -WeakHostReceive Enabled -ErrorAction SilentlyContinue",
+                    "Get-NetIPInterface -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -like '*sing*' -or $_.InterfaceAlias -like '*Local Area*' } | Set-NetIPInterface -Forwarding Enabled -WeakHostSend Enabled -WeakHostReceive Enabled -ErrorAction SilentlyContinue",
+                    "if ($src -like '*sing*') { Set-DnsClientServerAddress -InterfaceAlias $src -ServerAddresses @('1.1.1.1', '8.8.8.8') -ErrorAction SilentlyContinue }",
+                    "$tgtCurIp = (Get-NetIPAddress -InterfaceAlias $tgt -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.IPAddress -notlike '169.254*' -and $_.IPAddress -ne '0.0.0.0' }).IPAddress",
+                    "if ($tgtCurIp -ne '192.168.137.1') {",
+                    "    Get-NetIPAddress -InterfaceAlias $tgt -AddressFamily IPv4 -ErrorAction SilentlyContinue | Remove-NetIPAddress -Confirm:$false -ErrorAction SilentlyContinue",
+                    "    New-NetIPAddress -InterfaceAlias $tgt -IPAddress '192.168.137.1' -PrefixLength 24 -ErrorAction SilentlyContinue | Out-Null",
+                    "}",
+                    "Restart-Service -Name SharedAccess -Force -ErrorAction SilentlyContinue",
+                    "New-NetFirewallRule -DisplayName 'SmartVpn Hotspot DNS' -Direction Inbound -LocalPort 53 -Protocol UDP -Action Allow -ErrorAction SilentlyContinue | Out-Null",
+                    "New-NetFirewallRule -DisplayName 'SmartVpn Hotspot DHCP' -Direction Inbound -LocalPort 67 -Protocol UDP -Action Allow -ErrorAction SilentlyContinue | Out-Null",
+                    "New-NetFirewallRule -DisplayName 'SmartVpn Hotspot Proxy' -Direction Inbound -LocalPort 20808 -Protocol TCP -Action Allow -ErrorAction SilentlyContinue | Out-Null",
+                    "Write-Output 'OK'"
+                };
+
+                var ps1 = Path.Combine(Path.GetTempPath(), "nfv_enable_routing.ps1");
+                await File.WriteAllLinesAsync(ps1, lines, new UTF8Encoding(false));
+                await RunPs1Async(ps1, 15);
+                try { File.Delete(ps1); } catch { }
+                L("[Hotspot] هدایت بسته‌های IP (Forwarding/WeakHost/DNS) با موفقیت فعال شد.");
+            }
+            catch (Exception ex)
+            {
+                L("[Hotspot WARN] خطا در فعال‌سازی هدایت بسته‌ها: " + ex.Message);
             }
         }
 

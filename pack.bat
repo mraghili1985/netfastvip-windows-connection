@@ -42,6 +42,12 @@ if exist "wireguard\" (
 ) else (
   echo   - no wireguard folder, skipping
 )
+if exist "sing-box\" (
+  xcopy /e /i /y "sing-box" "%PUB%\Data\sing-box\" >nul
+  echo   - sing-box folder copied
+) else (
+  echo   - no sing-box folder, skipping
+)
 
 REM از این‌جا دیگر تک‌فایلی نیستیم: خروجی publish شامل exe + انبوهی DLL رانتایم است.
 REM همه‌ی این خروجی (به‌همراه پوشه‌ی Data داخلش) داخل یک زیرپوشه‌ی App جمع می‌شود تا

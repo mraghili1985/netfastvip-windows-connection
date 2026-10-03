@@ -20,6 +20,7 @@ using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Microsoft.Win32;
+using SmartVpn.XrayCore;
 
 namespace SmartVpn
 {
@@ -235,8 +236,15 @@ namespace SmartVpn
 
             // عکس از routeهای /32 فعلی — routeهای بازمانده از اتصال‌های قبلی در ویندوز می‌مانند؛
             // بعد از اتصال، فقط routeای که «جدید اضافه شده» ملاک IP سرور واقعی است
-            try { _routesBeforeConnect = GetHostRouteDestinations().Select(r => r.Dest).ToHashSet(); }
-            catch { _routesBeforeConnect = new HashSet<string>(); }
+            // اگر سرویس Xray فعال است، ابتدا آن را قطع می‌کنیم
+            if (_xrayIsConnected)
+            {
+                XrayEngine.Stop();
+                _xrayIsConnected = false;
+                _xrayTimer?.Stop();
+                if (XrayTxtActiveName != null) XrayTxtActiveName.Text = "—";
+            }
+
             _tunnelPeerIp = null; // شروع تمیز — IP سرور فقط از همین اتصال جدید خوانده شود
 
             SetStatusText(TxtConnecting);
@@ -384,11 +392,8 @@ namespace SmartVpn
 
             _ = ApplyKillSwitchAsync(profile, localIp);
 
-            if (_config.SplitTunnelMode is "deny" or "allow")
-            {
-                try { await SplitTunnel.ApplyAsync(_config.SplitTunnelMode, _config.SplitTunnelList, localIp); }
-                catch (Exception ex) { AppendConnLog("split-tunnel apply failed: " + ex.Message); }
-            }
+            // توجه: قابلیت اسپلیت‌تانل تفکیک برنامه‌ها (Per-App) منحصراً برای کانکشن‌های Xray/sing-box فعال است
+            // و روی کانکشن‌های سنتی اعمال نمی‌شود تا دستکاری جدول Route انجام نگیرد.
 
             bool isWgProfile = profile.Type == "wireguard" || profile.Type == "amneziawg";
             if (!isWgProfile && ResolveDnsChoice() is { } dns)
@@ -488,10 +493,13 @@ namespace SmartVpn
 
         private void ShowPanel(string tag)
         {
+            if (DrawerOverlay != null) DrawerOverlay.Visibility = Visibility.Collapsed;
             HomePanel.Visibility = tag == "home" ? Visibility.Visible : Visibility.Collapsed;
             ToolboxPanel.Visibility = tag == "tools" ? Visibility.Visible : Visibility.Collapsed;
             SettingsPanel.Visibility = tag == "settings" ? Visibility.Visible : Visibility.Collapsed;
             ConnLogPanel.Visibility = tag == "connlog" ? Visibility.Visible : Visibility.Collapsed;
+            if (HotspotPanel != null) HotspotPanel.Visibility = tag == "hotspot" ? Visibility.Visible : Visibility.Collapsed;
+            if (XrayPanel != null) XrayPanel.Visibility = tag == "xray" ? Visibility.Visible : Visibility.Collapsed;
 
             // هدر: صفحه خانه = برند و آیکون‌ها، بقیه صفحات = فلش برگشت + عنوان صفحه
             HeaderBrandPanel.Visibility = tag == "home" ? Visibility.Visible : Visibility.Collapsed;
@@ -503,7 +511,8 @@ namespace SmartVpn
                 case "home": AnimatePanelIn(HomePanel, HomeTransform); break;
                 case "tools": AnimatePanelIn(ToolboxPanel, ToolsTransform); LogBox.CaretIndex = LogBox.Text.Length; LogBox.ScrollToEnd(); break;
                 case "connlog": AnimatePanelIn(ConnLogPanel, ConnLogTransform); ConnLogBox.CaretIndex = ConnLogBox.Text.Length; ConnLogBox.ScrollToEnd(); break;
-                default: AnimatePanelIn(SettingsPanel, SettingsTransform); break;
+                case "settings": AnimatePanelIn(SettingsPanel, SettingsTransform); break;
+                case "xray": if (XrayPanel != null) AnimatePanelIn(XrayPanel, XrayTransform); break;
             }
         }
 
@@ -665,6 +674,7 @@ namespace SmartVpn
             };
             PowerBtn.Background = brush;
             if (MiniPowerBtn != null) MiniPowerBtn.Background = brush;
+            if (XrayBtnPower != null) XrayBtnPower.Background = brush;
             PowerHintText.Text = Localization.T(state == "connected"
                 ? "برای قطع اتصال کلیک کنید" : "روشن/خاموش اتصال");
             // نقطه وضعیت کنار متن هم همان پیام رنگی را می‌دهد
@@ -672,6 +682,8 @@ namespace SmartVpn
                 StatusDot.Fill = state == "off" ? new SolidColorBrush(Color.FromRgb(0x64, 0x74, 0x8B)) : brush;
             if (MiniStatusDot != null)
                 MiniStatusDot.Fill = state == "off" ? new SolidColorBrush(Color.FromRgb(0x64, 0x74, 0x8B)) : brush;
+            if (XrayStatusDot != null)
+                XrayStatusDot.Fill = state == "off" ? new SolidColorBrush(Color.FromRgb(0x64, 0x74, 0x8B)) : brush;
 
             if (MiniPowerGlow != null)
             {
@@ -691,6 +703,18 @@ namespace SmartVpn
                     _ => Color.FromRgb(0x33, 0x41, 0x55),
                 };
                 glow.Opacity = state == "off" ? 0.0 : 0.35;
+            }
+
+            if (XrayBtnPower?.Effect is DropShadowEffect xrayGlow)
+            {
+                xrayGlow.Color = state switch
+                {
+                    "connecting" => Color.FromRgb(0x3B, 0x82, 0xF6),
+                    "connected" => Color.FromRgb(0x22, 0xC5, 0x5E),
+                    "error" => Color.FromRgb(0xEF, 0x44, 0x44),
+                    _ => Color.FromRgb(0x33, 0x41, 0x55),
+                };
+                xrayGlow.Opacity = state == "off" ? 0.0 : 0.35;
             }
 
             // کلید پاور کوچک بالای صفحه هم همان رنگ/درخشش را می‌گیرد تا همیشه مشخص باشد وصل است یا نه — بدون نیاز به بازکردن صفحه خانه
@@ -721,5 +745,15 @@ namespace SmartVpn
         }
 
 
-    }
+    
+        public void SwitchToXrayBtn_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            ShowPanel("xray");
+        }
+
+        public void SwitchToVpnBtn_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            ShowPanel("home");
+        }
+}
 }

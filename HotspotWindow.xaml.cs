@@ -1,4 +1,4 @@
-﻿using QRCoder;
+using QRCoder;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -43,10 +43,19 @@ namespace SmartVpn
 
         private void CheckVpnState()
         {
+            bool isXray = _mainWin.XrayIsConnected;
             var activeConn = _mainWin.ActiveConnText?.Text?.Trim();
-            _isVpnConnected = !string.IsNullOrEmpty(activeConn) && activeConn != "—" && activeConn != Localization.T("قطع شده");
+            bool isTrad = !string.IsNullOrEmpty(activeConn) && activeConn != "—" && activeConn != Localization.T("قطع شده");
 
-            if (_isVpnConnected)
+            _isVpnConnected = isXray || isTrad;
+
+            if (isXray)
+            {
+                string pName = _mainWin.XrayActiveProfile?.Alias ?? "sing-box";
+                VpnStatusBadge.Text = Localization.T("وضعیت اتصال: متصل (Xray)") + $" ({pName})";
+                VpnStatusBadge.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+            }
+            else if (isTrad)
             {
                 VpnStatusBadge.Text = Localization.T("وضعیت VPN: متصل") + $" ({activeConn})";
                 VpnStatusBadge.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
@@ -55,7 +64,7 @@ namespace SmartVpn
             {
                 VpnStatusBadge.Text = Localization.T("وضعیت VPN: متصل نیست (غیرفعال)");
                 VpnStatusBadge.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
-                ResetAllState(Localization.T("برای استفاده از هات‌اسپات ابتدا به VPN متصل شوید."));
+                ResetAllState(Localization.T("برای استفاده از هات‌اسپات ابتدا به VPN یا Xray متصل شوید."));
             }
         }
 
@@ -101,12 +110,14 @@ namespace SmartVpn
         private async Task RefreshAdaptersAsync(bool searchForTarget)
         {
             var adapters = await _hotspot.GetAllAdaptersAsync();
-            var activeConn = _mainWin.ActiveConnText?.Text?.Trim() ?? "";
+            bool isXray = _mainWin.XrayIsConnected;
+            var activeConn = isXray ? "sing-box" : (_mainWin.ActiveConnText?.Text?.Trim() ?? "");
+            string? tunnelIp = isXray ? "172.19.0.1" : _mainWin._tunnelLocalIp;
 
             SourceCombo.Items.Clear();
             TargetCombo.Items.Clear();
 
-            string? bestSrc = HotspotService.FindBestVpnSourceAdapter(activeConn, _mainWin._tunnelLocalIp, adapters);
+            string? bestSrc = HotspotService.FindBestVpnSourceAdapter(activeConn, tunnelIp, adapters);
             string? bestTgt = searchForTarget ? HotspotService.FindBestTargetAdapter(adapters) : null;
 
             if (bestSrc != null)

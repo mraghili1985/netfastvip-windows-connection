@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -587,6 +587,8 @@ namespace SmartVpn
                     Foreground = new SolidColorBrush(light ? Color.FromRgb(0x33, 0x41, 0x55) : Color.FromRgb(0xE2, 0xE8, 0xF0)),
                 },
             };
+            dotsBtn.MouseEnter += (_, __) => dotsBtn.Background = new SolidColorBrush(light ? Color.FromArgb(0x28, 0x0F, 0x17, 0x2A) : Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF));
+            dotsBtn.MouseLeave += (_, __) => dotsBtn.Background = new SolidColorBrush(light ? Color.FromArgb(0x14, 0x0F, 0x17, 0x2A) : Color.FromArgb(0x22, 0xFF, 0xFF, 0xFF));
             menuPopup.PlacementTarget = dotsBtn;
             menuPopup.Placement = PlacementMode.Bottom;
             dotsBtn.MouseLeftButtonDown += (_, e) => e.Handled = true;
@@ -621,9 +623,11 @@ namespace SmartVpn
                     BorderBrush = new SolidColorBrush(pingColor),
                     BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(5),
-                    Padding = new Thickness(4, 1, 4, 1),
+                    Padding = new Thickness(5, 2, 5, 2),
                     Margin = new Thickness(0, 0, 6, 0),
                     VerticalAlignment = VerticalAlignment.Center,
+                    Cursor = System.Windows.Input.Cursors.Hand,
+                    ToolTip = "وضعیت Uptime / پینگ سرور",
                     Child = new StackPanel
                     {
                         Orientation = Orientation.Horizontal,
@@ -664,6 +668,22 @@ namespace SmartVpn
                 card.Child = contentGrid;
             }
             row.Children.Add(card);
+
+            if (!connected && !selected)
+            {
+                row.MouseEnter += (_, __) =>
+                {
+                    card.Background = new SolidColorBrush(light ? Color.FromArgb(0xFF, 0xEE, 0xF2, 0xF6) : Color.FromArgb(0x95, 0x2A, 0x3A, 0x52));
+                    card.BorderBrush = new SolidColorBrush(light ? Color.FromArgb(0x50, 0x0F, 0x17, 0x2A) : Color.FromArgb(0x50, 0x3B, 0x82, 0xF6));
+                    card.BorderThickness = new Thickness(0, 1, 1, 1);
+                };
+                row.MouseLeave += (_, __) =>
+                {
+                    card.Background = cardBg;
+                    card.BorderBrush = new SolidColorBrush(light ? Color.FromArgb(0x28, 0x0F, 0x17, 0x2A) : Color.FromArgb(0x22, 0x94, 0xA3, 0xB8));
+                    card.BorderThickness = light ? new Thickness(0, 1, 1, 1) : new Thickness(0);
+                };
+            }
 
             // کلیک تک روی کارت = فقط انتخاب/هایلایت — دبل‌کلیک = سوال تایید و اتصال/سوییچ واقعی
             card.MouseLeftButtonUp += (_, __) =>

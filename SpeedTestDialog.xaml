@@ -83,7 +83,8 @@
                 BorderThickness="1" CornerRadius="8" Padding="10,7" Margin="0,0,0,10">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="موتور تست:" FontSize="11.5" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <ComboBox x:Name="EngineCombo" FlowDirection="LeftToRight" MinWidth="150" FontSize="11.5" VerticalAlignment="Center">
+                <ComboBox x:Name="EngineCombo" FlowDirection="LeftToRight" MinWidth="165" FontSize="11.5" VerticalAlignment="Center">
+                    <ComboBoxItem Content="Speedtest.net (Ookla)"/>
                     <ComboBoxItem Content="Cloudflare"/>
                     <ComboBoxItem Content="M-Lab (NDT7)"/>
                 </ComboBox>
