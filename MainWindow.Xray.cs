@@ -1054,11 +1054,10 @@ namespace SmartVpn
         {
             try
             {
-                if (XraySubSummaryCard == null) return;
-
                 string bestData = "Unlimited";
                 string bestDays = "Unlimited";
                 DateTime? bestUpdate = null;
+                bool hasActive = XrayGroups.Any(g => g.Profiles.Count > 0);
 
                 foreach (var g in XrayGroups)
                 {
@@ -1070,21 +1069,45 @@ namespace SmartVpn
                         bestUpdate = g.LastUpdated;
                 }
 
-                if (XraySubDataLeftText != null) XraySubDataLeftText.Text = bestData;
-                if (XraySubTimeLeftText != null) XraySubTimeLeftText.Text = bestDays;
-                if (XraySubUpdatedText != null)
+                // 1. Update Xray Panel's sub card
+                if (XraySubSummaryCard != null)
                 {
-                    XraySubUpdatedText.Text = bestUpdate.HasValue
-                        ? $"{Localization.T("آخرین بروزرسانی:")} {bestUpdate.Value:HH:mm}"
-                        : "—";
-                }
-                if (XraySubActiveBadge != null)
-                {
-                    bool hasActive = XrayGroups.Any(g => g.Profiles.Count > 0);
-                    XraySubActiveBadge.Visibility = hasActive ? Visibility.Visible : Visibility.Collapsed;
+                    if (XraySubDataLeftText != null) XraySubDataLeftText.Text = bestData;
+                    if (XraySubTimeLeftText != null) XraySubTimeLeftText.Text = bestDays;
+                    if (XraySubUpdatedText != null)
+                    {
+                        XraySubUpdatedText.Text = bestUpdate.HasValue
+                            ? $"{Localization.T("آخرین بروزرسانی:")} {bestUpdate.Value:HH:mm}"
+                            : "—";
+                    }
+                    if (XraySubActiveBadge != null)
+                    {
+                        XraySubActiveBadge.Visibility = hasActive ? Visibility.Visible : Visibility.Collapsed;
+                    }
                 }
 
-                if (!_hasSubscriptionSummary && XrayGroups.Any(g => g.Profiles.Count > 0))
+                // 2. Update Dashboard HomeXraySubCard (Right column)
+                if (HomeXraySubCard != null)
+                {
+                    if (hasActive)
+                    {
+                        if (HomeXraySubDataLeftText != null) HomeXraySubDataLeftText.Text = bestData;
+                        if (HomeXraySubTimeLeftText != null) HomeXraySubTimeLeftText.Text = bestDays;
+                        if (HomeXraySubEmptyText != null) HomeXraySubEmptyText.Visibility = Visibility.Collapsed;
+                        if (HomeXraySubActiveBadge != null) HomeXraySubActiveBadge.Visibility = Visibility.Visible;
+                        if (HomeXraySubDetailPanel != null) HomeXraySubDetailPanel.Visibility = Visibility.Visible;
+                        if (HomeXraySubRefreshBtn != null) HomeXraySubRefreshBtn.Visibility = Visibility.Visible;
+                    }
+                    else
+                    {
+                        if (HomeXraySubActiveBadge != null) HomeXraySubActiveBadge.Visibility = Visibility.Collapsed;
+                        if (HomeXraySubDetailPanel != null) HomeXraySubDetailPanel.Visibility = Visibility.Collapsed;
+                        if (HomeXraySubEmptyText != null) HomeXraySubEmptyText.Visibility = Visibility.Visible;
+                    }
+                }
+
+                // 3. Fallback for VPN sub card if needed
+                if (!_hasSubscriptionSummary && hasActive)
                 {
                     if (SubDataLeftText != null) SubDataLeftText.Text = bestData;
                     if (SubTimeLeftText != null) SubTimeLeftText.Text = bestDays;
@@ -1102,18 +1125,26 @@ namespace SmartVpn
             XrayUpdateSub_Click(sender, e);
         }
 
+        private void HomeXraySubCard_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            XrayUpdateSub_Click(sender, e);
+        }
+
+        private void HomeXraySubRefreshBtn_Click(object sender, RoutedEventArgs e)
+        {
+            XrayUpdateSub_Click(sender, e);
+        }
+
         private void StartSubRefreshAnimation()
         {
             try
             {
-                if (XraySubRefreshRotate != null)
+                var anim = new System.Windows.Media.Animation.DoubleAnimation(0, 360, new Duration(TimeSpan.FromSeconds(0.8)))
                 {
-                    var anim = new System.Windows.Media.Animation.DoubleAnimation(0, 360, new Duration(TimeSpan.FromSeconds(0.8)))
-                    {
-                        RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever
-                    };
-                    XraySubRefreshRotate.BeginAnimation(RotateTransform.AngleProperty, anim);
-                }
+                    RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever
+                };
+                XraySubRefreshRotate?.BeginAnimation(RotateTransform.AngleProperty, anim);
+                HomeXraySubRefreshRotate?.BeginAnimation(RotateTransform.AngleProperty, anim);
             }
             catch { }
         }
@@ -1123,6 +1154,7 @@ namespace SmartVpn
             try
             {
                 XraySubRefreshRotate?.BeginAnimation(RotateTransform.AngleProperty, null);
+                HomeXraySubRefreshRotate?.BeginAnimation(RotateTransform.AngleProperty, null);
             }
             catch { }
         }
@@ -1604,6 +1636,8 @@ namespace SmartVpn
                 SetPowerState("connected");
                 Notify("Connected via sing-box: " + item.Alias);
                 RenderXrayConnList();
+                _config.AddRecentConnection(item.Alias);
+                RenderRecentServersList();
             }
             catch { }
 

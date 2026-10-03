@@ -445,5 +445,19 @@ namespace SmartVpn
             }
             catch { }
         }
+
+        private void CopyConnLog_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var text = ConnLogBox?.Text;
+                if (!string.IsNullOrEmpty(text))
+                {
+                    Clipboard.SetText(text);
+                    Notify(Localization.T("لاگ کانکشن‌ها در کلیپ‌بورد کپی شد"));
+                }
+            }
+            catch { }
+        }
     }
 }

@@ -437,6 +437,8 @@ namespace SmartVpn
             };
 
             RefreshList();
+            RenderRecentServersList();
+            UpdateXraySubscriptionCard();
             TryAutoCheckSubscriptionSummaryOnce();
 
             ShowPanel("home");
@@ -541,6 +543,12 @@ namespace SmartVpn
             UpdateSidebarState("tools");
         }
 
+        private void SidebarNavLogs_Click(object sender, RoutedEventArgs e)
+        {
+            ShowPanel("connlog");
+            UpdateSidebarState("connlog");
+        }
+
         private void TitleMaximizeButton_Click(object sender, RoutedEventArgs e)
         {
             WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
@@ -567,7 +575,190 @@ namespace SmartVpn
                 SetBtn(NavHotspotBtn, NavHotspotIndicator, current == "hotspot");
                 SetBtn(NavSpeedTestBtn, NavSpeedTestIndicator, current == "speedtest");
                 SetBtn(NavSettingsBtn, NavSettingsIndicator, current == "settings");
-                SetBtn(NavToolsBtn, NavToolsIndicator, current == "tools" || current == "logs" || current == "connlog");
+                SetBtn(NavToolsBtn, NavToolsIndicator, current == "tools");
+                SetBtn(NavLogsBtn, NavLogsIndicator, current == "logs" || current == "connlog");
+            }
+            catch { }
+        }
+
+        public void RenderRecentServersList()
+        {
+            try
+            {
+                if (RecentServersList == null) return;
+                RecentServersList.Children.Clear();
+
+                var recentNames = (_config.RecentConnections ?? new List<string>())
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                var itemsToRender = new List<(string name, string type, string subtitle, string icon, bool isXray, object? rawObj)>();
+
+                foreach (var name in recentNames)
+                {
+                    if (itemsToRender.Count >= 3) break;
+
+                    var vpnConn = _config.Connections.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase));
+                    if (vpnConn != null)
+                    {
+                        var flag = ExtractFlagOrIcon(vpnConn.Name, vpnConn.Type);
+                        itemsToRender.Add((vpnConn.Name, CategoryLabel(vpnConn.Type), vpnConn.ServerLine ?? vpnConn.Type, flag, false, vpnConn));
+                        continue;
+                    }
+
+                    var xrayProfile = XrayGroups.SelectMany(g => g.Profiles).FirstOrDefault(p => string.Equals(p.Alias, name, StringComparison.OrdinalIgnoreCase));
+                    if (xrayProfile != null)
+                    {
+                        var flag = ExtractFlagOrIcon(xrayProfile.Alias, xrayProfile.Protocol);
+                        itemsToRender.Add((xrayProfile.Alias, xrayProfile.Protocol.ToUpperInvariant(), $"{xrayProfile.Address}:{xrayProfile.Port}", flag, true, xrayProfile));
+                        continue;
+                    }
+                }
+
+                if (itemsToRender.Count < 3)
+                {
+                    foreach (var vpnConn in _config.Connections)
+                    {
+                        if (itemsToRender.Count >= 3) break;
+                        if (itemsToRender.Any(x => string.Equals(x.name, vpnConn.Name, StringComparison.OrdinalIgnoreCase))) continue;
+                        var flag = ExtractFlagOrIcon(vpnConn.Name, vpnConn.Type);
+                        itemsToRender.Add((vpnConn.Name, CategoryLabel(vpnConn.Type), vpnConn.ServerLine ?? vpnConn.Type, flag, false, vpnConn));
+                    }
+                }
+
+                if (itemsToRender.Count < 3)
+                {
+                    foreach (var p in XrayGroups.SelectMany(g => g.Profiles))
+                    {
+                        if (itemsToRender.Count >= 3) break;
+                        if (itemsToRender.Any(x => string.Equals(x.name, p.Alias, StringComparison.OrdinalIgnoreCase))) continue;
+                        var flag = ExtractFlagOrIcon(p.Alias, p.Protocol);
+                        itemsToRender.Add((p.Alias, p.Protocol.ToUpperInvariant(), $"{p.Address}:{p.Port}", flag, true, p));
+                    }
+                }
+
+                if (itemsToRender.Count == 0)
+                {
+                    var emptyText = new TextBlock
+                    {
+                        Text = Localization.T("هنوز سروری اضافه نشده است"),
+                        FontSize = 10.5,
+                        Foreground = (Brush)FindResource("SubTextBrush"),
+                        TextWrapping = TextWrapping.Wrap,
+                        Margin = new Thickness(4, 8, 4, 8),
+                        HorizontalAlignment = HorizontalAlignment.Center
+                    };
+                    RecentServersList.Children.Add(emptyText);
+                    return;
+                }
+
+                var cardBg = (Brush)FindResource("CardBrush");
+                var hoverBg = (Brush)FindResource("CardHoverBrush");
+                var borderBrush = (Brush)FindResource("GlassBorderBrush");
+                var accentBrush = (Brush)FindResource("AccentBrush");
+
+                foreach (var item in itemsToRender)
+                {
+                    bool isCurrentActive = (!item.isXray && _selectedName == item.name) ||
+                                           (item.isXray && _xraySelectedProfile != null && _xraySelectedProfile.Alias == item.name);
+
+                    var rowBorder = new Border
+                    {
+                        Background = isCurrentActive ? hoverBg : cardBg,
+                        BorderBrush = isCurrentActive ? accentBrush : borderBrush,
+                        BorderThickness = new Thickness(1),
+                        CornerRadius = new CornerRadius(10),
+                        Padding = new Thickness(10, 5, 10, 5),
+                        Margin = new Thickness(0, 0, 0, 5),
+                        Cursor = System.Windows.Input.Cursors.Hand
+                    };
+
+                    var rowGrid = new Grid();
+                    rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
+                    rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                    var iconBlock = new TextBlock
+                    {
+                        Text = item.icon,
+                        FontSize = 14,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        HorizontalAlignment = HorizontalAlignment.Left
+                    };
+                    Grid.SetColumn(iconBlock, 0);
+                    rowGrid.Children.Add(iconBlock);
+
+                    var textStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 6, 0) };
+                    var nameBlock = new TextBlock
+                    {
+                        Text = item.name,
+                        FontSize = 11.5,
+                        FontWeight = FontWeights.SemiBold,
+                        Foreground = Brushes.White,
+                        TextTrimming = TextTrimming.CharacterEllipsis,
+                        MaxWidth = 180
+                    };
+                    var subBlock = new TextBlock
+                    {
+                        Text = $"{item.type} • {item.subtitle}",
+                        FontSize = 9.5,
+                        Foreground = (Brush)FindResource("SubTextBrush"),
+                        TextTrimming = TextTrimming.CharacterEllipsis,
+                        MaxWidth = 180
+                    };
+                    textStack.Children.Add(nameBlock);
+                    textStack.Children.Add(subBlock);
+                    Grid.SetColumn(textStack, 1);
+                    rowGrid.Children.Add(textStack);
+
+                    var quickBadge = new Border
+                    {
+                        Background = isCurrentActive ? accentBrush : (Brush)FindResource("FieldBrush"),
+                        CornerRadius = new CornerRadius(6),
+                        Padding = new Thickness(8, 2.5, 8, 2.5),
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Child = new TextBlock
+                        {
+                            Text = isCurrentActive ? Localization.T("فعال") : Localization.T("انتخاب"),
+                            FontSize = 9.5,
+                            FontWeight = FontWeights.SemiBold,
+                            Foreground = isCurrentActive ? Brushes.Black : (Brush)FindResource("SubTextBrush")
+                        }
+                    };
+                    Grid.SetColumn(quickBadge, 2);
+                    rowGrid.Children.Add(quickBadge);
+
+                    rowBorder.Child = rowGrid;
+
+                    rowBorder.MouseEnter += (_, __) => { if (!isCurrentActive) rowBorder.Background = hoverBg; };
+                    rowBorder.MouseLeave += (_, __) => { if (!isCurrentActive) rowBorder.Background = cardBg; };
+
+                    rowBorder.MouseLeftButtonUp += (_, __) =>
+                    {
+                        if (item.isXray && item.rawObj is ProxyProfile p)
+                        {
+                            _xraySelectedProfile = p;
+                            if (XrayProxyList != null) XrayProxyList.SelectedItem = p;
+                            UpdateActiveProfileInfo(p);
+                            RenderXrayConnList();
+                            _config.AddRecentConnection(p.Alias);
+                            RenderRecentServersList();
+                        }
+                        else if (!item.isXray && item.rawObj is ConnectionProfile cp)
+                        {
+                            _selectedName = cp.Name;
+                            ActiveConnText.Text = $"{CategoryLabel(cp.Type)} {cp.Name}";
+                            ServerSubText.Text = cp.ServerLine;
+                            UpdateActiveBadge(cp.Name, cp.Type);
+                            RefreshList();
+                            _config.AddRecentConnection(cp.Name);
+                            RenderRecentServersList();
+                        }
+                    };
+
+                    RecentServersList.Children.Add(rowBorder);
+                }
             }
             catch { }
         }
@@ -749,11 +940,6 @@ namespace SmartVpn
                     LogBox.CaretIndex = LogBox.Text.Length;
                     LogBox.ScrollToEnd();
                 }
-                if (ConnLogBox != null)
-                {
-                    ConnLogBox.AppendText(entry);
-                    ConnLogBox.ScrollToEnd();
-                }
             });
             LogWriter.Write(line);
         }
@@ -766,12 +952,8 @@ namespace SmartVpn
                 if (ConnLogBox != null)
                 {
                     ConnLogBox.AppendText(entry);
+                    ConnLogBox.CaretIndex = ConnLogBox.Text.Length;
                     ConnLogBox.ScrollToEnd();
-                }
-                if (LogBox != null)
-                {
-                    LogBox.AppendText(entry);
-                    LogBox.ScrollToEnd();
                 }
 
                 try
@@ -798,25 +980,18 @@ namespace SmartVpn
                                 _tunnelPeerIp = ipStr;
                                 if (ServerIpText != null) ServerIpText.Text = ipStr;
                                 var sniffEntry = "[" + DateTime.Now.ToString("HH:mm:ss") + "] [ip] server from openvpn log: " + ipStr + Environment.NewLine;
-                                if (ConnLogBox != null) ConnLogBox.AppendText(sniffEntry);
-                                if (LogBox != null) LogBox.AppendText(sniffEntry);
+                                if (ConnLogBox != null)
+                                {
+                                    ConnLogBox.AppendText(sniffEntry);
+                                    ConnLogBox.CaretIndex = ConnLogBox.Text.Length;
+                                    ConnLogBox.ScrollToEnd();
+                                }
                             }
                         }
                         break;
                     }
                 }
                 catch { }
-
-                if (ConnLogBox != null)
-                {
-                    ConnLogBox.CaretIndex = ConnLogBox.Text.Length;
-                    ConnLogBox.ScrollToEnd();
-                }
-                if (LogBox != null)
-                {
-                    LogBox.CaretIndex = LogBox.Text.Length;
-                    LogBox.ScrollToEnd();
-                }
             });
             LogWriter.Write(line);
         }

@@ -297,30 +297,66 @@ namespace SmartVpn
             if (DrawerMenuPanel != null)
                 DrawerMenuPanel.FlowDirection = Localization.IsEnglish ? FlowDirection.LeftToRight : FlowDirection.RightToLeft;
 
-            // --- Segmented Control (VPN / Xray) ---
-            if (HomeSwitchToVpnBtn != null) HomeSwitchToVpnBtn.Content = T("VPN (سنتی)");
-            if (HomeSwitchToXrayBtn != null) HomeSwitchToXrayBtn.Content = T("Xray (پروکسی)");
+            // --- Sidebar Navigation ---
+            if (NavDashboardText != null) NavDashboardText.Text = T("داشبورد");
+            if (SidebarNavDashboardSubtext != null) SidebarNavDashboardSubtext.Text = T("مرکز کنترل");
+            if (NavVpnCoreText != null) NavVpnCoreText.Text = T("هسته VPN");
+            if (NavXrayCoreText != null) NavXrayCoreText.Text = T("هسته Xray");
+            if (NavHotspotText != null) NavHotspotText.Text = T("مدیریت Hotspot");
+            if (NavSpeedTestText != null) NavSpeedTestText.Text = T("تست سرعت");
+            if (NavSettingsText != null) NavSettingsText.Text = T("تنظیمات");
+            if (NavToolsText != null) NavToolsText.Text = T("ابزارهای شبکه");
+            if (NavLogsText != null) NavLogsText.Text = T("لاگ کانکشن‌ها");
+
+            // --- Home Panel: Hero & Telemetry ---
+            if (ConnControlLbl != null) ConnControlLbl.Text = T("کنترل اتصال");
+            if (DurationLbl != null) DurationLbl.Text = T("مدت زمان اتصال");
+            if (CurrentSpeedLbl != null) CurrentSpeedLbl.Text = T("سرعت لحظه‌ای");
+            if (LatencyLbl != null) LatencyLbl.Text = T("تاخیر / پینگ");
+            if (SessionTrafficLbl != null) SessionTrafficLbl.Text = T("حجم مصرفی سشن");
+            if (TunnelIpLbl != null) TunnelIpLbl.Text = T("🌐 آی‌پی تونل");
+            if (ServerIpLbl != null) ServerIpLbl.Text = T("🖥️ آی‌پی سرور");
+            if (ProtocolLbl != null) ProtocolLbl.Text = T("🔒 پروتکل");
+            if (YouLbl != null) YouLbl.Text = T("👤 نام کاربری");
+            if (LiveTrafficGraphLbl != null) LiveTrafficGraphLbl.Text = T("📈 نمودار زنده ترافیک");
+            if (PrivateIpText != null) PrivateIpText.ToolTip = T("برای کپی کلیک کنید");
+            if (ServerIpText != null) ServerIpText.ToolTip = T("برای کپی کلیک کنید");
+
+            // --- Home Panel: Recent Connections Card ---
+            if (RecentCardTitle != null) RecentCardTitle.Text = T("⭐ سرورهای منتخب و اخیر");
+            if (RecentCardSubtitle != null) RecentCardSubtitle.Text = T("اتصال سریع با یک کلیک به آخرین کانکشن‌ها");
+            if (HomeSwitchToVpnBtn != null) HomeSwitchToVpnBtn.Content = T("🛡️ سرورهای VPN Core");
+            if (HomeSwitchToXrayBtn != null) HomeSwitchToXrayBtn.Content = T("⚡ سرورهای Xray Core");
             if (XraySwitchToVpnBtn != null) XraySwitchToVpnBtn.Content = T("VPN (سنتی)");
             if (XraySwitchToXrayBtn != null) XraySwitchToXrayBtn.Content = T("Xray (پروکسی)");
 
+            // --- Home Panel: Stacked Dual Subscriptions ---
+            if (SubSectionLabel != null) SubSectionLabel.Text = T("🛡️ اشتراک VPN Core");
+            if (SubActiveText != null) SubActiveText.Text = T("فعال");
+            if (SubEmptyText != null) SubEmptyText.Text = T("برای مشاهده وضعیت اشتراک کلیک کنید");
+            if (SubTimeLbl != null) SubTimeLbl.Text = T("زمان باقی‌مانده");
+            if (SubDataLbl != null) SubDataLbl.Text = T("حجم باقی‌مانده");
+            if (SubRefreshBtn != null) SubRefreshBtn.ToolTip = T("بروزرسانی اشتراک VPN");
+
+            if (HomeXraySubSectionLabel != null) HomeXraySubSectionLabel.Text = T("⚡ اشتراک Xray Core");
+            if (HomeXraySubActiveText != null) HomeXraySubActiveText.Text = T("فعال");
+            if (HomeXraySubEmptyText != null) HomeXraySubEmptyText.Text = T("برای مشاهده وضعیت اشتراک کلیک کنید");
+            if (HomeXraySubTimeLbl != null) HomeXraySubTimeLbl.Text = T("زمان باقی‌مانده");
+            if (HomeXraySubDataLbl != null) HomeXraySubDataLbl.Text = T("حجم باقی‌مانده");
+            if (HomeXraySubRefreshBtn != null) HomeXraySubRefreshBtn.ToolTip = T("بروزرسانی اشتراک Xray");
+
+            // Refresh recent servers list and Xray card with current language
+            RenderRecentServersList();
+            UpdateXraySubscriptionCard();
+
             // --- Home panel dynamic labels ---
             var moreOpen = MoreInfoPanel?.Visibility == Visibility.Visible;
-            MoreInfoText.Text  = T(moreOpen ? "بستن جزئیات" : "نمایش جزئیات");
-            PowerHintText.Text = T(_currentStatusKey == TxtConnected
+            if (MoreInfoText != null) MoreInfoText.Text = T(moreOpen ? "بستن جزئیات" : "نمایش جزئیات");
+            if (PowerHintText != null) PowerHintText.Text = T(_currentStatusKey == TxtConnected
                 ? "برای قطع اتصال کلیک کنید" : "Click to Connect");
-            AddBtn.ToolTip = T("افزودن کانکشن جدید");
-            SubRefreshBtn.ToolTip = T("بروزرسانی وضعیت اشتراک");
-            SubSummaryCard.ToolTip = T("مشاهده / استعلام وضعیت اشتراک");
-            SubEmptyText.Text   = T("برای مشاهده وضعیت اشتراک کلیک کنید");
-            SubSectionLabel.Text = T("🎫 اشتراک من");
-            SubActiveText.Text  = T("فعال");
-            SubTimeLbl.Text     = T("⏳ زمان باقی‌مانده");
-            SubDataLbl.Text     = T("📦 حجم باقی‌مانده");
-            ConnSectionLabel.Text = T("کانکشن‌ها");
-            ProtocolLbl.Text    = T("Protocol");
-            YouLbl.Text         = T("User");
-            PrivateIpText.ToolTip = T("برای کپی کلیک کنید");
-            ServerIpText.ToolTip  = T("برای کپی کلیک کنید");
+            if (AddBtn != null) AddBtn.ToolTip = T("افزودن کانکشن جدید");
+            if (SubSummaryCard != null) SubSummaryCard.ToolTip = T("مشاهده / استعلام وضعیت اشتراک");
+            if (ConnSectionLabel != null) ConnSectionLabel.Text = T("کانکشن‌ها");
             if (ActiveConnSummaryPanel != null)
                 ActiveConnSummaryPanel.FlowDirection = Localization.IsEnglish ? FlowDirection.LeftToRight : FlowDirection.RightToLeft;
             if (SubSummaryPanel != null)

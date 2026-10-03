@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Text.Encodings.Web;
@@ -26,6 +26,17 @@ public sealed class AppConfig
 
     // آخرین کانکشنی که واقعاً وصل شده — بعد از بستن/باز کردن برنامه همین انتخاب‌شده نمایش داده می‌شود
     public string? LastConnectedName { get; set; }
+    public List<string> RecentConnections { get; set; } = [];
+
+    public void AddRecentConnection(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return;
+        RecentConnections.RemoveAll(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase));
+        RecentConnections.Insert(0, name);
+        if (RecentConnections.Count > 10)
+            RecentConnections = RecentConnections.Take(10).ToList();
+        try { Save(); } catch { }
+    }
     // آیا لیست کانکشن‌ها (دکمه «نمایش بیشتر») باز مانده — رفتار آخرین باری که کاربر انتخاب کرده حفظ می‌شود
     public bool ConnListExpanded { get; set; }
 

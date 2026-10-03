@@ -346,6 +346,8 @@ namespace SmartVpn
                 _everConnected = true;
                 _selectedName = profile.Name;
                 _connectedName = profile.Name; // تنها اینجا مشخص می‌شود چه چیزی واقعا وصل شده
+                _config.AddRecentConnection(profile.Name);
+                RenderRecentServersList();
                 MiniConnectionText.Text = profile.Name;
                 MoveToTop(profile.Name); // کانکشن متصل‌شده می‌رود صدر لیست
                 ActiveConnText.Text = $"{CategoryLabel(profile.Type)} {profile.Name}";
@@ -518,7 +520,7 @@ namespace SmartVpn
             // هدر: صفحه خانه = برند و آیکون‌ها، بقیه صفحات = فلش برگشت + عنوان صفحه
             HeaderBrandPanel.Visibility = tag == "home" ? Visibility.Visible : Visibility.Collapsed;
             HeaderPagePanel.Visibility = tag == "home" ? Visibility.Collapsed : Visibility.Visible;
-            HeaderTitleText.Text = tag == "vpn" ? "VPN Core" : tag == "xray" ? "Xray Core" : tag == "tools" ? Localization.T("ابزارها و گزارش") : tag == "settings" ? Localization.T("تنظیمات") : tag == "connlog" ? Localization.T("گزارش کانکشن‌ها") : "";
+            HeaderTitleText.Text = tag == "vpn" ? "VPN Core" : tag == "xray" ? "Xray Core" : tag == "tools" ? Localization.T("ابزارهای شبکه") : tag == "settings" ? Localization.T("تنظیمات") : tag == "connlog" ? Localization.T("لاگ کانکشن‌ها") : "";
 
             switch (tag)
             {
@@ -526,22 +528,9 @@ namespace SmartVpn
                 case "vpn": if (VpnPanel != null) AnimatePanelIn(VpnPanel, VpnTransform); break;
                 case "tools":
                     AnimatePanelIn(ToolboxPanel, ToolsTransform);
-                    if (LogBox.Text.Length == 0 && ConnLogBox.Text.Length > 0)
+                    if (LogBox.Text.Length == 0)
                     {
-                        LogBox.Text = ConnLogBox.Text;
-                    }
-                    else if (LogBox.Text.Length == 0)
-                    {
-                        try
-                        {
-                            var p = System.IO.Path.Combine(AppContext.BaseDirectory, "Data", "app.log");
-                            if (System.IO.File.Exists(p))
-                            {
-                                var lines = System.IO.File.ReadLines(p).TakeLast(80);
-                                LogBox.Text = string.Join(Environment.NewLine, lines) + Environment.NewLine;
-                            }
-                        }
-                        catch { }
+                        LogBox.Text = Localization.T("برای اجرای تست پینگ یا تریسرورت، آدرس مقصد را وارد کرده و دکمه را بزنید...") + Environment.NewLine;
                     }
                     LogBox.CaretIndex = LogBox.Text.Length;
                     LogBox.ScrollToEnd();
