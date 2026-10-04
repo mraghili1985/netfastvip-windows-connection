@@ -491,7 +491,7 @@ namespace SmartVpn
             await _lock.WaitAsync();
             try
             {
-                L($"[Hotspot] تلاش برای روشن کردن هات‌اسپات با بایند مستقیم به پروفایل ({sourceName})...");
+                L($"[Hotspot] Attempting to start mobile hotspot bound to profile ({sourceName})...");
 
                 var lines = new[]
                 {
@@ -580,9 +580,9 @@ namespace SmartVpn
                     _activeSrc = sourceName;
                     
                     if (_hotspotBoundToSelectedProfile)
-                        L("[Hotspot] هات‌اسپات مستقیماً از طریق پروفایل VPN راه‌اندازی شد. (مسیردهی نیتیو)");
+                        L("[Hotspot] Mobile hotspot started directly via VPN profile (native routing).");
                     else
-                        L("[Hotspot] بایندینگ مستقیم شکست خورد، هات‌اسپات نیازمند مسیردهی ICS است.");
+                        L("[Hotspot] Direct binding not available; fallback to ICS routing.");
 
                     return (true, p[1], p[2], "");
                 }
@@ -602,7 +602,7 @@ namespace SmartVpn
             if (_hotspotBoundToSelectedProfile && string.Equals(_activeSrc, sourceName, StringComparison.OrdinalIgnoreCase))
             {
                 _activeTgt = targetName;
-                L($"[Hotspot] نیازی به اعمال زورکی COM ICS نیست؛ ترافیک به طور نیتیو از {sourceName} در جریان است.");
+                L($"[Hotspot] Native routing active on {sourceName}; skipping redundant COM ICS.");
                 await EnableHotspotRoutingAndDnsAsync(sourceName, targetName);
                 return (true, "");
             }
@@ -613,7 +613,7 @@ namespace SmartVpn
             {
                 _activeSrc = sourceName;
                 _activeTgt = targetName;
-                L($"[Hotspot] target Wi‑Fi Direct نام پشتیبانی‌نشده دارد؛ از اعمال غیرضروری ICS چشم‌پوشی می‌شود تا ویندوز آداپتور مجازی را غیرفعال نکند.");
+                L("[Hotspot] Target Wi-Fi Direct virtual adapter detected; skipping redundant ICS.");
                 await EnableHotspotRoutingAndDnsAsync(sourceName, targetName);
                 return (true, "");
             }
@@ -621,7 +621,7 @@ namespace SmartVpn
             await _lock.WaitAsync();
             try
             {
-                L($"[Hotspot] برقراری پل ارتباطی ICS ({sourceName} ➔ {targetName})...");
+                L($"[Hotspot] Establishing ICS bridge ({sourceName} ➔ {targetName})...");
 
                 var lines = new List<string>
                 {
@@ -871,7 +871,7 @@ namespace SmartVpn
             await _lock.WaitAsync();
             try
             {
-                L("[Hotspot] متوقف‌سازی کامل سرویس‌ها و شیرینگ...");
+                L("[Hotspot] Stopping all services and sharing...");
                 var lines = new[]
                 {
                     "$ErrorActionPreference = 'SilentlyContinue'",
@@ -946,11 +946,11 @@ namespace SmartVpn
                 await File.WriteAllLinesAsync(ps1, lines, new UTF8Encoding(false));
                 await RunPs1Async(ps1, 15);
                 try { File.Delete(ps1); } catch { }
-                L("[Hotspot] هدایت بسته‌های IP (Forwarding/WeakHost/DNS) با موفقیت فعال شد.");
+                L("[Hotspot] IP packet forwarding (Forwarding/WeakHost/DNS) enabled successfully.");
             }
             catch (Exception ex)
             {
-                L("[Hotspot WARN] خطا در فعال‌سازی هدایت بسته‌ها: " + ex.Message);
+                L("[Hotspot WARN] Error enabling packet forwarding: " + ex.Message);
             }
         }
 

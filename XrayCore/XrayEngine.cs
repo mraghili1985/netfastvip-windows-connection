@@ -483,14 +483,14 @@ namespace SmartVpn.XrayCore
             string configDir = Path.GetDirectoryName(exe) ?? AppDomain.CurrentDomain.BaseDirectory;
             string configPath = Path.Combine(configDir, "singbox-run.json");
 
-            Log?.Invoke($"[sing-box] هسته در حال راه‌اندازی: {Path.GetFileName(exe)}");
-            Log?.Invoke($"[sing-box] کانکشن انتخابی: {profile.Alias} ({profile.Protocol} {profile.Network})");
+            Log?.Invoke($"[sing-box] Starting core: {Path.GetFileName(exe)}");
+            Log?.Invoke($"[sing-box] Selected profile: {profile.Alias} ({profile.Protocol} {profile.Network})");
 
             // Attempt 1: Full TUN mode
             var result = LaunchProcess(exe, configPath, profile, enableTun: true, splitMode, splitList, dnsMode, dnsPrimary, dnsSecondary);
             if (!result.Success)
             {
-                Log?.Invoke("[sing-box WARN] حالت TUN با خطا مواجه شد؛ تلاش برای راه‌اندازی در حالت System Proxy...");
+                Log?.Invoke("[sing-box WARN] TUN mode failed; falling back to System Proxy mode...");
                 // Attempt 2: Fallback to Mixed System Proxy only
                 result = LaunchProcess(exe, configPath, profile, enableTun: false, splitMode, splitList, dnsMode, dnsPrimary, dnsSecondary);
             }
@@ -499,14 +499,14 @@ namespace SmartVpn.XrayCore
             {
                 if (splitMode == "allow" && (splitList?.Count ?? 0) > 0)
                 {
-                    Log?.Invoke($"[sing-box] تونل تفکیک‌شده برنامه‌ها (Allow): تنها {splitList!.Count} برنامه انتخاب‌شده از پروکسی عبور داده می‌شوند.");
+                    Log?.Invoke($"[sing-box] App split tunnel (Allow): only {splitList!.Count} app(s) routed through proxy.");
                 }
                 else
                 {
                     SystemProxyHelper.Enable("127.0.0.1:20808");
-                    Log?.Invoke("[sing-box] تنظیمات پراکسی سیستم ویندوز فعال شد (127.0.0.1:20808)");
+                    Log?.Invoke("[sing-box] Windows system proxy enabled (127.0.0.1:20808)");
                 }
-                Log?.Invoke("[sing-box] اتصال با موفقیت برقرار شد.");
+                Log?.Invoke("[sing-box] Connection established successfully.");
                 return (true, "");
             }
             else
@@ -525,7 +525,7 @@ namespace SmartVpn.XrayCore
             }
             catch (Exception ex)
             {
-                Log?.Invoke($"[sing-box ERROR] خطا در پارس لینک اتصال: {ex.Message}");
+                Log?.Invoke($"[sing-box ERROR] Failed to parse URI: {ex.Message}");
                 return (false, ex.Message);
             }
         }
@@ -642,7 +642,7 @@ namespace SmartVpn.XrayCore
             }
             catch { }
 
-            Log?.Invoke("[sing-box] سرویس sing-box متوقف و پراکسی سیستم غیرفعال شد.");
+            Log?.Invoke("[sing-box] Service stopped and system proxy disabled.");
         }
     }
 }

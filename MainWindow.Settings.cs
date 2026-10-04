@@ -169,7 +169,7 @@ namespace SmartVpn
             var tag = (string)((RadioButton)sender).Tag;
             _config.SplitTunnelMode = tag;
             _config.Save();
-            AppendConnLog("split-tunnel mode = " + tag + " (روی اتصال بعدی اعمال می‌شود)");
+            AppendConnLog("split-tunnel mode = " + tag + " (applies on next connection)");
         }
 
                 private void BtnManagePerApp_Click(object sender, RoutedEventArgs e)
@@ -184,7 +184,7 @@ namespace SmartVpn
             if (!_ready) return;
             _config.DnsMode = (string)((RadioButton)sender).Tag;
             _config.Save();
-            AppendConnLog("dns mode = " + _config.DnsMode + " (روی اتصال بعدی اعمال می‌شود)");
+            AppendConnLog("dns mode = " + _config.DnsMode + " (applies on next connection)");
         }
 
         private void DnsBox_LostFocus(object sender, RoutedEventArgs e)
@@ -233,7 +233,7 @@ namespace SmartVpn
                     key.DeleteValue(RunValueName, false);
                 }
             }
-            catch (Exception ex) { AppendConnLog("تنظیم اجرای خودکار ناموفق بود: " + ex.Message); }
+            catch (Exception ex) { AppendConnLog("Failed to configure auto-startup: " + ex.Message); }
         }
 
         // ================= اعمال ترجمه روی المان‌های named =================

@@ -176,10 +176,10 @@ namespace SmartVpn
                     await Task.Delay(200);
                 }
                 if (ifIndex == null)
-                    AppendConnLog("killswitch: هشدار — بعد از چند تلاش هم آداپتور تانل پیدا نشد؛ ممکن است اتصال فعلی بلاک شود، دوباره قطع/وصل کنید");
+                    AppendConnLog("killswitch: Warning — tunnel adapter not found after multiple attempts; connection might be blocked, please reconnect");
 
                 var ok = await KillSwitch.EnableAsync(serverIp, serverPort, ifIndex);
-                if (!ok) AppendConnLog("killswitch: فعال‌سازی ناموفق بود — ترافیک مسدود نشد");
+                if (!ok) AppendConnLog("killswitch: Activation failed — traffic was not blocked");
             }
             catch (Exception ex) { AppendConnLog("killswitch enable failed: " + ex.Message); }
         }
@@ -513,7 +513,7 @@ namespace SmartVpn
                 StopSpin();
                 SetStatusText(TxtAuthFailed);
                 PowerHintText.Text = Localization.T("روشن/خاموش اتصال");
-                AppendConnLog("خطا: احراز هویت ناموفق است.");
+                AppendConnLog("Error: Authentication failed (invalid credentials).");
                 // دکمه «بررسی اشتراک» — چون علت رایج AUTH_FAILED پایان اشتراک است، مستقیم به پنل کاربری هدایت می‌شود
                 var choice = AskDialog.Choose(this, MsgAuthFailed, BtnCheckSubscription, BtnOkText);
                 if (choice == 0)

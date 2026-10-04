@@ -228,7 +228,7 @@ namespace SmartVpn
             {
                 StatusText.Text = Localization.T("هات‌اسپات روشن شد! (نیاز به اشتراک‌گذاری دستی در صورت قطعی اینترنت)");
                 StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B"));
-                _mainWin.AppendLog("[Hotspot] شیرینگ خودکار انجام نشد. آموزش دستی در دسترس قرار گرفت.");
+                _mainWin.AppendLog("[Hotspot] Auto-sharing failed. Manual setup guide is available.");
                 
                 BtnTutorial.Visibility = Visibility.Visible;
             }

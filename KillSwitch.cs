@@ -74,7 +74,7 @@ public static class KillSwitch
             var rc = FwpmEngineOpen0(null, RPC_C_AUTHN_WINNT, IntPtr.Zero, ref session, out _engine);
             if (rc != 0)
             {
-                Log?.Invoke($"killswitch: FwpmEngineOpen0 failed (0x{rc:X}) — آیا برنامه با دسترسی Administrator اجرا شده؟");
+                Log?.Invoke($"killswitch: FwpmEngineOpen0 failed (0x{rc:X}) — is the app running with Administrator privileges?");
                 _engine = IntPtr.Zero;
                 return false;
             }
@@ -122,7 +122,7 @@ public static class KillSwitch
                 }
                 else
                 {
-                    Log?.Invoke("killswitch: هشدار — آی‌پی سرور مشخص نیست، استثنای سرور اضافه نشد (ممکن است پس از فعال شدن Kill Switch اتصال جدید سرور برقرار نشود)");
+                    Log?.Invoke("killswitch: Warning — server IP unknown; server endpoint exception not added");
                 }
 
                 // 5) استثنا: آداپتور مجازی تانل (۱۰۰٪ ترافیک ورودی/خروجی روی آن آزاد است)
@@ -139,12 +139,12 @@ public static class KillSwitch
                     }
                     else
                     {
-                        Log?.Invoke($"killswitch: ConvertInterfaceIndexToLuid failed (0x{rcLuid:X}) — استثنای آداپتور تانل اضافه نشد");
+                        Log?.Invoke($"killswitch: ConvertInterfaceIndexToLuid failed (0x{rcLuid:X}) — tunnel adapter exception not added");
                     }
                 }
                 else
                 {
-                    Log?.Invoke("killswitch: هشدار — Interface Index آداپتور تانل مشخص نیست، استثنای تانل اضافه نشد");
+                    Log?.Invoke("killswitch: Warning — tunnel adapter Interface Index unknown; tunnel exception not added");
                 }
 
                 // 6) استثنا: DHCP خروجی محلی (UDP از پورت 68 — برای تمدید IP لوکال)
@@ -183,7 +183,7 @@ public static class KillSwitch
                     // اگر Interface Index تانل مشخص نیست، بدون امکان استثنا کردن آن، محافظت DNS را
                     // به‌طور کلی (روی همه‌ی اینترفیس‌ها جز لوپ‌بک) اعمال می‌کنیم — ایمن‌تر است حتی اگر
                     // موقتاً DNS خود تانل را هم مسدود کند تا اینکه ریسک نشت را بپذیریم.
-                    Log?.Invoke("killswitch: هشدار — Interface تانل نامعلوم است؛ محافظت DNS به‌صورت سراسری (غیر از لوپ‌بک) اعمال می‌شود");
+                    Log?.Invoke("killswitch: Warning — tunnel interface unknown; applying DNS leak protection globally (except loopback)");
                     foreach (var (protoNum, protoLabel) in new[] { (17u /* UDP */, "UDP"), (6u /* TCP */, "TCP") })
                     {
                         AddFilter($"Block DNS ({protoLabel} 53) fallback", LAYER_ALE_AUTH_CONNECT_V4,
@@ -199,12 +199,12 @@ public static class KillSwitch
                 var commitRc = FwpmTransactionCommit0(_engine);
                 if (commitRc != 0) throw new InvalidOperationException($"FwpmTransactionCommit0 failed (0x{commitRc:X})");
 
-                Log?.Invoke("killswitch: فعال شد — تمام ترافیک خروجی جز استثناهای مجاز مسدود است");
+                Log?.Invoke("killswitch: Enabled — all outbound traffic blocked except permitted exceptions");
                 return true;
             }
             catch (Exception ex)
             {
-                Log?.Invoke("killswitch: فعال‌سازی ناموفق بود، هیچ فیلتری اعمال نشد -> " + ex.Message);
+                Log?.Invoke("killswitch: Activation failed, no filters applied -> " + ex.Message);
                 try { FwpmTransactionAbort0(_engine); } catch { }
                 try { FwpmEngineClose0(_engine); } catch { }
                 _engine = IntPtr.Zero;
@@ -222,7 +222,7 @@ public static class KillSwitch
             try
             {
                 // بستن کامل Session به‌تنهایی تمام فیلترها و SubLayer را هم پاک می‌کند،
-                // اما برای شفافیت و لا�� تمیز، هر فیلتر را هم صریحاً حذف می‌کنیم.
+                // اما برای شفافیت و لا تمیز، هر فیلتر را هم صریحاً حذف می‌کنیم.
                 foreach (var key in _filterKeys)
                 {
                     var k = key;
@@ -236,7 +236,7 @@ public static class KillSwitch
             {
                 try { FwpmEngineClose0(_engine); } catch { }
                 _engine = IntPtr.Zero;
-                Log?.Invoke("killswitch: غیرفعال شد — فیلترها پاک شدند");
+                Log?.Invoke("killswitch: Disabled — WFP filters removed");
             }
         }
     }

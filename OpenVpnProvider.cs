@@ -65,7 +65,7 @@ public sealed class OpenVpnProvider : IConnectionProvider
         var inf = Path.Combine(driverDir, "ovpn-dco.inf");
         if (!File.Exists(inf))
         {
-            Log?.Invoke("درایور ovpn-dco نصب نیست و فایل driver همراه برنامه هم نیست — اگر اتصال برقرار نشد، OpenVPN را نصب کنید");
+            Log?.Invoke("ovpn-dco driver is not installed and driver directory is missing — if connection fails, install OpenVPN");
             return;
         }
 
@@ -78,7 +78,7 @@ public sealed class OpenVpnProvider : IConnectionProvider
         var devcon = Path.Combine(driverDir, "devcon.exe");
         if (File.Exists(devcon))
         {
-            Log?.Invoke("در حال نصب درایور ovpn-dco (فقط بار اول)…");
+            Log?.Invoke("Installing ovpn-dco driver (first time only)...");
             var psiDevcon = new ProcessStartInfo(devcon, $"install \"{inf}\" ovpn-dco")
             {
                 UseShellExecute = false,
@@ -93,16 +93,16 @@ public sealed class OpenVpnProvider : IConnectionProvider
                 {
                     await p.WaitForExitAsync(ct);
                     Log?.Invoke(p.ExitCode == 0
-                        ? "درایور ovpn-dco نصب شد"
-                        : $"نصب درایور ovpn-dco با devcon ناموفق بود (کد {p.ExitCode})");
+                        ? "ovpn-dco driver installed successfully"
+                        : $"ovpn-dco driver installation failed (code {p.ExitCode})");
                     return;
                 }
             }
-            catch (Exception ex) { Log?.Invoke("خطا در نصب درایور ovpn-dco با devcon: " + ex.Message); }
+            catch (Exception ex) { Log?.Invoke("Error installing ovpn-dco driver with devcon: " + ex.Message); }
         }
         else
         {
-            Log?.Invoke("devcon.exe کنار درایور پیدا نشد — تلاش با pnputil (ممکن است device واقعی نسازد)");
+            Log?.Invoke("devcon.exe not found alongside driver — falling back to pnputil...");
         }
 
         var psi = new ProcessStartInfo("pnputil.exe", $"/add-driver \"{inf}\" /install")
@@ -118,10 +118,10 @@ public sealed class OpenVpnProvider : IConnectionProvider
             if (p is null) return;
             await p.WaitForExitAsync(ct);
             Log?.Invoke(p.ExitCode == 0
-                ? "درایور ovpn-dco نصب شد"
-                : $"نصب درایور ovpn-dco ناموفق بود (کد {p.ExitCode})");
+                ? "ovpn-dco driver installed successfully"
+                : $"ovpn-dco driver installation failed (code {p.ExitCode})");
         }
-        catch (Exception ex) { Log?.Invoke("خطا در نصب درایور ovpn-dco: " + ex.Message); }
+        catch (Exception ex) { Log?.Invoke("Error installing ovpn-dco driver: " + ex.Message); }
     }
 
     // خروجی openvpn و پیام‌های این کلاس به لاگ اپ — مثل RasProvider.Log (Console.WriteLine در WPF به جایی نمی‌رسد)
@@ -317,7 +317,7 @@ public sealed class OpenVpnProvider : IConnectionProvider
         var exePath = FindExe();
         if (exePath is null)
         {
-            Log?.Invoke("openvpn.exe پیدا نشد — OpenVPN نصب نیست؛ فقط اتصال‌های openvpn به آن نیاز دارند (راهنما: README.txt)");
+            Log?.Invoke("openvpn.exe not found — OpenVPN is not installed (refer to README.txt)");
             return false;
         }
 
@@ -337,7 +337,7 @@ public sealed class OpenVpnProvider : IConnectionProvider
         // وقتی آداپتور از قبل رفته تقریباً بی‌هزینه و فوری برمی‌گردد.
         if (_lastTeardownUtc != DateTime.MinValue)
         {
-            Log?.Invoke($"[{Type}] در انتظار آزاد شدن کامل آداپتور اتصال قبلی…");
+            Log?.Invoke($"[{Type}] Waiting for previous adapter to release...");
             await WaitForAdapterGoneAsync(ct);
         }
 
@@ -345,7 +345,7 @@ public sealed class OpenVpnProvider : IConnectionProvider
         var basePath = Path.Combine(AppContext.BaseDirectory, "Data", _baseProfileName);
         if (!File.Exists(basePath))
         {
-            Log?.Invoke($"{_baseProfileName} پیدا نشد: {basePath}");
+            Log?.Invoke($"{_baseProfileName} not found: {basePath}");
             return false;
         }
 
@@ -458,7 +458,7 @@ public sealed class OpenVpnProvider : IConnectionProvider
             var winner = await Task.WhenAny(connected.Task, Task.Delay(35000, ct));
             if (winner != connected.Task)
             {
-                Log?.Invoke($"[{Type}] timeout — وصل نشد");
+                Log?.Invoke($"[{Type}] Connection timed out");
                 await DisconnectAsync(CancellationToken.None);
                 return false;
             }
@@ -471,13 +471,13 @@ public sealed class OpenVpnProvider : IConnectionProvider
         }
         catch (OperationCanceledException)
         {
-            Log?.Invoke($"[{Type}] اتصال لغو گردید — پاک‌سازی فوری پروسه");
+            Log?.Invoke($"[{Type}] Connection cancelled — terminating process");
             await DisconnectAsync(CancellationToken.None);
             throw;
         }
         catch (Exception ex)
         {
-            Log?.Invoke($"[{Type}] خطای اتصال: {ex.Message}");
+            Log?.Invoke($"[{Type}] Connection error: {ex.Message}");
             await DisconnectAsync(CancellationToken.None);
             return false;
         }
@@ -562,7 +562,7 @@ public sealed class OpenVpnProvider : IConnectionProvider
         if (_restartDetected)
         {
             _restartDetected = false;
-            Log?.Invoke($"[{Type}] ری‌استارت داخلی openvpn دیده شد — اتصال مجدد کامل و تمیز");
+            Log?.Invoke($"[{Type}] Internal openvpn restart detected — reconnecting cleanly");
             return false;
         }
 
@@ -577,7 +577,7 @@ public sealed class OpenVpnProvider : IConnectionProvider
         // openvpn فقط وقتی از CONNECTED خارج می‌شود که خودش قطعی را قطعی تشخیص داده باشد
         // (TUN error، exit-notify سرور یا ping-restart) — پس مثل OpenVPN Connect همان لحظه
         // مرده اعلام می‌کنیم تا موتور اتصال بلافاصله اتصال مجدد کامل و تمیز انجام دهد.
-        Log?.Invoke($"[{Type}] قطعی تانل تشخیص داده شد (state={state}) — ��تصال مجدد کامل");
+        Log?.Invoke($"[{Type}] Tunnel disconnected (state={state}) — reconnecting");
         return false;
     }
 
@@ -617,11 +617,11 @@ public sealed class OpenVpnProvider : IConnectionProvider
             {
                 var exited = _proc.WaitForExitAsync(ct);
                 if (await Task.WhenAny(exited, Task.Delay(2500, ct)) == exited)
-                    Log?.Invoke($"[{Type}] خاموشی تمیز انجام شد ✓");
+                    Log?.Invoke($"[{Type}] Clean shutdown completed ✓");
             }
             if (_proc is { HasExited: false })
             {
-                Log?.Invoke($"[{Type}] SIGTERM جواب نداد — kill");
+                Log?.Invoke($"[{Type}] SIGTERM did not respond — killing process");
                 _proc.Kill(entireProcessTree: true);
                 await _proc.WaitForExitAsync(ct);
             }

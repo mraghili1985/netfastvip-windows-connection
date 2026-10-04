@@ -266,14 +266,14 @@ namespace SmartVpn
             {
                 using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Internet Settings", true);
                 key?.SetValue("ProxyEnable", 0, RegistryValueKind.DWord);
-                AppendLog("پراکسی سیستم از طریق رجیستری غیرفعال شد.");
+                AppendLog("System proxy disabled via registry.");
             }
-            catch (Exception ex) { AppendLog("خطا در غیرفعال‌کردن پراکسی: " + ex.Message); }
+            catch (Exception ex) { AppendLog("Error disabling proxy: " + ex.Message); }
         }
 
         private async void DnsLeakTest_Click(object sender, RoutedEventArgs e)
         {
-            AppendLog("--- تست نشتی DNS ---");
+            AppendLog("--- DNS Leak Test ---");
             try
             {
                 var json = await _http.GetStringAsync("http://ip-api.com/json/?fields=status,query,country,countryCode,isp");
@@ -288,7 +288,7 @@ namespace SmartVpn
                     AppendLog("DNS " + dns + " -> " + Flag(cc) + " " + country + " (" + isp + ")");
                 }
             }
-            catch (Exception ex) { AppendLog("خطا در تست نشتی DNS: " + ex.Message); }
+            catch (Exception ex) { AppendLog("DNS leak test error: " + ex.Message); }
         }
 
         private async void ResetAdapter_Click(object sender, RoutedEventArgs e)
@@ -296,7 +296,7 @@ namespace SmartVpn
             try
             {
                 var nic = NetworkInterface.GetAllNetworkInterfaces().FirstOrDefault(IsPhysicalNic);
-                if (nic == null) { AppendLog("کارت شبکه فعال پیدا نشد."); return; }
+                if (nic == null) { AppendLog("No active network adapter found."); return; }
                 _nicBase = nic.Name;
                 AppendLog("> netsh interface set interface \"" + _nicBase + "\" admin=disable");
                 await RunToolAsync("netsh", "interface set interface \"" + _nicBase + "\" admin=disable");
@@ -304,7 +304,7 @@ namespace SmartVpn
                 AppendLog("> netsh interface set interface \"" + _nicBase + "\" admin=enable");
                 await RunToolAsync("netsh", "interface set interface \"" + _nicBase + "\" admin=enable");
             }
-            catch (Exception ex) { AppendLog("خطا در ریست آداپتور: " + ex.Message); }
+            catch (Exception ex) { AppendLog("Error resetting adapter: " + ex.Message); }
         }
 
         private async Task RunToolAsync(string exe, string args)
@@ -343,7 +343,7 @@ namespace SmartVpn
             var host = ServerIpText.Text;
             if (string.IsNullOrWhiteSpace(host) || host == "—")
             {
-                AppendLog("هدف را در کادر بالا وارد کنید یا ابتدا به یک کانکشن وصل شوید.");
+                AppendLog("Enter a target in the box above or connect to a VPN first.");
                 return null;
             }
             return host;
@@ -354,7 +354,7 @@ namespace SmartVpn
             if (_pingProc is { HasExited: false })
             {
                 try { _pingProc.Kill(true); } catch { }
-                AppendLog("پینگ متوقف شد.");
+                AppendLog("Ping stopped.");
                 return;
             }
 
@@ -382,7 +382,7 @@ namespace SmartVpn
             if (_tracertProc is { HasExited: false })
             {
                 try { _tracertProc.Kill(true); } catch { }
-                AppendLog("Traceroute متوقف شد.");
+                AppendLog("Traceroute stopped.");
                 return;
             }
 

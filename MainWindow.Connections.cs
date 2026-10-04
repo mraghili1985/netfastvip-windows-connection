@@ -1037,6 +1037,28 @@ namespace SmartVpn
             }
         }
 
+        public static string? ExtractFriendlyName(string content)
+        {
+            if (string.IsNullOrWhiteSpace(content)) return null;
+
+            // 1. setenv FRIENDLY_NAME "..." or setenv UV_NAME "..."
+            var m = Regex.Match(content, @"^\s*setenv\s+(?:FRIENDLY_NAME|UV_NAME)\s+[""']?([^""'\r\n]+)[""']?", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+            if (m.Success && !string.IsNullOrWhiteSpace(m.Groups[1].Value))
+                return m.Groups[1].Value.Trim();
+
+            // 2. # Friendly Name: ... or # Profile: ... or # OVPN_ACCESS_SERVER_PROFILE=...
+            m = Regex.Match(content, @"^\s*#\s*(?:Friendly\s*Name|Profile|OVPN_ACCESS_SERVER_PROFILE|Name)\s*[:=]\s*[""']?([^""'\r\n]+)[""']?", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+            if (m.Success && !string.IsNullOrWhiteSpace(m.Groups[1].Value))
+                return m.Groups[1].Value.Trim();
+
+            // 3. friendly-name "..."
+            m = Regex.Match(content, @"^\s*friendly-name\s+[""']?([^""'\r\n]+)[""']?", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+            if (m.Success && !string.IsNullOrWhiteSpace(m.Groups[1].Value))
+                return m.Groups[1].Value.Trim();
+
+            return null;
+        }
+
         private bool LoadOvpnContentIntoForm(string norm, string? customName = null, string? sourceUrlOrFile = null)
         {
             norm = norm.Replace("\r\n", "\n");
@@ -1081,7 +1103,16 @@ namespace SmartVpn
             UpdateSidebarState("vpn");
             OpenConnForm(null);
 
-            string name = !string.IsNullOrWhiteSpace(customName) ? customName : "";
+            string name = !string.IsNullOrWhiteSpace(customName) ? customName.Trim() : "";
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                var friendly = ExtractFriendlyName(norm);
+                if (!string.IsNullOrWhiteSpace(friendly))
+                {
+                    name = friendly;
+                }
+            }
+
             if (string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(sourceUrlOrFile))
             {
                 try
@@ -1089,8 +1120,9 @@ namespace SmartVpn
                     if (sourceUrlOrFile.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                     {
                         var uri = new Uri(sourceUrlOrFile);
-                        name = Path.GetFileNameWithoutExtension(uri.LocalPath);
-                        if (string.IsNullOrWhiteSpace(name) || name == "/" || name.Length <= 1) name = uri.Host;
+                        var seg = Path.GetFileNameWithoutExtension(uri.LocalPath);
+                        if (!string.IsNullOrWhiteSpace(seg) && seg != "/" && seg.Length > 1) name = seg;
+                        else name = uri.Host;
                     }
                     else
                     {
@@ -1417,9 +1449,9 @@ namespace SmartVpn
                     File.WriteAllText(dest, text);
                     _config.BaseOvpn = text;
                     _config.Save();
-                    AppendConnLog("base.ovpn به‌روز شد.");
+                    AppendConnLog("base.ovpn updated.");
                 }
-                catch (Exception ex) { AppendConnLog("خطا در به‌روزرسانی base.ovpn: " + ex.Message); }
+                catch (Exception ex) { AppendConnLog("Error updating base.ovpn: " + ex.Message); }
             }
         }
 
@@ -1437,8 +1469,8 @@ namespace SmartVpn
         }
 
         // ================= درگ‌اند‌دراپ فایل روی پنجره =================
-        private const string MsgWgDetected = "فایل وایرگارد (.conf) شناسایی شد — پشتیبانی WireGuard به‌زودی اضافه می‌شود.";
-        private const string MsgDropUnsupportedFmt = "فرمت فایل «{0}» پشتیبانی نمی‌شود (فقط ovpn / json / pkg).";
+        private const string MsgWgDetected = "WireGuard configuration file (.conf) detected.";
+        private const string MsgDropUnsupportedFmt = "Unsupported file format '{0}' (supported: .ovpn, .conf, .json, .pkg).";
 
         // برنامه با دسترسی ادمین اجرا می‌شود و ویندوز (UIPI) مسیر عادی درگ‌اند‌دراپ WPF را بلاک می‌کند؛
         // فیلتر پیام‌ها را باز کرده و فایل‌ها را از مسیر قدیمی WM_DROPFILES می‌گیریم
@@ -1446,8 +1478,11 @@ namespace SmartVpn
         private const uint WmCopyData = 0x004A;
         private const uint WmCopyGlobalData = 0x0049;
         private const uint MsgFltAllow = 1;
+        private const uint MsgFltAdd = 1;
 
-        [DllImport("user32.dll")]
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool ChangeWindowMessageFilter(uint message, uint dwFlag);
+        [DllImport("user32.dll", SetLastError = true)]
         private static extern bool ChangeWindowMessageFilterEx(IntPtr hwnd, uint message, uint action, IntPtr pChangeFilterStruct);
         [DllImport("shell32.dll")]
         private static extern void DragAcceptFiles(IntPtr hWnd, bool fAccept);
@@ -1455,19 +1490,35 @@ namespace SmartVpn
         private static extern uint DragQueryFile(IntPtr hDrop, uint iFile, StringBuilder? lpszFile, uint cch);
         [DllImport("shell32.dll")]
         private static extern void DragFinish(IntPtr hDrop);
+        [DllImport("ole32.dll")]
+        private static extern int RevokeDragDrop(IntPtr hwnd);
 
-        private void EnableElevatedDragDrop()
+        public void EnableElevatedDragDrop()
         {
             try
             {
                 var hwnd = new WindowInteropHelper(this).Handle;
+                if (hwnd == IntPtr.Zero) return;
+
+                ChangeWindowMessageFilter(WmDropFiles, MsgFltAdd);
+                ChangeWindowMessageFilter(WmCopyData, MsgFltAdd);
+                ChangeWindowMessageFilter(WmCopyGlobalData, MsgFltAdd);
+
                 ChangeWindowMessageFilterEx(hwnd, WmDropFiles, MsgFltAllow, IntPtr.Zero);
                 ChangeWindowMessageFilterEx(hwnd, WmCopyGlobalData, MsgFltAllow, IntPtr.Zero);
                 ChangeWindowMessageFilterEx(hwnd, WmCopyData, MsgFltAllow, IntPtr.Zero);
+
+                RevokeDragDrop(hwnd);
                 DragAcceptFiles(hwnd, true);
-                HwndSource.FromHwnd(hwnd)?.AddHook(DropFilesHook);
+
+                var source = HwndSource.FromHwnd(hwnd);
+                source?.RemoveHook(DropFilesHook);
+                source?.AddHook(DropFilesHook);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppendConnLog("[DragDrop] Error enabling elevated drag-drop: " + ex.Message);
+            }
         }
 
         private IntPtr DropFilesHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -1483,25 +1534,127 @@ namespace SmartVpn
                     var sb = new StringBuilder((int)len + 1);
                     if (DragQueryFile(wParam, i, sb, (uint)sb.Capacity) > 0) files.Add(sb.ToString());
                 }
-                if (files.Count > 0) HandleDroppedFiles(files.ToArray());
+                if (files.Count > 0)
+                {
+                    Dispatcher.Invoke(() => HandleDroppedFiles(files.ToArray()));
+                }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppendConnLog("[DragDrop] Error reading dropped files: " + ex.Message);
+            }
             finally { DragFinish(wParam); }
             handled = true;
             return IntPtr.Zero;
         }
 
-        private void Window_DragOver(object sender, DragEventArgs e)
+        private void Window_PreviewDragOver(object sender, DragEventArgs e)
         {
-            e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+            if (e.Data.GetDataPresent(DataFormats.FileDrop) || e.Data.GetDataPresent(DataFormats.Text) || e.Data.GetDataPresent(DataFormats.UnicodeText))
+            {
+                e.Effects = DragDropEffects.Copy;
+            }
+            else
+            {
+                e.Effects = DragDropEffects.None;
+            }
             e.Handled = true;
         }
 
-        private void Window_Drop(object sender, DragEventArgs e)
+        private void Window_DragOver(object sender, DragEventArgs e) => Window_PreviewDragOver(sender, e);
+
+        private void Window_PreviewDrop(object sender, DragEventArgs e)
         {
-            if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
-            if (e.Data.GetData(DataFormats.FileDrop) is not string[] files || files.Length == 0) return;
-            HandleDroppedFiles(files);
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                if (e.Data.GetData(DataFormats.FileDrop) is string[] files && files.Length > 0)
+                {
+                    HandleDroppedFiles(files);
+                    e.Handled = true;
+                    return;
+                }
+            }
+
+            if (e.Data.GetDataPresent(DataFormats.Text) || e.Data.GetDataPresent(DataFormats.UnicodeText))
+            {
+                var text = (e.Data.GetData(DataFormats.UnicodeText) as string ?? e.Data.GetData(DataFormats.Text) as string)?.Trim();
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    HandleDroppedText(text);
+                    e.Handled = true;
+                    return;
+                }
+            }
+        }
+
+        private void Window_Drop(object sender, DragEventArgs e) => Window_PreviewDrop(sender, e);
+
+        private async void HandleDroppedText(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return;
+
+            // ۱. اگر لینک اینترنتی است (مثل دانلود کانفیگ)
+            if (text.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || text.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    AppendConnLog("[URL Import] Downloading configuration from dropped link: " + text);
+                    using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+                    http.DefaultRequestHeaders.Add("User-Agent", "SmartVpn/3.0");
+                    var content = await http.GetStringAsync(text);
+                    if (!string.IsNullOrWhiteSpace(content))
+                    {
+                        if (LoadOvpnContentIntoForm(content, null, text))
+                        {
+                            AskDialog.Info(this, "کانفیگ با موفقیت از لینک دریافت و در فرم بارگذاری شد.");
+                            return;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AppendConnLog("[URL Import] Error downloading from link: " + ex.Message);
+                }
+            }
+
+            // ۲. اگر متن حاوی کانفیگ مستقیم OpenVPN است
+            if (text.Contains("client") || (text.Contains("remote ") && text.Contains("dev tun")) || text.Contains("<ca>"))
+            {
+                if (LoadOvpnContentIntoForm(text, null, null))
+                {
+                    AskDialog.Info(this, "کانفیگ OpenVPN با موفقیت در فرم بارگذاری شد.");
+                    return;
+                }
+            }
+
+            // ۳. اگر کانفیگ WireGuard است
+            if (text.Contains("[Interface]", StringComparison.OrdinalIgnoreCase) && text.Contains("[Peer]", StringComparison.OrdinalIgnoreCase))
+            {
+                ShowPanel("vpn");
+                UpdateSidebarState("vpn");
+                OpenConnForm(null);
+
+                var isAmnezia = text.Contains("jc", StringComparison.OrdinalIgnoreCase) ||
+                                text.Contains("h1", StringComparison.OrdinalIgnoreCase) ||
+                                text.Contains("jmin", StringComparison.OrdinalIgnoreCase) ||
+                                text.Contains("# amw", StringComparison.OrdinalIgnoreCase);
+
+                foreach (ComboBoxItem item in ConnFormTypeCombo.Items)
+                {
+                    if (string.Equals((string)item.Tag, isAmnezia ? "amneziawg" : "wireguard", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ConnFormTypeCombo.SelectedItem = item;
+                        break;
+                    }
+                }
+
+                ConnFormNameBox.Text = isAmnezia ? "AmneziaWG Profile" : "WireGuard Profile";
+                _formWgConf = text;
+                PopulateFormWgFields(text);
+                ConnFormWgStatusText.Text = Localization.T("کانفیگ: بارگذاری شده ✔");
+                AskDialog.Info(this, string.Format("کانفیگ {0} با موفقیت شناسایی و در فرم لود شد.", isAmnezia ? "AmneziaWG" : "WireGuard"));
+                return;
+            }
         }
 
         private void HandleDroppedFiles(string[] files)
@@ -1553,7 +1706,9 @@ namespace SmartVpn
                 // ب: تشخیص کانفیگ OpenVPN (.ovpn یا .vpn یا فایل متنی با client/remote/<ca>)
                 if (ext == ".ovpn" || ext == ".vpn" || content.Contains("client") || (content.Contains("remote ") && content.Contains("dev tun")) || content.Contains("<ca>"))
                 {
-                    if (LoadOvpnContentIntoForm(content, Path.GetFileNameWithoutExtension(f), f))
+                    var friendly = ExtractFriendlyName(content);
+                    var defaultName = !string.IsNullOrWhiteSpace(friendly) ? friendly : Path.GetFileNameWithoutExtension(f);
+                    if (LoadOvpnContentIntoForm(content, defaultName, f))
                     {
                         AskDialog.Info(this, "کانفیگ OpenVPN با موفقیت شناسایی و در فرم بارگذاری شد. می‌توانید مشخصات را بررسی و ذخیره نمایید.");
                         return;
@@ -1729,7 +1884,8 @@ namespace SmartVpn
                 {
                     var rawOvpn = File.ReadAllText(path);
                     var content = SanitizeOvpn(rawOvpn);
-                    var name    = Path.GetFileNameWithoutExtension(path);
+                    var friendly = ExtractFriendlyName(rawOvpn);
+                    var name    = !string.IsNullOrWhiteSpace(friendly) ? friendly : Path.GetFileNameWithoutExtension(path);
 
                     var remMatch = Regex.Match(rawOvpn, @"^remote\s+(\S+)\s+(\d+)", RegexOptions.Multiline | RegexOptions.IgnoreCase);
                     var server   = remMatch.Success ? remMatch.Groups[1].Value : "";
@@ -1747,11 +1903,11 @@ namespace SmartVpn
                         OvpnInline = content,
                     });
                     _config.Save();
-                    AppendConnLog("ایمپورت فایل ovpn: " + name);
+                    AppendConnLog("Imported .ovpn profile: " + name);
                     return true;
                 }
 
-                // json (رسمی) یا pkg (قدیمی) — هر دو محتوای JSON دا��ند
+                // json (رسمی) یا pkg (قدیمی) — هر دو محتوای JSON دارند
                 var json = File.ReadAllText(path);
                 var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 var pkg = JsonSerializer.Deserialize<PackageFile>(json, opts);
@@ -1759,21 +1915,21 @@ namespace SmartVpn
                 {
                     _config.ApplyOfficialPackage(pkg);
                     _config.Save();
-                    AppendConnLog("پکیج رسمی ایمپورت شد (نسخه " + pkg.PackageVersion + ").");
+                    AppendConnLog("Official package imported (version " + pkg.PackageVersion + ").");
                     return true;
                 }
                 return false;
             }
             catch (Exception ex)
             {
-                AppendConnLog("خطا در ایمپورت: " + ex.Message);
+                AppendConnLog("Import error: " + ex.Message);
                 return false;
             }
         }
 
         private void Export_Click(object sender, RoutedEventArgs e)
         {
-            // انتخاب کاربر: بک‌اپ همراه یوزر/پسو��د یا بدون آن
+            // انتخاب کاربر: بک‌اپ همراه یوزر/پسورد یا بدون آن
             var choice = AskDialog.Choose(this, MsgExportChoice, BtnExportWithCreds, BtnExportNoCreds);
             if (choice == -1) return;
             var withCreds = choice == 0;
@@ -1808,10 +1964,10 @@ namespace SmartVpn
                     };
                     var opts = new JsonSerializerOptions { WriteIndented = true };
                     File.WriteAllText(dlg.FileName, JsonSerializer.Serialize(pkg, opts));
-                    AppendConnLog((withCreds ? "بک‌اپ همراه یوزر/پسورد ساخته شد: " : "پکیج بدون یوزر/پسورد ساخته شد: ") + dlg.FileName);
+                    AppendConnLog((withCreds ? "Package exported with credentials: " : "Package exported without credentials: ") + dlg.FileName);
                     AskDialog.Info(this, MsgExported);
                 }
-                catch (Exception ex) { AppendConnLog("خطا در اکسپورت: " + ex.Message); }
+                catch (Exception ex) { AppendConnLog("Export error: " + ex.Message); }
             }
         }
 

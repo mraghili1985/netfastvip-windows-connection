@@ -38,9 +38,9 @@ namespace SmartVpn
         private const string BtnInstallCa = "نصب گواهی";
         private const string BtnNotNow = "حالا نه";
         private const string MsgCaRequired = "بدون نصب گواهی، اتصال SSTP / IKEv2 ممکن نیست.";
-        private const string LogCaInstalled = "گواهی CA با موفقیت نصب شد.";
-        private const string LogCaFailed = "نصب گواهی CA انجام نشد — کانکشن‌های SSTP/IKEv2 از این اتصال کنار گذاشته شدند.";
-        private const string LogCaSkipped = "نصب گواهی CA رد شد — کانکشن‌های SSTP/IKEv2 از این اتصال کنار گذاشته شدند.";
+        private const string LogCaInstalled = "CA certificate installed successfully.";
+        private const string LogCaFailed = "CA certificate installation failed — SSTP/IKEv2 profiles excluded.";
+        private const string LogCaSkipped = "CA certificate installation skipped — SSTP/IKEv2 profiles excluded.";
         private const string MsgBaseMissing = "فایل base.ovpn موجود نیست.";
         private const string MsgDeleteConfirm = "این کانکشن حذف شود؟";
         private const string MsgImported = "ایمپورت انجام شد.";
@@ -57,11 +57,11 @@ namespace SmartVpn
         private const string BtnExportWithCreds = "همراه یوزر/پسورد";
         private const string BtnExportNoCreds = "بدون یوزر/پسورد";
         private const string NotifyIdleStopped = "به‌دلیل بی‌استفادگی، اتصال قطع شد.";
-        private const string LogIdleStopped = "قطع خودکار پس از {0} دقیقه بی‌استفادگی.";
+        private const string LogIdleStopped = "Auto-disconnected after {0} minute(s) of inactivity.";
         private const string TrayShowApp = "نمایش برنامه";
         private const string TrayExit = "خروج";
         private const string TrayHint = "برنامه کنار ساعت باز است — برای خروج کامل، روی آیکون راست‌کلیک کنید و «خروج» را بزنید.";
-        private const string LogExitIpChanged = "IP خروجی تغییر کرد: {0} ← {1}";
+        private const string LogExitIpChanged = "Exit IP changed: {0} -> {1}";
         private const string MsgExitConfirm = "اتصال VPN فعال است — با خروج از برنامه قطع می‌شود. خارج شوید؟";
 
         private readonly AppConfig _config = AppConfig.Load();
@@ -196,6 +196,12 @@ namespace SmartVpn
             };
 
             MiniWidget.MouseLeftButtonDown += (_, __) => { try { DragMove(); } catch { } };
+        }
+
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            EnableElevatedDragDrop();
         }
 
         [DllImport("dwmapi.dll")]

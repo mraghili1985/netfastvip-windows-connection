@@ -255,7 +255,7 @@ namespace SmartVpn
                                 {
                                     UpdateActiveBadge(_xrayActiveProfile?.Alias, _xrayActiveProfile?.Protocol, country);
                                 }
-                                AppendConnLog($"[sing-box] موقعیت خروجی (GeoIP): {geoStr}");
+                                AppendConnLog($"[sing-box] Exit location (GeoIP): {geoStr}");
                             });
 
                             // Trigger ping to this GeoIP immediately
@@ -428,14 +428,14 @@ namespace SmartVpn
                         if (_xrayIsConnected && XrayServerIpText != null)
                         {
                             XrayServerIpText.Text = $"{ip}:{item.Port}";
-                            AppendConnLog($"[sing-box] IP سرور مقصد شناسایی شد: {ip} ({host})");
+                            AppendConnLog($"[sing-box] Target server IP resolved: {ip} ({host})");
                         }
                     });
                 }
             }
             catch (Exception ex)
             {
-                AppendConnLog($"[sing-box WARN] خطا در تحلیل DNS سرور: {ex.Message}");
+                AppendConnLog($"[sing-box WARN] Error resolving server DNS: {ex.Message}");
             }
         }
 
@@ -1605,15 +1605,15 @@ namespace SmartVpn
 
                     if (stMode == "deny" && stList.Count > 0)
                     {
-                        AppendConnLog($"[sing-box] تونل برنامه‌ها (Bypass): تمام ترافیک از پروکسی عبور می‌کند به جز {stList.Count} برنامه لیست.");
+                        AppendConnLog($"[sing-box] App tunnel (Bypass): routing all traffic through proxy except {stList.Count} app(s).");
                     }
                     else if (stMode == "allow" && stList.Count > 0)
                     {
-                        AppendConnLog($"[sing-box] تونل برنامه‌ها (Allow): فقط {stList.Count} برنامه انتخاب‌شده از پروکسی عبور می‌کنند.");
+                        AppendConnLog($"[sing-box] App tunnel (Allow): only {stList.Count} app(s) routed through proxy.");
                     }
                     else
                     {
-                        AppendConnLog("[sing-box] تونل سراسری: تمام برنامه‌ها از هسته عبور می‌کنند.");
+                        AppendConnLog("[sing-box] Full tunnel: routing all traffic through proxy.");
                     }
 
                     var (success, error) = await System.Threading.Tasks.Task.Run(() =>
@@ -1623,7 +1623,7 @@ namespace SmartVpn
                     {
                         SetXrayUiDisconnected();
                         ShowInAppMessage($"خطا در راه‌اندازی هسته sing-box:\n{error}", "خطای اتصال");
-                        AppendConnLog($"[sing-box ERROR] اتصال برقرار نشد: {error}");
+                        AppendConnLog($"[sing-box ERROR] Connection failed: {error}");
                         return;
                     }
 
@@ -1634,7 +1634,7 @@ namespace SmartVpn
             {
                 XrayEngine.Stop();
                 SetXrayUiDisconnected();
-                AppendConnLog("[sing-box] اتصال قطع گردید.");
+                AppendConnLog("[sing-box] Disconnected.");
             }
         }
 

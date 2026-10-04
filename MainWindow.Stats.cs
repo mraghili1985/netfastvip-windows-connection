@@ -223,11 +223,11 @@ namespace SmartVpn
                     _pingFails++;
                     PingText.Text = "—";
                     PingText.Foreground = new SolidColorBrush(Color.FromRgb(0x64, 0x74, 0x8B));
-                    if (_pingFails == 2) AppendConnLog("[ping] " + host + " → timeout (پیاپی)");
+                    if (_pingFails == 2) AppendConnLog("[ping] " + host + " → timeout (consecutive)");
                     return;
                 }
 
-                if (_pingFails >= 2) AppendConnLog("[ping] " + host + " → دوباره پاسخ داد (" + ms + " ms)");
+                if (_pingFails >= 2) AppendConnLog("[ping] " + host + " → replied (" + ms + " ms)");
                 _pingFails = 0;
                 PingText.Text = ms + " ms";
                 // رنگ فقط بر اساس خودِ عدد پینگ — دیگر برچسب «کیفیت» مطلق نداریم چون برای سرورهای
