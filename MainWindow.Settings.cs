@@ -70,7 +70,7 @@ namespace SmartVpn
             AppTitleBar.SetResourceReference(Border.BorderBrushProperty, "LineBrush");
         }
 
-        private void ApplyThemeChoice(string theme)
+        internal void ApplyThemeChoice(string theme)
         {
             try
             {
@@ -83,6 +83,8 @@ namespace SmartVpn
                 ThemeSystemRb.IsChecked = theme == "system";
 
                 try { RefreshList(); } catch { }
+                try { RenderXrayConnList(); } catch { }
+                try { RenderRecentServersList(); } catch { }
             }
             catch 
             { 
@@ -303,7 +305,6 @@ namespace SmartVpn
             if (NavVpnCoreText != null) NavVpnCoreText.Text = T("هسته VPN");
             if (NavXrayCoreText != null) NavXrayCoreText.Text = T("هسته Xray");
             if (NavHotspotText != null) NavHotspotText.Text = T("مدیریت Hotspot");
-            if (NavSpeedTestText != null) NavSpeedTestText.Text = T("تست سرعت");
             if (NavSettingsText != null) NavSettingsText.Text = T("تنظیمات");
             if (NavToolsText != null) NavToolsText.Text = T("ابزارهای شبکه");
             if (NavLogsText != null) NavLogsText.Text = T("لاگ کانکشن‌ها");

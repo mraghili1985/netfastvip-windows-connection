@@ -15,7 +15,7 @@ public sealed class AppConfig
     public long TotalUploadBytes { get; set; }
 
     // --- New in step 11.6 ---
-    public string Theme { get; set; } = "dark"; // dark | light | system (پیش‌فرض: تم سیستم)
+    public string Theme { get; set; } = "system"; // dark | light | system (پیش‌فرض: تم سیستم)
     public string Language { get; set; } = "fa"; // fa | en
 	public string SplitTunnelMode { get; set; } = "off"; // off | deny | allow
 	public List<string> SplitTunnelList { get; set; } = [];

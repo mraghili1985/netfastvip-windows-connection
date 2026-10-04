@@ -526,11 +526,6 @@ namespace SmartVpn
             UpdateSidebarState("hotspot");
         }
 
-        private void SidebarNavSpeedTest_Click(object sender, RoutedEventArgs e)
-        {
-            SpeedTest_Click(sender, e);
-        }
-
         private void SidebarNavSettings_Click(object sender, RoutedEventArgs e)
         {
             ShowPanel("settings");
@@ -573,7 +568,6 @@ namespace SmartVpn
                 SetBtn(NavXrayCoreBtn, NavXrayCoreIndicator, current == "xray");
                 SetBtn(NavServersBtn, NavServersIndicator, current == "servers");
                 SetBtn(NavHotspotBtn, NavHotspotIndicator, current == "hotspot");
-                SetBtn(NavSpeedTestBtn, NavSpeedTestIndicator, current == "speedtest");
                 SetBtn(NavSettingsBtn, NavSettingsIndicator, current == "settings");
                 SetBtn(NavToolsBtn, NavToolsIndicator, current == "tools");
                 SetBtn(NavLogsBtn, NavLogsIndicator, current == "logs" || current == "connlog");

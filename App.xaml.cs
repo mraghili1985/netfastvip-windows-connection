@@ -115,8 +115,17 @@ public partial class App : Application
 
     private static void OnUserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
     {
-        if (_currentTheme == "system")
-            Current.Dispatcher.Invoke(() => ApplyTheme("system"));
+        if (_currentTheme == "system" && Current != null)
+        {
+            Current.Dispatcher.Invoke(() =>
+            {
+                ApplyTheme("system");
+                if (Current.MainWindow is MainWindow mw)
+                {
+                    mw.ApplyThemeChoice("system");
+                }
+            });
+        }
     }
 
     public static string CurrentTheme => _currentTheme;
@@ -136,6 +145,34 @@ public partial class App : Application
         else w.Resources["BgBrush"] = new SolidColorBrush(color);
     }
 
+    public static Color GetWindowsAccentColor()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\DWM");
+            if (key?.GetValue("AccentColor") is int acc)
+            {
+                byte r = (byte)(acc & 0xFF);
+                byte g = (byte)((acc >> 8) & 0xFF);
+                byte b = (byte)((acc >> 16) & 0xFF);
+                if (r != 0 || g != 0 || b != 0) return Color.FromRgb(r, g, b);
+            }
+            if (key?.GetValue("ColorizationColor") is int col)
+            {
+                byte r = (byte)((col >> 16) & 0xFF);
+                byte g = (byte)((col >> 8) & 0xFF);
+                byte b = (byte)(col & 0xFF);
+                if (r != 0 || g != 0 || b != 0) return Color.FromRgb(r, g, b);
+            }
+            if (SystemParameters.WindowGlassBrush is SolidColorBrush sb)
+            {
+                return sb.Color;
+            }
+        }
+        catch { }
+        return Color.FromRgb(0x38, 0xBD, 0xF8);
+    }
+
     // Radius panel palette (shadcn slate, blue primary)
     public static void ApplyTheme(string theme)
     {
@@ -150,6 +187,17 @@ public partial class App : Application
         };
         _isDark = dark;
 
+        string accentHex;
+        if (theme == "system")
+        {
+            var sysColor = GetWindowsAccentColor();
+            accentHex = $"#{sysColor.R:X2}{sysColor.G:X2}{sysColor.B:X2}";
+        }
+        else
+        {
+            accentHex = dark ? "#38BDF8" : "#2563EB";
+        }
+
         if (dark)
         {
             SetBrush("BgBrush", "#80090E1A");
@@ -160,7 +208,7 @@ public partial class App : Application
             SetBrush("LineBrush", "#253554");
             SetBrush("TextBrush", "#FFFFFF");
             SetBrush("SubTextBrush", "#94A3B8");
-            SetBrush("AccentBrush", "#38BDF8");
+            SetBrush("AccentBrush", accentHex);
             SetBrush("Accent2Brush", "#22C55E");
             SetBrush("DangerBrush", "#EF4444");
             SetBrush("HoverBrush", "#3020304D");
@@ -171,20 +219,34 @@ public partial class App : Application
         }
         else
         {
-            // پالت روشن مایل به خاکستری — هماهنگ با پنل ردیوس (slate + آبی 2563EB)،
-            // بدون سفید خالص تا چشم را نزند
-            SetBrush("BgBrush", "#E8ECF1");
-            SetBrush("CardBrush", "#F6F8FA");
-            SetBrush("FieldBrush", "#E2E8F0");
+            // پالت روشن روان (Fluent Light) با کنتراست شفاف و متن‌های تیره اسلیت
+            SetBrush("BgBrush", "#F1F5F9");
+            SetBrush("SidebarBrush", "#E2E8F0");
+            SetBrush("CardBrush", "#FFFFFF");
+            SetBrush("CardHoverBrush", "#F8FAFC");
+            SetBrush("FieldBrush", "#FFFFFF");
             SetBrush("LineBrush", "#CBD5E1");
             SetBrush("TextBrush", "#0F172A");
-            SetBrush("SubTextBrush", "#5B6B80");
-            SetBrush("AccentBrush", "#2563EB");
+            SetBrush("SubTextBrush", "#475569");
+            SetBrush("AccentBrush", accentHex);
             SetBrush("Accent2Brush", "#16A34A");
             SetBrush("DangerBrush", "#EF4444");
-            SetBrush("HoverBrush", "#DAE1E9");
-            SetBrush("RowCardBrush", "#F0FFFFFF");
-            SetBrush("RowLineBrush", "#280F172A");
+            SetBrush("HoverBrush", "#E2E8F0");
+            SetBrush("RowCardBrush", "#FFFFFF");
+            SetBrush("RowLineBrush", "#E2E8F0");
+            SetBrush("GlassBrush", "#F8FAFC");
+            SetBrush("GlassBorderBrush", "#CBD5E1");
+        }
+
+        if (Current?.Resources["PrimaryGlowBrush"] is LinearGradientBrush glow && !glow.IsFrozen)
+        {
+            var c1 = (Color)ColorConverter.ConvertFromString(accentHex);
+            var c2 = dark ? Color.FromRgb(0x02, 0x84, 0xC7) : Color.FromRgb(0x1D, 0x4E, 0xD8);
+            if (glow.GradientStops.Count >= 2)
+            {
+                glow.GradientStops[0].Color = c1;
+                glow.GradientStops[1].Color = c2;
+            }
         }
 
         // پنجره‌های باز: رنگ پاپ‌آپ‌ها و نوار عنوان با تم جدید همگام شوند

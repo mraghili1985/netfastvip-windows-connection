@@ -42,6 +42,11 @@ public static class DarkTitleBar
             int text = ToColorRef(window, "TextBrush");
             if (caption >= 0) DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, ref caption, sizeof(int));
             if (text >= 0) DwmSetWindowAttribute(hwnd, DWMWA_TEXT_COLOR, ref text, sizeof(int));
+
+            // ویندوز 11 (بیلد 22621 به بعد): افکت Mica روی پنجره
+            const int DWMWA_SYSTEMBACKDROP_TYPE = 38;
+            int backdrop = 2; // Mica
+            DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, ref backdrop, sizeof(int));
         }
         catch { /* ویندوزهای خیلی قدیمی — نادیده گرفتن بی‌خطر است */ }
     }

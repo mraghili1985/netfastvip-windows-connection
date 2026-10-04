@@ -314,7 +314,7 @@
                                           Fill="{DynamicResource AccentBrush}" Width="18" Height="18" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock Text="NETFASTVIP" FontSize="13.5" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="NETFASTVIP" FontSize="13.5" FontWeight="Bold" Foreground="{DynamicResource TextBrush}"/>
                                     <TextBlock Text="Fluent Shield" FontSize="10" Foreground="{DynamicResource SubTextBrush}"/>
                                 </StackPanel>
                             </StackPanel>
@@ -329,7 +329,7 @@
                                         <StackPanel Orientation="Horizontal" Margin="14,0,0,0" VerticalAlignment="Center">
                                             <TextBlock Text="⌂" FontSize="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Width="24"/>
                                             <StackPanel VerticalAlignment="Center">
-                                                <TextBlock x:Name="NavDashboardText" Text="داشبورد" FontSize="13" FontWeight="SemiBold" Foreground="White"/>
+                                                <TextBlock x:Name="NavDashboardText" Text="داشبورد" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                                                 <TextBlock x:Name="SidebarNavDashboardSubtext" Text="آماده" FontSize="9.5" Foreground="{DynamicResource SubTextBrush}"/>
                                             </StackPanel>
                                         </StackPanel>
@@ -378,18 +378,6 @@
                                         <StackPanel Orientation="Horizontal" Margin="14,0,0,0" VerticalAlignment="Center">
                                             <TextBlock Text="📶" FontSize="15" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" Width="24"/>
                                             <TextBlock x:Name="NavHotspotText" Text="هات‌اسپات" FontSize="13" FontWeight="Medium" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Grid>
-                                </Button>
-
-                                <!-- Speedtest Tab -->
-                                <Button x:Name="NavSpeedTestBtn" Style="{StaticResource SidebarTabBtn}" Click="SidebarNavSpeedTest_Click">
-                                    <Grid>
-                                        <Border x:Name="NavSpeedTestIndicator" Width="3" Height="22" HorizontalAlignment="Left"
-                                                Background="{DynamicResource AccentBrush}" CornerRadius="1.5" Visibility="Collapsed"/>
-                                        <StackPanel Orientation="Horizontal" Margin="14,0,0,0" VerticalAlignment="Center">
-                                            <TextBlock Text="⏱" FontSize="15" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" Width="24"/>
-                                            <TextBlock x:Name="NavSpeedTestText" Text="تست سرعت" FontSize="13" FontWeight="Medium" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Grid>
                                 </Button>
@@ -508,7 +496,7 @@
 
                                             <!-- Active Server Title, Subtitle, & Status -->
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                <TextBlock x:Name="ActiveConnText" Text="یک کانکشن انتخاب کنید" FontSize="15" FontWeight="Bold" Foreground="White" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock x:Name="ActiveConnText" Text="یک کانکشن انتخاب کنید" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" TextTrimming="CharacterEllipsis"/>
                                                 <TextBlock x:Name="ServerSubText" Text="—" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis"/>
                                                 <Border x:Name="GeoIpPill" Background="#1838BDF8" BorderBrush="#3038BDF8" BorderThickness="1" CornerRadius="8" Padding="7,3" Margin="0,5,0,0" HorizontalAlignment="Left" MaxWidth="210">
                                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -540,7 +528,7 @@
                                         <StackPanel Grid.Column="0">
                                             <TextBlock x:Name="CurrentSpeedLbl" Text="سرعت لحظه‌ای" FontSize="11" Foreground="{DynamicResource SubTextBrush}"/>
                                             <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                                                <TextBlock x:Name="DlSpeedText" Text="↓ 0 B/s" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                                                <TextBlock x:Name="DlSpeedText" Text="↓ 0 B/s" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextBrush}"/>
                                                 <TextBlock x:Name="UlSpeedText" Text="↑ 0 B/s" FontSize="11" Foreground="#22C55E" Margin="10,0,0,2" VerticalAlignment="Bottom"/>
                                             </StackPanel>
                                         </StackPanel>
@@ -580,7 +568,7 @@
                                                     BorderThickness="1" CornerRadius="8" Padding="8,5" Margin="0,0,3,3" Cursor="Hand" ToolTip="برای کپی کلیک کنید" MouseLeftButtonDown="CopyIpText_Click">
                                                 <StackPanel>
                                                     <TextBlock x:Name="TunnelIpLbl" Text="🌐 آی‌پی تونل" FontSize="9.5" Foreground="{DynamicResource SubTextBrush}"/>
-                                                    <TextBlock x:Name="PrivateIpText" Text="—" FontSize="11" FontWeight="SemiBold" Foreground="White" Margin="0,1,0,0"/>
+                                                    <TextBlock x:Name="PrivateIpText" Text="—" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Margin="0,1,0,0"/>
                                                 </StackPanel>
                                             </Border>
 
@@ -589,7 +577,7 @@
                                                     BorderThickness="1" CornerRadius="8" Padding="8,5" Margin="3,0,0,3" Cursor="Hand" ToolTip="برای کپی کلیک کنید" MouseLeftButtonDown="CopyIpText_Click">
                                                 <StackPanel>
                                                     <TextBlock x:Name="ServerIpLbl" Text="🖥️ آی‌پی سرور" FontSize="9.5" Foreground="{DynamicResource SubTextBrush}"/>
-                                                    <TextBlock x:Name="ServerIpText" Text="—" FontSize="11" FontWeight="SemiBold" Foreground="White" Margin="0,1,0,0"/>
+                                                    <TextBlock x:Name="ServerIpText" Text="—" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Margin="0,1,0,0"/>
                                                 </StackPanel>
                                             </Border>
 
@@ -598,7 +586,7 @@
                                                     BorderThickness="1" CornerRadius="8" Padding="8,5" Margin="0,3,3,0">
                                                 <StackPanel>
                                                     <TextBlock x:Name="ProtocolLbl" Text="🔒 پروتکل" FontSize="9.5" Foreground="{DynamicResource SubTextBrush}"/>
-                                                    <TextBlock x:Name="ProtocolText" Text="—" FontSize="11" FontWeight="SemiBold" Foreground="White" Margin="0,1,0,0"/>
+                                                    <TextBlock x:Name="ProtocolText" Text="—" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Margin="0,1,0,0"/>
                                                 </StackPanel>
                                             </Border>
 
@@ -607,7 +595,7 @@
                                                     BorderThickness="1" CornerRadius="8" Padding="8,5" Margin="3,3,0,0">
                                                 <StackPanel>
                                                     <TextBlock x:Name="YouLbl" Text="👤 نام کاربری" FontSize="9.5" Foreground="{DynamicResource SubTextBrush}"/>
-                                                    <TextBlock x:Name="YouText" Text="—" FontSize="11" FontWeight="SemiBold" Foreground="White" Margin="0,1,0,0"/>
+                                                    <TextBlock x:Name="YouText" Text="—" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Margin="0,1,0,0"/>
                                                 </StackPanel>
                                             </Border>
                                         </Grid>
@@ -714,7 +702,7 @@
                                         <!-- Card Header -->
                                         <Grid Grid.Row="0">
                                             <StackPanel>
-                                                <TextBlock x:Name="RecentCardTitle" Text="⭐ سرورهای منتخب و اخیر" FontSize="12.5" FontWeight="Bold" Foreground="White"/>
+                                                <TextBlock x:Name="RecentCardTitle" Text="⭐ سرورهای منتخب و اخیر" FontSize="12.5" FontWeight="Bold" Foreground="{DynamicResource TextBrush}"/>
                                                 <TextBlock x:Name="RecentCardSubtitle" Text="اتصال سریع با یک کلیک به آخرین کانکشن‌ها" FontSize="9.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,1,0,0"/>
                                             </StackPanel>
                                         </Grid>
@@ -767,7 +755,7 @@
 
                                             <StackPanel Grid.Column="1" x:Name="SubSummaryPanel" VerticalAlignment="Center">
                                                 <StackPanel Orientation="Horizontal">
-                                                    <TextBlock x:Name="SubSectionLabel" Text="🛡️ اشتراک VPN Core" FontSize="11" FontWeight="SemiBold" Foreground="White"/>
+                                                    <TextBlock x:Name="SubSectionLabel" Text="🛡️ اشتراک VPN Core" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                                                     <Border x:Name="SubActiveBadge" Background="#2022C55E" CornerRadius="6" Padding="5,1" Margin="6,0,0,0" Visibility="Collapsed">
                                                         <StackPanel Orientation="Horizontal">
                                                             <Ellipse x:Name="SubActiveDot" Width="5" Height="5" Fill="#22C55E" VerticalAlignment="Center" Margin="0,0,3,0"/>
@@ -782,11 +770,11 @@
                                                 <StackPanel Orientation="Horizontal">
                                                     <StackPanel Margin="0,0,10,0">
                                                         <TextBlock x:Name="SubTimeLbl" Text="زمان باقی‌مانده" FontSize="8" Foreground="{DynamicResource SubTextBrush}"/>
-                                                        <TextBlock x:Name="SubTimeLeftText" Text="—" FontSize="10.5" FontWeight="SemiBold" Foreground="White"/>
+                                                        <TextBlock x:Name="SubTimeLeftText" Text="—" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                                                     </StackPanel>
                                                     <StackPanel>
                                                         <TextBlock x:Name="SubDataLbl" Text="حجم باقی‌مانده" FontSize="8" Foreground="{DynamicResource SubTextBrush}"/>
-                                                        <TextBlock x:Name="SubDataLeftText" Text="—" FontSize="10.5" FontWeight="SemiBold" Foreground="White"/>
+                                                        <TextBlock x:Name="SubDataLeftText" Text="—" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                                                     </StackPanel>
                                                     <TextBlock x:Name="SubUpdatedText" Text="" Visibility="Collapsed"/>
                                                 </StackPanel>
@@ -813,7 +801,7 @@
 
                                             <StackPanel Grid.Column="1" x:Name="HomeXraySubSummaryPanel" VerticalAlignment="Center">
                                                 <StackPanel Orientation="Horizontal">
-                                                    <TextBlock x:Name="HomeXraySubSectionLabel" Text="⚡ اشتراک Xray Core" FontSize="11" FontWeight="SemiBold" Foreground="White"/>
+                                                    <TextBlock x:Name="HomeXraySubSectionLabel" Text="⚡ اشتراک Xray Core" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                                                     <Border x:Name="HomeXraySubActiveBadge" Background="#2022C55E" CornerRadius="6" Padding="5,1" Margin="6,0,0,0" Visibility="Collapsed">
                                                         <StackPanel Orientation="Horizontal">
                                                             <Ellipse x:Name="HomeXraySubActiveDot" Width="5" Height="5" Fill="#22C55E" VerticalAlignment="Center" Margin="0,0,3,0"/>
@@ -828,11 +816,11 @@
                                                 <StackPanel Orientation="Horizontal">
                                                     <StackPanel Margin="0,0,10,0">
                                                         <TextBlock x:Name="HomeXraySubTimeLbl" Text="زمان باقی‌مانده" FontSize="8" Foreground="{DynamicResource SubTextBrush}"/>
-                                                        <TextBlock x:Name="HomeXraySubTimeLeftText" Text="—" FontSize="10.5" FontWeight="SemiBold" Foreground="White"/>
+                                                        <TextBlock x:Name="HomeXraySubTimeLeftText" Text="—" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                                                     </StackPanel>
                                                     <StackPanel>
                                                         <TextBlock x:Name="HomeXraySubDataLbl" Text="حجم باقی‌مانده" FontSize="8" Foreground="{DynamicResource SubTextBrush}"/>
-                                                        <TextBlock x:Name="HomeXraySubDataLeftText" Text="—" FontSize="10.5" FontWeight="SemiBold" Foreground="White"/>
+                                                        <TextBlock x:Name="HomeXraySubDataLeftText" Text="—" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                                                     </StackPanel>
                                                 </StackPanel>
                                             </Border>
@@ -865,7 +853,7 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="🛡️ VPN Core" FontSize="16" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                    <TextBlock Text="🛡️ VPN Core" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
                                     <TextBlock Text="سرورهای WireGuard, OpenVPN, Amnezia, L2TP, SSTP" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="12,0,0,0" VerticalAlignment="Center"/>
                                 </StackPanel>
 
@@ -910,7 +898,7 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock x:Name="XrayConnSectionLabel" Text="⚡ Xray Core" FontSize="16" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="XrayConnSectionLabel" Text="⚡ Xray Core" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
                                     <TextBlock Text="هسته sing-box (VLESS / VMess / Trojan)" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="12,0,0,0" VerticalAlignment="Center"/>
                                     <!-- Hidden Mode Switcher Stubs for code-behind compatibility -->
                                     <Button x:Name="XraySwitchToVpnBtn" Click="SwitchToVpnBtn_Click" Visibility="Collapsed"/>
@@ -958,7 +946,7 @@
                                     </Button>
                                     <StackPanel Grid.Column="1" x:Name="XraySubSummaryPanel" VerticalAlignment="Center">
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock x:Name="XraySubSectionLabel" Text="My Subscription" FontSize="12.5" FontWeight="Bold" Foreground="White"/>
+                                            <TextBlock x:Name="XraySubSectionLabel" Text="My Subscription" FontSize="12.5" FontWeight="Bold" Foreground="{DynamicResource TextBrush}"/>
                                             <Border x:Name="XraySubActiveBadge" Background="#2022C55E" CornerRadius="6" Padding="6,1" Margin="8,0,0,0">
                                                 <StackPanel Orientation="Horizontal">
                                                     <Ellipse x:Name="XraySubActiveDot" Width="5" Height="5" Fill="#22C55E" VerticalAlignment="Center" Margin="0,0,4,0"/>
@@ -972,11 +960,11 @@
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                             <StackPanel Margin="0,0,20,0">
                                                 <TextBlock x:Name="XraySubTimeLbl" Text="Expires" FontSize="10" Foreground="{DynamicResource SubTextBrush}"/>
-                                                <TextBlock x:Name="XraySubTimeLeftText" Text="—" FontSize="12" FontWeight="SemiBold" Foreground="White"/>
+                                                <TextBlock x:Name="XraySubTimeLeftText" Text="—" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                                             </StackPanel>
                                             <StackPanel>
                                                 <TextBlock x:Name="XraySubDataLbl" Text="Data Left" FontSize="10" Foreground="{DynamicResource SubTextBrush}"/>
-                                                <TextBlock x:Name="XraySubDataLeftText" Text="—" FontSize="12" FontWeight="SemiBold" Foreground="White"/>
+                                                <TextBlock x:Name="XraySubDataLeftText" Text="—" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                                             </StackPanel>
                                             <TextBlock x:Name="XraySubUpdatedText" Text="" Visibility="Collapsed"/>
                                         </StackPanel>
@@ -1029,7 +1017,7 @@
                                 <TranslateTransform x:Name="HotspotTransform"/>
                             </ScrollViewer.RenderTransform>
                             <StackPanel Margin="2,0">
-                                <TextBlock Text="VPN WiFi-Direct &amp; Hotspot" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,0,0,15"/>
+                                <TextBlock Text="VPN WiFi-Direct &amp; Hotspot" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,15"/>
 
                                 <Border Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,15">
                                     <Grid>
@@ -1039,9 +1027,9 @@
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
                                         <TextBlock Grid.Row="0" x:Name="HsVpnLabel" Text="Active VPN Connection:" Foreground="{DynamicResource SubTextBrush}" FontSize="11.5"/>
-                                        <TextBlock Grid.Row="0" x:Name="HsVpnConnectionText" Text="Checking..." Foreground="White" FontSize="13" FontWeight="Bold" FontFamily="Consolas" HorizontalAlignment="Right"/>
+                                        <TextBlock Grid.Row="0" x:Name="HsVpnConnectionText" Text="Checking..." Foreground="{DynamicResource TextBrush}" FontSize="13" FontWeight="Bold" FontFamily="Consolas" HorizontalAlignment="Right"/>
                                         <TextBlock Grid.Row="2" x:Name="HsAdapterLabel" Text="Internet NIC Adapter:" Foreground="{DynamicResource SubTextBrush}" FontSize="11.5"/>
-                                        <TextBlock Grid.Row="2" x:Name="HsSourceText" Text="Checking..." Foreground="White" FontSize="12.5" FontWeight="Bold" FontFamily="Consolas" HorizontalAlignment="Right"/>
+                                        <TextBlock Grid.Row="2" x:Name="HsSourceText" Text="Checking..." Foreground="{DynamicResource TextBrush}" FontSize="12.5" FontWeight="Bold" FontFamily="Consolas" HorizontalAlignment="Right"/>
                                     </Grid>
                                 </Border>
 
@@ -1069,9 +1057,9 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Row="0" Grid.Column="0" Text="SSID:" Foreground="{DynamicResource SubTextBrush}" FontSize="12.5" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="HsSsidText" Text="-" Foreground="White" FontSize="14" FontWeight="Bold" FontFamily="Consolas"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="HsSsidText" Text="-" Foreground="{DynamicResource TextBrush}" FontSize="14" FontWeight="Bold" FontFamily="Consolas"/>
                                         <TextBlock Grid.Row="2" Grid.Column="0" Text="PASS:" Foreground="{DynamicResource SubTextBrush}" FontSize="12.5" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                        <TextBlock Grid.Row="2" Grid.Column="1" x:Name="HsPassText" Text="-" Foreground="White" FontSize="14" FontWeight="Bold" FontFamily="Consolas"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="1" x:Name="HsPassText" Text="-" Foreground="{DynamicResource TextBrush}" FontSize="14" FontWeight="Bold" FontFamily="Consolas"/>
                                     </Grid>
                                 </Border>
 
@@ -1085,10 +1073,10 @@
                                 <Border x:Name="HsClientsContainer" Visibility="Collapsed" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="12,10"
                                         Cursor="Hand" MouseEnter="HsClientsContainer_MouseEnter" MouseLeave="HsClientsContainer_MouseLeave">
                                     <Grid>
-                                        <TextBlock x:Name="HsClientsCountText" Text="Connected Devices: 0" Foreground="White" FontSize="12" HorizontalAlignment="Center"/>
+                                        <TextBlock x:Name="HsClientsCountText" Text="Connected Devices: 0" Foreground="{DynamicResource TextBrush}" FontSize="12" HorizontalAlignment="Center"/>
                                         <Popup x:Name="HsClientsPopup" PlacementTarget="{Binding ElementName=HsClientsContainer}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
                                             <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="8" Width="300">
-                                                <TextBox x:Name="HsClientsTextBox" IsReadOnly="True" TextWrapping="Wrap" MaxHeight="130" Background="{DynamicResource FieldBrush}" Foreground="White" BorderThickness="0" FontFamily="Consolas" FontSize="11" Padding="6"/>
+                                                <TextBox x:Name="HsClientsTextBox" IsReadOnly="True" TextWrapping="Wrap" MaxHeight="130" Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}" BorderThickness="0" FontFamily="Consolas" FontSize="11" Padding="6"/>
                                             </Border>
                                         </Popup>
                                     </Grid>
@@ -1101,12 +1089,12 @@
                             <DockPanel.RenderTransform>
                                 <TranslateTransform x:Name="ToolsTransform"/>
                             </DockPanel.RenderTransform>
-                            <TextBlock DockPanel.Dock="Top" x:Name="ToolboxTitle" Text="🧰 Network Toolbox &amp; Diagnostics" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,0,0,12"/>
+                            <TextBlock DockPanel.Dock="Top" x:Name="ToolboxTitle" Text="🧰 Network Toolbox &amp; Diagnostics" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,12"/>
                             
                             <Button DockPanel.Dock="Top" x:Name="SpeedTestBtn" Style="{StaticResource ToolTile}" Click="SpeedTest_Click" Margin="0,0,0,10" Padding="12,10">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="🚀" FontSize="16" Foreground="#22C55E" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="SpeedTestLbl" Text="Run Connection Speed Test" FontSize="13" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center" Foreground="White"/>
+                                    <TextBlock x:Name="SpeedTestLbl" Text="Run Connection Speed Test" FontSize="13" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}"/>
                                 </StackPanel>
                             </Button>
 
@@ -1140,7 +1128,7 @@
                                     <ColumnDefinition Width="8"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBox Grid.Column="0" x:Name="ToolTargetBox" Height="34" FontFamily="Consolas" FontSize="12" VerticalContentAlignment="Center" Background="{DynamicResource FieldBrush}" Foreground="White" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="8,0"/>
+                                <TextBox Grid.Column="0" x:Name="ToolTargetBox" Height="34" FontFamily="Consolas" FontSize="12" VerticalContentAlignment="Center" Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="8,0"/>
                                 <Button Grid.Column="2" x:Name="PingToggleBtn" Content="🏓 Start Ping" Style="{StaticResource ActionBtn}" Click="PingToggle_Click"/>
                                 <Button Grid.Column="4" x:Name="TracerouteToggleBtn" Content="🛰 Traceroute" Style="{StaticResource ActionBtn}" Click="TracerouteToggle_Click"/>
                             </Grid>
@@ -1153,7 +1141,7 @@
                                     <Button x:Name="ClearLogBtn" Content="🗑 پاک‌سازی" Style="{StaticResource ActionBtn}" Padding="8,3" Click="ClearLog_Click"/>
                                 </StackPanel>
                             </Grid>
-                            <TextBox x:Name="LogBox" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="White" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="8"/>
+                            <TextBox x:Name="LogBox" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="8"/>
                         </DockPanel>
 
                         <!-- ================= 5. SETTINGS PANEL ================= -->
@@ -1162,9 +1150,9 @@
                                 <TranslateTransform x:Name="SettingsTransform"/>
                             </ScrollViewer.RenderTransform>
                             <StackPanel Margin="2,0">
-                                <TextBlock Text="Settings &amp; Configuration" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,0,0,14"/>
+                                <TextBlock Text="Settings &amp; Configuration" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,14"/>
 
-                                <Expander x:Name="AppearanceExpander" Header="🎨 Appearance &amp; Language" IsExpanded="True" Margin="0,0,0,10" Padding="10" Foreground="White" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1">
+                                <Expander x:Name="AppearanceExpander" Header="🎨 Appearance &amp; Language" IsExpanded="True" Margin="0,0,0,10" Padding="10" Foreground="{DynamicResource TextBrush}" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1">
                                     <StackPanel Margin="4,10,4,4">
                                         <TextBlock x:Name="LangLabel" Text="Language" Foreground="{DynamicResource SubTextBrush}" Margin="0,0,0,6"/>
                                         <StackPanel Orientation="Horizontal">
@@ -1180,7 +1168,7 @@
                                     </StackPanel>
                                 </Expander>
 
-                                <Expander x:Name="BehaviorExpander" Header="⚙ Connection Behavior" Margin="0,0,0,10" Padding="10" Foreground="White" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1">
+                                <Expander x:Name="BehaviorExpander" Header="⚙ Connection Behavior" Margin="0,0,0,10" Padding="10" Foreground="{DynamicResource TextBrush}" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1">
                                     <StackPanel Margin="4,10,4,4">
                                         <CheckBox x:Name="SmartToggle" Content="Smart Connect (Auto try all servers)" Checked="SmartToggle_Changed" Unchecked="SmartToggle_Changed"/>
                                         <CheckBox x:Name="TrayToggle" Content="Minimize to tray instead of closing" Checked="TrayToggle_Changed" Unchecked="TrayToggle_Changed" Margin="0,6,0,0"/>
@@ -1189,18 +1177,18 @@
                                     </StackPanel>
                                 </Expander>
 
-                                <Expander x:Name="IdleExpander" Header="⏱ Idle Auto-Disconnect" Margin="0,0,0,10" Padding="10" Foreground="White" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1">
+                                <Expander x:Name="IdleExpander" Header="⏱ Idle Auto-Disconnect" Margin="0,0,0,10" Padding="10" Foreground="{DynamicResource TextBrush}" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1">
                                     <StackPanel Margin="4,10,4,4">
                                         <RadioButton x:Name="IdleOffRb" GroupName="IdleMode" Content="Always Connected" Checked="IdleRb_Checked"/>
                                         <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                                             <RadioButton x:Name="IdleOnRb" GroupName="IdleMode" Content="Disconnect after" VerticalAlignment="Center" Checked="IdleRb_Checked"/>
-                                            <TextBox x:Name="IdleMinutesBox" Width="52" Height="28" Margin="10,0,8,0" FontFamily="Consolas" FontSize="12" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Background="{DynamicResource FieldBrush}" Foreground="White" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" LostFocus="IdleMinutes_LostFocus"/>
+                                            <TextBox x:Name="IdleMinutesBox" Width="52" Height="28" Margin="10,0,8,0" FontFamily="Consolas" FontSize="12" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" LostFocus="IdleMinutes_LostFocus"/>
                                             <TextBlock x:Name="IdleMinutesLabel" Text="minutes idle" VerticalAlignment="Center" Foreground="{DynamicResource SubTextBrush}"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </Expander>
 
-                                <Expander x:Name="SplitExpander" Header="🔀 Per-App Split Tunneling (Xray / Proxy)" Margin="0,0,0,10" Padding="10" Foreground="White" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1">
+                                <Expander x:Name="SplitExpander" Header="🔀 Per-App Split Tunneling (Xray / Proxy)" Margin="0,0,0,10" Padding="10" Foreground="{DynamicResource TextBrush}" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1">
                                     <StackPanel Margin="4,10,4,4">
                                         <RadioButton x:Name="StOffRb" GroupName="StMode" Tag="off" Content="Tunnel Entire System" Checked="StMode_Checked"/>
                                         <RadioButton x:Name="StAllowRb" GroupName="StMode" Tag="allow" Content="Only selected apps (Allow list)" Checked="StMode_Checked" Margin="0,6,0,0"/>
@@ -1209,7 +1197,7 @@
                                     </StackPanel>
                                 </Expander>
 
-                                <Expander x:Name="DnsExpander" Header="🌐 DNS Servers" Margin="0,0,0,10" Padding="10" Foreground="White" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1">
+                                <Expander x:Name="DnsExpander" Header="🌐 DNS Servers" Margin="0,0,0,10" Padding="10" Foreground="{DynamicResource TextBrush}" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1">
                                     <StackPanel Margin="4,10,4,4">
                                         <RadioButton x:Name="DnsAutoRb" GroupName="DnsMode" Tag="auto" Content="Automatic" Checked="DnsRb_Checked"/>
                                         <RadioButton x:Name="DnsCfRb" GroupName="DnsMode" Tag="cloudflare" Content="Cloudflare — 1.1.1.1" Checked="DnsRb_Checked" Margin="0,5,0,0"/>
@@ -1219,13 +1207,13 @@
                                         <RadioButton x:Name="DnsCustomRb" GroupName="DnsMode" Tag="custom" Content="Custom DNS" Checked="DnsRb_Checked" Margin="0,5,0,0"/>
                                         <Grid Margin="0,8,0,2">
                                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                            <TextBox Grid.Column="0" x:Name="DnsPrimaryBox" Height="30" FontFamily="Consolas" FontSize="12" Background="{DynamicResource FieldBrush}" Foreground="White" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" LostFocus="DnsBox_LostFocus"/>
-                                            <TextBox Grid.Column="2" x:Name="DnsSecondaryBox" Height="30" FontFamily="Consolas" FontSize="12" Background="{DynamicResource FieldBrush}" Foreground="White" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" LostFocus="DnsBox_LostFocus"/>
+                                            <TextBox Grid.Column="0" x:Name="DnsPrimaryBox" Height="30" FontFamily="Consolas" FontSize="12" Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" LostFocus="DnsBox_LostFocus"/>
+                                            <TextBox Grid.Column="2" x:Name="DnsSecondaryBox" Height="30" FontFamily="Consolas" FontSize="12" Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" LostFocus="DnsBox_LostFocus"/>
                                         </Grid>
                                     </StackPanel>
                                 </Expander>
 
-                                <Expander x:Name="PackageExpander" Header="📦 Package &amp; About" Margin="0,0,0,10" Padding="10" Foreground="White" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1">
+                                <Expander x:Name="PackageExpander" Header="📦 Package &amp; About" Margin="0,0,0,10" Padding="10" Foreground="{DynamicResource TextBrush}" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1">
                                     <StackPanel Margin="4,10,4,4">
                                         <Button x:Name="UpdateBaseBtn" Content="🔧 Update base.ovpn" Style="{StaticResource ActionBtn}" Margin="0,4" Click="UpdateBase_Click"/>
                                         <Button x:Name="ImportBtn" Content="📥 Import OVPN / Package" Style="{StaticResource ActionBtn}" Margin="0,4" Click="Import_Click"/>
@@ -1246,14 +1234,14 @@
                                 <TranslateTransform x:Name="ConnLogTransform"/>
                             </Grid.RenderTransform>
                             <Grid Grid.Row="0" Margin="0,0,0,10">
-                                <TextBlock x:Name="ConnLogSectionLbl" Text="📶 لاگ سیستم و کانکشن‌ها" FontSize="16" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ConnLogSectionLbl" Text="📶 لاگ سیستم و کانکشن‌ها" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                     <Button x:Name="CopyConnLogBtn" Content="📋 کپی لاگ" Style="{StaticResource ActionBtn}" Margin="0,0,6,0" Padding="8,3" Click="CopyConnLog_Click"/>
                                     <Button x:Name="OpenConnLogFileBtn" Content="📂 فایل لاگ" Style="{StaticResource ActionBtn}" Margin="0,0,6,0" Padding="8,3" Click="OpenLogFile_Click"/>
                                     <Button x:Name="ClearConnLogBtn" Content="🗑 پاک‌سازی" Style="{StaticResource ActionBtn}" Padding="8,3" Click="ClearConnLog_Click"/>
                                 </StackPanel>
                             </Grid>
-                            <TextBox Grid.Row="1" x:Name="ConnLogBox" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="White" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="8"/>
+                            <TextBox Grid.Row="1" x:Name="ConnLogBox" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="8"/>
                         </Grid>
 
                     </Grid>
@@ -1280,7 +1268,7 @@
                         <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal">
                                 <Ellipse x:Name="MiniStatusDot" Width="7" Height="7" Fill="#64748B" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <TextBlock x:Name="MiniStatusText" Text="Ready" FontSize="12.5" FontWeight="Bold" Foreground="White"/>
+                                <TextBlock x:Name="MiniStatusText" Text="Ready" FontSize="12.5" FontWeight="Bold" Foreground="{DynamicResource TextBrush}"/>
                             </StackPanel>
                             <TextBlock x:Name="MiniConnectionText" Text="—" FontSize="10" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0"/>
                             <TextBlock x:Name="MiniSpeedText" Text="↓ 0 B/s   ↑ 0 B/s" FontSize="10.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,3,0,0"/>
@@ -1305,18 +1293,18 @@
                     <Grid>
                         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
                         <Grid Grid.Row="0" Margin="20,20,20,10">
-                            <TextBlock x:Name="DrawerTitleText" Text="Main Menu" Foreground="White" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="DrawerTitleText" Text="Main Menu" Foreground="{DynamicResource TextBrush}" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
                             <Button HorizontalAlignment="Right" Width="30" Height="30" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="DrawerClose_Click">
                                 <Path Data="M18 6L6 18M6 6l12 12" Stroke="#94A3B8" StrokeThickness="2" Stretch="Uniform" Width="14" Height="14"/>
                             </Button>
                         </Grid>
                         <StackPanel Grid.Row="1" Margin="10,20,10,10">
-                            <Button Style="{StaticResource DrawerNavBtn}" Click="HotspotNavHome_Click"><TextBlock x:Name="DrawerNavHomeText" Text="🏠 Dashboard" Foreground="White"/></Button>
-                            <Button Style="{StaticResource DrawerNavBtn}" Margin="0,5,0,0" Click="HotspotNavXray_Click"><TextBlock x:Name="DrawerNavXrayText" Text="🚀 Xray Service" Foreground="White"/></Button>
-                            <Button Style="{StaticResource DrawerNavBtn}" Margin="0,5,0,0" Click="HotspotNavLogs_Click"><TextBlock x:Name="DrawerNavLogsText" Text="📄 Connection Logs" Foreground="White"/></Button>
-                            <Button Style="{StaticResource DrawerNavBtn}" Margin="0,5,0,0" Click="OpenHotspotWindow_Click"><TextBlock x:Name="DrawerNavHotspotText" Text="🛜 Hotspot Manager" Foreground="White"/></Button>
-                            <Button Style="{StaticResource DrawerNavBtn}" Margin="0,5,0,0" Click="HotspotNavTools_Click"><TextBlock x:Name="DrawerNavToolsText" Text="🧰 Toolbox" Foreground="White"/></Button>
-                            <Button Style="{StaticResource DrawerNavBtn}" Margin="0,5,0,0" Click="HotspotNavSettings_Click"><TextBlock x:Name="DrawerNavSettingsText" Text="⚙ Settings" Foreground="White"/></Button>
+                            <Button Style="{StaticResource DrawerNavBtn}" Click="HotspotNavHome_Click"><TextBlock x:Name="DrawerNavHomeText" Text="🏠 Dashboard" Foreground="{DynamicResource TextBrush}"/></Button>
+                            <Button Style="{StaticResource DrawerNavBtn}" Margin="0,5,0,0" Click="HotspotNavXray_Click"><TextBlock x:Name="DrawerNavXrayText" Text="🚀 Xray Service" Foreground="{DynamicResource TextBrush}"/></Button>
+                            <Button Style="{StaticResource DrawerNavBtn}" Margin="0,5,0,0" Click="HotspotNavLogs_Click"><TextBlock x:Name="DrawerNavLogsText" Text="📄 Connection Logs" Foreground="{DynamicResource TextBrush}"/></Button>
+                            <Button Style="{StaticResource DrawerNavBtn}" Margin="0,5,0,0" Click="OpenHotspotWindow_Click"><TextBlock x:Name="DrawerNavHotspotText" Text="🛜 Hotspot Manager" Foreground="{DynamicResource TextBrush}"/></Button>
+                            <Button Style="{StaticResource DrawerNavBtn}" Margin="0,5,0,0" Click="HotspotNavTools_Click"><TextBlock x:Name="DrawerNavToolsText" Text="🧰 Toolbox" Foreground="{DynamicResource TextBrush}"/></Button>
+                            <Button Style="{StaticResource DrawerNavBtn}" Margin="0,5,0,0" Click="HotspotNavSettings_Click"><TextBlock x:Name="DrawerNavSettingsText" Text="⚙ Settings" Foreground="{DynamicResource TextBrush}"/></Button>
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -1328,17 +1316,17 @@
                     <Border.Effect><DropShadowEffect BlurRadius="30" ShadowDepth="0" Color="#000000" Opacity="0.7"/></Border.Effect>
                     <StackPanel x:Name="XraySubModalStack">
                         <Grid Margin="0,0,0,14">
-                            <TextBlock x:Name="XraySubTitleText" Text="🔗 Add Xray Subscription Link" Foreground="White" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="XraySubTitleText" Text="🔗 Add Xray Subscription Link" Foreground="{DynamicResource TextBrush}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
                             <Button HorizontalAlignment="Right" Width="28" Height="28" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="XraySubCancel_Click">
                                 <Path Data="M18 6L6 18M6 6l12 12" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2" Stretch="Uniform" Width="12" Height="12"/>
                             </Button>
                         </Grid>
                         <TextBlock x:Name="XraySubNameHintText" Text="Subscription / Group Name (Optional):" Foreground="{DynamicResource SubTextBrush}" FontSize="11" Margin="0,0,0,4"/>
-                        <TextBox x:Name="XraySubNameInput" Height="34" Padding="8,6" Margin="0,0,0,10" Background="{DynamicResource FieldBrush}" Foreground="White" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" FontSize="11.5" VerticalContentAlignment="Center"/>
+                        <TextBox x:Name="XraySubNameInput" Height="34" Padding="8,6" Margin="0,0,0,10" Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" FontSize="11.5" VerticalContentAlignment="Center"/>
                         <TextBlock x:Name="XraySubHintText" Text="Enter subscription link or node URL:" Foreground="{DynamicResource SubTextBrush}" FontSize="11" Margin="0,0,0,6"/>
                         <Grid Margin="0,0,0,16">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <TextBox x:Name="XraySubUrlInput" Grid.Column="0" Height="34" Padding="8,6" Background="{DynamicResource FieldBrush}" Foreground="White" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" FontSize="11.5" VerticalContentAlignment="Center" KeyDown="XraySubUrlInput_KeyDown"/>
+                            <TextBox x:Name="XraySubUrlInput" Grid.Column="0" Height="34" Padding="8,6" Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" FontSize="11.5" VerticalContentAlignment="Center" KeyDown="XraySubUrlInput_KeyDown"/>
                             <Button Grid.Column="1" x:Name="XraySubPasteBtn" Content="📋 Paste" Style="{StaticResource ActionBtn}" Padding="10,0" Height="34" Margin="6,0,0,0" FontSize="11" Click="XraySubPaste_Click"/>
                         </Grid>
                         <Grid>
@@ -1356,7 +1344,7 @@
                     <Border.Effect><DropShadowEffect BlurRadius="30" ShadowDepth="0" Color="#000000" Opacity="0.7"/></Border.Effect>
                     <StackPanel x:Name="XrayShareModalStack">
                         <Grid Margin="0,0,0,12">
-                            <TextBlock x:Name="XrayShareTitleText" Text="📱 Share Connection" Foreground="White" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="XrayShareTitleText" Text="📱 Share Connection" Foreground="{DynamicResource TextBrush}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
                             <Button HorizontalAlignment="Right" Width="28" Height="28" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="XrayShareClose_Click">
                                 <Path Data="M18 6L6 18M6 6l12 12" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2" Stretch="Uniform" Width="12" Height="12"/>
                             </Button>
@@ -1365,7 +1353,7 @@
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
                                     <Border Background="#1E293B" CornerRadius="4" Padding="5,1" Margin="0,0,6,0"><TextBlock x:Name="XrayShareProtoBadge" Text="VLESS" FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/></Border>
-                                    <TextBlock x:Name="XrayShareAliasText" Text="Server Name" FontSize="12" FontWeight="SemiBold" Foreground="White"/>
+                                    <TextBlock x:Name="XrayShareAliasText" Text="Server Name" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                                 </StackPanel>
                                 <TextBlock x:Name="XrayShareAddressText" Text="1.2.3.4:443" FontSize="10.5" Foreground="{DynamicResource SubTextBrush}"/>
                             </StackPanel>
@@ -1390,7 +1378,7 @@
                     <StackPanel x:Name="InAppMessageModalStack">
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                             <TextBlock x:Name="InAppMsgIcon" Text="ℹ" FontSize="18" Foreground="{DynamicResource AccentBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="InAppMsgTitle" Text="System Message" Foreground="White" FontSize="13.5" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="InAppMsgTitle" Text="System Message" Foreground="{DynamicResource TextBrush}" FontSize="13.5" FontWeight="Bold" VerticalAlignment="Center"/>
                         </StackPanel>
                         <TextBlock x:Name="InAppMsgText" Text="Message" Foreground="{DynamicResource SubTextBrush}" FontSize="12" LineHeight="19" TextWrapping="Wrap" Margin="0,0,0,16"/>
                         <Button x:Name="InAppMsgOkBtn" Content="OK" Style="{StaticResource PrimaryActionBtn}" Height="34" Width="100" HorizontalAlignment="Center" FontSize="12" Click="InAppMsgOverlay_Dismiss"/>
