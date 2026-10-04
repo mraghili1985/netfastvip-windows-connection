@@ -196,9 +196,44 @@ namespace SmartVpn
             StartSubRefreshSpin();
             try
             {
-                var client = new PortalApiClient(url);
-                await client.LoginAsync(prof.Username, prof.Password);
-                var dashboard = await client.GetDashboardAsync();
+                PortalDashboard? dashboard = null;
+                var appClient = new CustomerAppApiClient(url);
+
+                // ۱. تلاش با توکن‌های ذخیره‌شده یا یوزر/پسوردهای اپ مشتری
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(_config.CustomerRefreshToken))
+                    {
+                        var services = await appClient.GetServicesAsync();
+                        var svc = services.FirstOrDefault();
+                        if (svc != null) dashboard = CustomerAppApiClient.ConvertToPortalDashboard(svc);
+                    }
+                }
+                catch { }
+
+                if (dashboard == null)
+                {
+                    try
+                    {
+                        if (prof.Username.StartsWith("09") || prof.Username.Contains("@"))
+                            await appClient.LoginCustomerAsync(prof.Username, prof.Password);
+                        else
+                            await appClient.LoginRadiusAsync(prof.Username, prof.Password);
+
+                        var services = await appClient.GetServicesAsync();
+                        var svc = services.FirstOrDefault();
+                        if (svc != null) dashboard = CustomerAppApiClient.ConvertToPortalDashboard(svc);
+                    }
+                    catch { }
+                }
+
+                // ۲. در صورت ناموفق بودن، تلاش با کلاینت پورتال قدیمی
+                if (dashboard == null)
+                {
+                    var client = new PortalApiClient(url);
+                    await client.LoginAsync(prof.Username, prof.Password);
+                    dashboard = await client.GetDashboardAsync();
+                }
 
                 var expired = string.Equals(dashboard.Account.Status, "expired", StringComparison.OrdinalIgnoreCase)
                               || dashboard.Account.RemainingDays <= 0;

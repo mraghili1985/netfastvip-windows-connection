@@ -79,16 +79,67 @@ public partial class SubscriptionDialog : Window
 
         try
         {
-            var client     = new PortalApiClient(_portalBaseUrl);
-            var loginUser  = await client.LoginAsync(user, pass);
-            var dashboard  = await client.GetDashboardAsync();
+            bool handled = false;
+            // ۱. تلاش با کلاینت جدید اپ مشتری (25-Customer-App-API)
+            try
+            {
+                var appClient = new CustomerAppApiClient(_portalBaseUrl);
+                CustomerLoginResponse loginRes;
+                if (user.StartsWith("09") || user.StartsWith("+") || user.Contains("@"))
+                    loginRes = await appClient.LoginCustomerAsync(user, pass);
+                else
+                    loginRes = await appClient.LoginRadiusAsync(user, pass);
 
-            Populate(dashboard, loginUser.CanConnect);
-            StatusText.Visibility  = Visibility.Collapsed;
-            ResultPanel.Visibility = Visibility.Visible;
+                var services = await appClient.GetServicesAsync();
+                var primarySvc = services.FirstOrDefault();
+                if (primarySvc != null)
+                {
+                    var dashboard = CustomerAppApiClient.ConvertToPortalDashboard(primarySvc);
+                    Populate(dashboard, primarySvc.CanConnect);
+                    StatusText.Visibility  = Visibility.Collapsed;
+                    ResultPanel.Visibility = Visibility.Visible;
 
-            // پروفایل‌ها از هاست/پروفایل‌های موجود مدیریت می‌شوند؛ این استعلام فقط وضعیت اشتراک را می‌خواند.
-            if (SaveCheck.IsChecked == true) OnSaveCredentials?.Invoke(user, pass);
+                    // سینک خودکار کانکشن‌ها و سرورها
+                    var cfg = AppConfig.Load();
+                    await PortalSyncService.SyncFromCustomerAppAsync(appClient, cfg);
+                    cfg.Save();
+
+                    if (SaveCheck.IsChecked == true) OnSaveCredentials?.Invoke(user, pass);
+                    handled = true;
+                }
+            }
+            catch (CustomerDeviceLimitException devEx)
+            {
+                ShowStatus(devEx.Message, true);
+                return;
+            }
+            catch (CustomerAppException cEx) when (cEx.StatusCode == 404 || cEx.ErrorCode == "NOT_FOUND")
+            {
+                // سرور مسیر /api/app ندارد؛ به پورتال قدیمی فال‌بک کن
+                handled = false;
+            }
+            catch (CustomerAppException cEx)
+            {
+                if (cEx.StatusCode is 401 || cEx.ErrorCode == "UNAUTHORIZED")
+                    ShowStatus(Localization.T(MsgBadCreds), true);
+                else
+                    ShowStatus(cEx.Message, true);
+                return;
+            }
+
+            // ۲. در صورت عدم تطابق با API جدید، استفاده از کلاینت پورتال قدیمی (Fallback)
+            if (!handled)
+            {
+                var client     = new PortalApiClient(_portalBaseUrl);
+                var loginUser  = await client.LoginAsync(user, pass);
+                var dashboard  = await client.GetDashboardAsync();
+
+                Populate(dashboard, loginUser.CanConnect);
+                StatusText.Visibility  = Visibility.Collapsed;
+                ResultPanel.Visibility = Visibility.Visible;
+
+                if (SaveCheck.IsChecked == true) OnSaveCredentials?.Invoke(user, pass);
+            }
         }
         catch (PortalApiException ex)
         {

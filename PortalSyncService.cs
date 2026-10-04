@@ -80,7 +80,168 @@ public static class PortalSyncService
             added++;
         }
 
-                return new SyncResult { Added = added, Updated = updated, Removed = removed, Errors = errors };
+        return new SyncResult { Added = added, Updated = updated, Removed = removed, Errors = errors };
+    }
+
+    /// <summary>
+    /// سینک کانکشن‌ها از API جدید اپ مشتری (25-Customer-App-API)
+    /// شامل پروفایل‌های OpenVPN، کانفیگ‌های WireGuard و لینک‌های ساب‌اسکریپشن V2Ray.
+    /// </summary>
+    public static async Task<SyncResult> SyncFromCustomerAppAsync(
+        CustomerAppApiClient client,
+        AppConfig config,
+        CancellationToken ct = default)
+    {
+        var added = 0;
+        var updated = 0;
+        var errors = new List<string>();
+
+        List<CustomerService> services;
+        try
+        {
+            services = await client.GetServicesAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            return new SyncResult { Errors = { $"خطا در دریافت لیست سرویس‌ها: {ex.Message}" } };
+        }
+
+        // حذف کانکشن‌های قبلی پورتال
+        var removed = config.Connections.RemoveAll(c =>
+            string.Equals(c.Source, "portal", StringComparison.OrdinalIgnoreCase));
+
+        foreach (var svc in services)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                var connData = await client.GetServiceConnectionAsync(svc.Id, ct);
+
+                // ۱. کانکشن‌های OpenVPN
+                if (connData.Radius?.Profiles != null)
+                {
+                    foreach (var p in connData.Radius.Profiles)
+                    {
+                        var prof = BuildFromRadiusProfile(p, connData.Radius.Username, connData.Radius.Password, svc.Name);
+                        config.Connections.Add(prof);
+                        added++;
+                    }
+                }
+
+                // ۲. کانکشن WireGuard
+                if (connData.WireGuard != null && !string.IsNullOrWhiteSpace(connData.WireGuard.Text))
+                {
+                    var wgProf = BuildFromWireGuardData(connData.WireGuard, svc.Name);
+                    config.Connections.Add(wgProf);
+                    added++;
+                }
+
+                // ۳. ساب‌اسکریپشن V2Ray
+                var v2Sub = connData.V2Ray?.SubscriptionUrl ?? connData.WireGuard?.SubscriptionUrl;
+                if (!string.IsNullOrWhiteSpace(v2Sub))
+                {
+                    try
+                    {
+                        var subUrl = v2Sub.Trim();
+                        var (proxies, userInfo, suggestedTitle, err) = await SmartVpn.XrayCore.SubscriptionManager.FetchSubscriptionAsync(subUrl);
+                        if (proxies != null && proxies.Count > 0)
+                        {
+                            var existingGroups = SmartVpn.XrayCore.SubscriptionGroupManager.LoadGroups();
+                            var group = existingGroups.FirstOrDefault(g => string.Equals(g.Url, subUrl, StringComparison.OrdinalIgnoreCase));
+                            if (group == null)
+                            {
+                                group = new SmartVpn.XrayCore.SubscriptionGroup
+                                {
+                                    Name = !string.IsNullOrWhiteSpace(suggestedTitle) ? suggestedTitle : $"اشتراک {svc.Name}",
+                                    Url = subUrl
+                                };
+                                existingGroups.Add(group);
+                            }
+                            group.Profiles.Clear();
+                            foreach (var p in proxies)
+                            {
+                                p.GroupId = group.Id;
+                                p.GroupName = group.Name;
+                                group.Profiles.Add(p);
+                            }
+                            if (userInfo != null)
+                            {
+                                group.DataRemaining = userInfo.GetRemainingDataString();
+                                group.TotalData = userInfo.GetTotalDataString();
+                                group.DaysRemaining = userInfo.GetExpireString();
+                            }
+                            group.LastUpdated = DateTime.Now;
+                            SmartVpn.XrayCore.SubscriptionGroupManager.SaveGroups(existingGroups);
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                errors.Add($"{svc.Name}: {ex.Message}");
+            }
+        }
+
+        return new SyncResult { Added = added, Updated = updated, Removed = removed, Errors = errors };
+    }
+
+    private static ConnectionProfile BuildFromRadiusProfile(RadiusProfileItem p, string username, string password, string serviceName)
+    {
+        var remoteMatch = Regex.Match(p.Text,
+            @"^remote\s+(\S+)\s+(\d+)(?:\s+(udp|tcp))?",
+            RegexOptions.Multiline | RegexOptions.IgnoreCase);
+
+        var server = remoteMatch.Success ? remoteMatch.Groups[1].Value : "";
+        var port = remoteMatch.Success && int.TryParse(remoteMatch.Groups[2].Value, out var pt) ? (int?)pt : null;
+        var proto = remoteMatch.Success && remoteMatch.Groups[3].Success ? remoteMatch.Groups[3].Value.ToLower() : "udp";
+        if (Regex.IsMatch(p.Text, @"^proto\s+tcp", RegexOptions.Multiline | RegexOptions.IgnoreCase)) proto = "tcp";
+
+        var nameMatch = Regex.Match(p.Text, @"setenv\s+FRIENDLY_NAME\s+""?([^""\r\n]+)""?", RegexOptions.IgnoreCase);
+        var label = nameMatch.Success
+            ? nameMatch.Groups[1].Value.Trim()
+            : (!string.IsNullOrWhiteSpace(p.Label) ? p.Label : (!string.IsNullOrWhiteSpace(p.FileName) ? p.FileName : "OpenVPN"));
+
+        return new ConnectionProfile
+        {
+            Name = label,
+            Type = "openvpn",
+            Server = server,
+            Port = port,
+            Proto = proto,
+            OvpnInline = StripRemoteAndProto(p.Text),
+            Username = username,
+            Password = password,
+            Psk = "",
+            WireGuardConf = "",
+            Source = "portal"
+        };
+    }
+
+    private static ConnectionProfile BuildFromWireGuardData(WireGuardConnectionData wg, string serviceName)
+    {
+        var epMatch = Regex.Match(wg.Text, @"Endpoint\s*=\s*([^:\r\n]+)(?::(\d+))?", RegexOptions.IgnoreCase);
+        var server = epMatch.Success ? epMatch.Groups[1].Value.Trim() : "";
+        var port = epMatch.Success && int.TryParse(epMatch.Groups[2].Value, out var pt) ? (int?)pt : null;
+
+        var name = !string.IsNullOrWhiteSpace(wg.FileName)
+            ? wg.FileName.Replace(".conf", "", StringComparison.OrdinalIgnoreCase)
+            : $"WireGuard - {serviceName}";
+
+        return new ConnectionProfile
+        {
+            Name = name,
+            Type = "wireguard",
+            Server = server,
+            Port = port,
+            Proto = "udp",
+            OvpnInline = "",
+            WireGuardConf = wg.Text,
+            Username = "",
+            Password = "",
+            Psk = "",
+            Source = "portal"
+        };
     }
 
     // ===== تبدیل PortalConnectionProfile به ConnectionProfile =====

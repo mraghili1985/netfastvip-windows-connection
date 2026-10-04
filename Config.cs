@@ -46,26 +46,63 @@ public sealed class AppConfig
     public string DnsPrimary { get; set; } = "";
     public string DnsSecondary { get; set; } = "";
 
+    // ===== تنظیمات پنل اصلی پروداکشن (NETFASTVIP) - محفوظ برای بازگردانی =====
+    public const string DefaultProductionPortalApiUrl = "https://panel.netfast.vip/";
+    public const string DefaultProductionPanelUrl = "https://panel.netfast.vip/portal/login";
+    public const string DefaultProductionConnectionsUrl = "https://dl.netfast.vip/connections.json";
+    public const string DefaultProductionUpdateUrl = "https://dl.netfast.vip/version.json";
+    public const string DefaultProductionTelegramUrl = "https://t.me/netfastvip";
+    public const string DefaultProductionSupportUrl = "https://t.me/nfv_sup";
+
+    // ===== تنظیمات پنل تستی اپ مشتری (v2moon.shop) =====
+    public const string DefaultTestCustomerApiUrl = "https://panel.v2moon.shop";
+    public const string DefaultTestPanelUrl = "https://panel.v2moon.shop";
+
     // آدرس کانال تلگرام — از config.json قابل تغییر است، بدون نیاز به بیلد مجدد
-    public string TelegramUrl { get; set; } = "https://t.me/netfastvip";
+    public string TelegramUrl { get; set; } = DefaultProductionTelegramUrl;
 
     // لینک پنل کاربری/اکانتینگ برای بررسی اشتراک (دکمه در پنجره درباره)
-    public string PanelUrl { get; set; } = "https://panel.netfast.vip/portal/login";
+    public string PanelUrl { get; set; } = DefaultTestPanelUrl;
 
     // لینک پشتیبانی تلگرام (دکمه Support در پنجره درباره)
-    public string SupportUrl { get; set; } = "https://t.me/nfv_sup";
+    public string SupportUrl { get; set; } = DefaultProductionSupportUrl;
 
     // آدرس فایل version.json روی هاست برای بررسی نسخه جدید — خالی یعنی بررسی خاموش (UpdateChecker.cs)
-    public string UpdateUrl { get; set; } = "https://dl.netfast.vip/version.json";
+    public string UpdateUrl { get; set; } = DefaultProductionUpdateUrl;
 
     // آدرس فایل connections.json روی هاست برای دریافت خودکار سرورها/base.ovpn/گواهی CA — خالی یعنی بررسی خاموش (ConnectionsUpdateChecker.cs)
-    public string ConnectionsUpdateUrl { get; set; } = "https://dl.netfast.vip/connections.json";
+    public string ConnectionsUpdateUrl { get; set; } = DefaultProductionConnectionsUrl;
 
     // محتوای گواهی CA به‌صورت Base64 — داخل کانفیگ نگه داشته می‌شود (self-healing مثل BaseOvpn)
     public string Ca { get; set; } = "";
 
-    // آدرس پایه پورتال جدید NETFASTVIP برای استعلام وضعیت اشتراک/ترافیک — خالی یعنی دکمه «وضعیت اشتراک من» پیام راهنما می‌دهد (SubscriptionDialog / PortalApiClient). ورود با یوزر/پس همان کانکشن رسمی انجام می‌شود؛ نیازی به توکن مشترک نیست.
-    public string PortalApiUrl { get; set; } = "https://panel.netfast.vip/";
+    // آدرس پایه پورتال و API اپ — اکنون روی سرور تستی تنظیم شده و با SwitchToProductionPanel به پروداکشن برمی‌گردد
+    public string PortalApiUrl { get; set; } = DefaultTestCustomerApiUrl;
+
+    // نشست و احراز هویت اپ مشتری (25-Customer-App-API)
+    public string? CustomerAccessToken { get; set; }
+    public string? CustomerRefreshToken { get; set; }
+    public DateTime? CustomerTokenExpiresAt { get; set; }
+    public string? CustomerDeviceId { get; set; }
+    public string? CustomerLoginMode { get; set; } // customer | radius
+    public string? CustomerUsername { get; set; }
+
+    // متدهای سوییچ بین محیط تستی و پروداکشن
+    public void SwitchToProductionPanel()
+    {
+        PortalApiUrl = DefaultProductionPortalApiUrl;
+        PanelUrl = DefaultProductionPanelUrl;
+        ConnectionsUpdateUrl = DefaultProductionConnectionsUrl;
+        UpdateUrl = DefaultProductionUpdateUrl;
+        Save();
+    }
+
+    public void SwitchToTestPanel()
+    {
+        PortalApiUrl = DefaultTestCustomerApiUrl;
+        PanelUrl = DefaultTestPanelUrl;
+        Save();
+    }
 
     // قطع خودکار پس از این تعداد دقیقه بی‌استفادگی — ۰ یعنی همیشه متصل
     public int IdleDisconnectMinutes { get; set; }
