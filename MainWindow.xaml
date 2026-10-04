@@ -857,13 +857,18 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock Text="🛡️ VPN Core" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
-                                        <TextBlock Text="سرورهای WireGuard, OpenVPN, Amnezia, L2TP, SSTP" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="12,0,0,0" VerticalAlignment="Center"/>
                                     </StackPanel>
 
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                         <!-- Prominent '+' Action Button -->
                                         <Button x:Name="AddBtn" Style="{StaticResource PrimaryActionBtn}" Click="Add_Click" Margin="0,0,8,0" Width="38" Height="34" Padding="0" ToolTip="افزودن کانکشن جدید (Add Connection)">
                                             <TextBlock Text="＋" FontSize="20" FontWeight="Bold" Margin="0,-2,0,0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Button>
+                                        <Button x:Name="VpnPingAllBtn" Style="{StaticResource ActionBtn}" Click="VpnPingAll_Click" Margin="0,0,6,0" ToolTip="Ping All Servers">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="⚡" FontSize="11"/>
+                                                <TextBlock Text=" Ping All" Margin="4,0,0,0"/>
+                                            </StackPanel>
                                         </Button>
                                         <Button x:Name="FilterDropdownBtn" Style="{StaticResource ActionBtn}" Click="FilterDropdownBtn_Click" Margin="0,0,6,0">
                                             <StackPanel Orientation="Horizontal">
@@ -1216,7 +1221,6 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <TextBlock x:Name="XrayConnSectionLabel" Text="⚡ Xray Core" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
-                                    <TextBlock Text="هسته sing-box (VLESS / VMess / Trojan)" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="12,0,0,0" VerticalAlignment="Center"/>
                                     <!-- Hidden Mode Switcher Stubs for code-behind compatibility -->
                                     <Button x:Name="XraySwitchToVpnBtn" Click="SwitchToVpnBtn_Click" Visibility="Collapsed"/>
                                     <Button x:Name="XraySwitchToXrayBtn" Click="SwitchToXrayBtn_Click" Visibility="Collapsed"/>
@@ -1401,64 +1405,224 @@
                         </ScrollViewer>
 
                         <!-- ================= 4. TOOLBOX PANEL ================= -->
-                        <DockPanel x:Name="ToolboxPanel" Visibility="Collapsed" LastChildFill="True">
-                            <DockPanel.RenderTransform>
+                        <Grid x:Name="ToolboxPanel" Visibility="Collapsed">
+                            <Grid.RenderTransform>
                                 <TranslateTransform x:Name="ToolsTransform"/>
-                            </DockPanel.RenderTransform>
-                            <TextBlock DockPanel.Dock="Top" x:Name="ToolboxTitle" Text="🧰 Network Toolbox &amp; Diagnostics" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,12"/>
-                            
-                            <Button DockPanel.Dock="Top" x:Name="SpeedTestBtn" Style="{StaticResource ToolTile}" Click="SpeedTest_Click" Margin="0,0,0,10" Padding="12,10">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="🚀" FontSize="16" Foreground="#22C55E" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="SpeedTestLbl" Text="Run Connection Speed Test" FontSize="13" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}"/>
-                                </StackPanel>
-                            </Button>
+                            </Grid.RenderTransform>
 
-                            <UniformGrid DockPanel.Dock="Top" Columns="3" Rows="2" Margin="0,0,0,10">
-                                <Button x:Name="RenewIpBtn" Style="{StaticResource ToolTile}" Click="RenewIp_Click">
-                                    <StackPanel><TextBlock Text="🔄" FontSize="16" HorizontalAlignment="Center"/><TextBlock x:Name="RenewIpLbl" Text="Renew IP" FontSize="11" Margin="0,4,0,0" HorizontalAlignment="Center"/></StackPanel>
+                            <!-- VIEW 1: REGULAR TOOLBOX HOME VIEW -->
+                            <DockPanel x:Name="ToolboxHomeView" LastChildFill="True" Visibility="Visible">
+                                <TextBlock DockPanel.Dock="Top" x:Name="ToolboxTitle" Text="🧰 Network Toolbox &amp; Diagnostics" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,12"/>
+                                
+                                <Button DockPanel.Dock="Top" x:Name="SpeedTestBtn" Style="{StaticResource ToolTile}" Click="SpeedTest_Click" Margin="0,0,0,10" Padding="12,10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="🚀" FontSize="16" Foreground="#22C55E" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="SpeedTestLbl" Text="Run Connection Speed Test" FontSize="13" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}"/>
+                                    </StackPanel>
                                 </Button>
-                                <Button x:Name="FlushDnsBtn" Style="{StaticResource ToolTile}" Click="FlushDns_Click">
-                                    <StackPanel><TextBlock Text="🧹" FontSize="16" HorizontalAlignment="Center"/><TextBlock x:Name="FlushDnsLbl" Text="Flush DNS" FontSize="11" Margin="0,4,0,0" HorizontalAlignment="Center"/></StackPanel>
-                                </Button>
-                                <Button x:Name="ProxyOffBtn" Style="{StaticResource ToolTile}" Click="ProxyOff_Click">
-                                    <StackPanel><TextBlock Text="🚫" FontSize="16" HorizontalAlignment="Center"/><TextBlock x:Name="DisableProxyLbl" Text="Disable Proxy" FontSize="11" Margin="0,4,0,0" HorizontalAlignment="Center"/></StackPanel>
-                                </Button>
-                                <Button x:Name="KillProcBtn" Style="{StaticResource ToolTile}" Click="KillProc_Click">
-                                    <StackPanel><TextBlock Text="⛔" FontSize="16" HorizontalAlignment="Center"/><TextBlock x:Name="KillProcLbl" Text="Kill Frozen Procs" FontSize="11" Margin="0,4,0,0" HorizontalAlignment="Center"/></StackPanel>
-                                </Button>
-                                <Button x:Name="DnsLeakTestBtn" Style="{StaticResource ToolTile}" Click="DnsLeakTest_Click">
-                                    <StackPanel><TextBlock Text="🧪" FontSize="16" HorizontalAlignment="Center"/><TextBlock x:Name="DnsLeakLbl" Text="DNS Leak Test" FontSize="11" Margin="0,4,0,0" HorizontalAlignment="Center"/></StackPanel>
-                                </Button>
-                                <Button x:Name="ResetAdapterBtn" Style="{StaticResource ToolTile}" Click="ResetAdapter_Click">
-                                    <StackPanel><TextBlock Text="🔁" FontSize="16" HorizontalAlignment="Center"/><TextBlock x:Name="ResetAdapterLbl" Text="Reset Adapter" FontSize="11" Margin="0,4,0,0" HorizontalAlignment="Center"/></StackPanel>
-                                </Button>
-                            </UniformGrid>
 
-                            <TextBlock DockPanel.Dock="Top" x:Name="PingTraceLbl" Text="🏓 Ping &amp; Traceroute" Style="{StaticResource SectionTitle}"/>
-                            <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBox Grid.Column="0" x:Name="ToolTargetBox" Height="34" FontFamily="Consolas" FontSize="12" VerticalContentAlignment="Center" Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="8,0"/>
-                                <Button Grid.Column="2" x:Name="PingToggleBtn" Content="🏓 Start Ping" Style="{StaticResource ActionBtn}" Click="PingToggle_Click"/>
-                                <Button Grid.Column="4" x:Name="TracerouteToggleBtn" Content="🛰 Traceroute" Style="{StaticResource ActionBtn}" Click="TracerouteToggle_Click"/>
-                            </Grid>
+                                <UniformGrid DockPanel.Dock="Top" Columns="3" Rows="2" Margin="0,0,0,10">
+                                    <Button x:Name="RenewIpBtn" Style="{StaticResource ToolTile}" Click="RenewIp_Click">
+                                        <StackPanel><TextBlock Text="🔄" FontSize="16" HorizontalAlignment="Center"/><TextBlock x:Name="RenewIpLbl" Text="Renew IP" FontSize="11" Margin="0,4,0,0" HorizontalAlignment="Center"/></StackPanel>
+                                    </Button>
+                                    <Button x:Name="FlushDnsBtn" Style="{StaticResource ToolTile}" Click="FlushDns_Click">
+                                        <StackPanel><TextBlock Text="🧹" FontSize="16" HorizontalAlignment="Center"/><TextBlock x:Name="FlushDnsLbl" Text="Flush DNS" FontSize="11" Margin="0,4,0,0" HorizontalAlignment="Center"/></StackPanel>
+                                    </Button>
+                                    <Button x:Name="ProxyOffBtn" Style="{StaticResource ToolTile}" Click="ProxyOff_Click">
+                                        <StackPanel><TextBlock Text="🚫" FontSize="16" HorizontalAlignment="Center"/><TextBlock x:Name="DisableProxyLbl" Text="Disable Proxy" FontSize="11" Margin="0,4,0,0" HorizontalAlignment="Center"/></StackPanel>
+                                    </Button>
+                                    <Button x:Name="KillProcBtn" Style="{StaticResource ToolTile}" Click="KillProc_Click">
+                                        <StackPanel><TextBlock Text="⛔" FontSize="16" HorizontalAlignment="Center"/><TextBlock x:Name="KillProcLbl" Text="Kill Frozen Procs" FontSize="11" Margin="0,4,0,0" HorizontalAlignment="Center"/></StackPanel>
+                                    </Button>
+                                    <Button x:Name="DnsLeakTestBtn" Style="{StaticResource ToolTile}" Click="DnsLeakTest_Click">
+                                        <StackPanel><TextBlock Text="🧪" FontSize="16" HorizontalAlignment="Center"/><TextBlock x:Name="DnsLeakLbl" Text="DNS Leak Test" FontSize="11" Margin="0,4,0,0" HorizontalAlignment="Center"/></StackPanel>
+                                    </Button>
+                                    <Button x:Name="ResetAdapterBtn" Style="{StaticResource ToolTile}" Click="ResetAdapter_Click">
+                                        <StackPanel><TextBlock Text="🔁" FontSize="16" HorizontalAlignment="Center"/><TextBlock x:Name="ResetAdapterLbl" Text="Reset Adapter" FontSize="11" Margin="0,4,0,0" HorizontalAlignment="Center"/></StackPanel>
+                                    </Button>
+                                </UniformGrid>
 
-                            <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
-                                <TextBlock x:Name="LogSectionLbl" Text="📡 لاگ ابزارها و پینگ/تریس (Diagnostics Log)" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center"/>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                    <Button x:Name="CopyLogBtn" Content="📋 کپی لاگ" Style="{StaticResource ActionBtn}" Margin="0,0,6,0" Padding="8,3" Click="CopyLog_Click"/>
-                                    <Button x:Name="OpenLogFileBtn" Content="📂 فایل لاگ" Style="{StaticResource ActionBtn}" Margin="0,0,6,0" Padding="8,3" Click="OpenLogFile_Click"/>
-                                    <Button x:Name="ClearLogBtn" Content="🗑 پاک‌سازی" Style="{StaticResource ActionBtn}" Padding="8,3" Click="ClearLog_Click"/>
-                                </StackPanel>
-                            </Grid>
-                            <TextBox x:Name="LogBox" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="8"/>
-                        </DockPanel>
+                                <TextBlock DockPanel.Dock="Top" x:Name="PingTraceLbl" Text="🏓 Ping &amp; Traceroute" Style="{StaticResource SectionTitle}"/>
+                                <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" x:Name="ToolTargetBox" Height="34" FontFamily="Consolas" FontSize="12" VerticalContentAlignment="Center" Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="8,0"/>
+                                    <Button Grid.Column="2" x:Name="PingToggleBtn" Content="🏓 Start Ping" Style="{StaticResource ActionBtn}" Click="PingToggle_Click"/>
+                                    <Button Grid.Column="4" x:Name="TracerouteToggleBtn" Content="🛰 Traceroute" Style="{StaticResource ActionBtn}" Click="TracerouteToggle_Click"/>
+                                </Grid>
+
+                                <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
+                                    <TextBlock x:Name="LogSectionLbl" Text="📡 لاگ ابزارها و پینگ/تریس (Diagnostics Log)" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center"/>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button x:Name="CopyLogBtn" Content="📋 کپی لاگ" Style="{StaticResource ActionBtn}" Margin="0,0,6,0" Padding="8,3" Click="CopyLog_Click"/>
+                                        <Button x:Name="OpenLogFileBtn" Content="📂 فایل لاگ" Style="{StaticResource ActionBtn}" Margin="0,0,6,0" Padding="8,3" Click="OpenLogFile_Click"/>
+                                        <Button x:Name="ClearLogBtn" Content="🗑 پاک‌سازی" Style="{StaticResource ActionBtn}" Padding="8,3" Click="ClearLog_Click"/>
+                                    </StackPanel>
+                                </Grid>
+                                <TextBox x:Name="LogBox" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="8"/>
+                            </DockPanel>
+
+                            <!-- VIEW 2: IN-PLACE SPEED TEST VIEW -->
+                            <DockPanel x:Name="ToolboxSpeedTestView" Visibility="Collapsed" LastChildFill="True">
+                                <!-- Top Bar with Back Button -->
+                                <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button Grid.Column="0" x:Name="SpeedTestBackBtn" Style="{StaticResource ActionBtn}" Padding="10,6" Click="SpeedTestBack_Click" Margin="0,0,12,0" ToolTip="بازگشت به ابزارها">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="←" FontSize="14" FontWeight="Bold" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="بازگشت به ابزارها" FontSize="11.5" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="🚀 تست سرعت اتصال (Connection Speed Test)" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextBrush}"/>
+                                        <TextBlock Text="سنجش زنده پینگ، جیتر، سرعت دانلود و آپلود" FontSize="10.5" Foreground="{DynamicResource SubTextBrush}"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel Margin="0,0,6,0">
+                                        <!-- Connection Indicator & Engine Selection -->
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="10"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Via connection card -->
+                                            <Border Grid.Column="0" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}"
+                                                    BorderThickness="1" CornerRadius="10" Padding="12,8">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Ellipse x:Name="SpeedViaDot" Width="9" Height="9" Fill="#64748B" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                    <TextBlock x:Name="SpeedViaText" Text="Direct Internet" FontSize="12" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Test engine selector -->
+                                            <Border Grid.Column="2" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}"
+                                                    BorderThickness="1" CornerRadius="10" Padding="10,6">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="موتور تست:" FontSize="11" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                    <ComboBox x:Name="SpeedEngineCombo" MinWidth="150" Height="28" FontSize="11" VerticalAlignment="Center">
+                                                        <ComboBoxItem Content="Speedtest.net (Ookla)"/>
+                                                        <ComboBoxItem Content="Cloudflare"/>
+                                                        <ComboBoxItem Content="M-Lab (NDT7)"/>
+                                                    </ComboBox>
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
+
+                                        <!-- Vector Speedometer Gauge Card -->
+                                        <Border Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}"
+                                                BorderThickness="1" CornerRadius="14" Padding="12,12" Margin="0,0,0,10">
+                                            <StackPanel>
+                                                <Viewbox Width="240" FlowDirection="LeftToRight" HorizontalAlignment="Center">
+                                                    <Canvas Width="200" Height="116">
+                                                        <Path Data="M 20,100 A 80,80 0 0 1 180,100" Stroke="{DynamicResource LineBrush}"
+                                                              StrokeThickness="10" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                                        <Path x:Name="SpeedGaugeValueArc" Data="M 20,100 A 80,80 0 0 1 180,100" Stroke="{DynamicResource AccentBrush}"
+                                                              StrokeThickness="10" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                                              StrokeDashArray="0 1000"/>
+                                                        <TextBlock Canvas.Left="10" Canvas.Top="103" Text="0" FontSize="8" Foreground="#64748B"/>
+                                                        <TextBlock Canvas.Left="29" Canvas.Top="42" Text="12" FontSize="8" Foreground="#64748B"/>
+                                                        <TextBlock Canvas.Left="94" Canvas.Top="7" Text="25" FontSize="8" Foreground="#64748B"/>
+                                                        <TextBlock Canvas.Left="160" Canvas.Top="42" Text="38" FontSize="8" Foreground="#64748B"/>
+                                                        <TextBlock Canvas.Left="177" Canvas.Top="103" Text="50+" FontSize="8" Foreground="#64748B"/>
+                                                        <Line x:Name="SpeedNeedle" X1="100" Y1="100" X2="100" Y2="36"
+                                                              Stroke="#F8FAFC" StrokeThickness="3"
+                                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round">
+                                                            <Line.RenderTransform>
+                                                                <RotateTransform x:Name="SpeedNeedleRotate" CenterX="100" CenterY="100" Angle="-90"/>
+                                                            </Line.RenderTransform>
+                                                        </Line>
+                                                        <Ellipse Canvas.Left="93" Canvas.Top="93" Width="14" Height="14" Fill="{DynamicResource AccentBrush}"/>
+                                                    </Canvas>
+                                                </Viewbox>
+                                                <StackPanel Orientation="Horizontal" FlowDirection="LeftToRight" HorizontalAlignment="Center" Margin="0,2,0,0">
+                                                    <TextBlock x:Name="SpeedGaugeArrow" Text="" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,8,2" Visibility="Collapsed"/>
+                                                    <TextBlock x:Name="SpeedGaugeNumText" Text="0.0" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource TextBrush}"/>
+                                                    <TextBlock Text="Mbps" FontSize="11.5" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Bottom" Margin="6,0,0,6"/>
+                                                </StackPanel>
+                                                <TextBlock x:Name="SpeedPhaseText" Text="آماده شروع تست" FontSize="12" FontWeight="Bold"
+                                                           Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" Margin="0,2,0,2"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- 4 Metric Cards -->
+                                        <UniformGrid Columns="4" Margin="0,0,0,8">
+                                            <Border Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="6,8" Margin="0,0,4,0">
+                                                <StackPanel>
+                                                    <TextBlock Text="پینگ" FontSize="10.5" Foreground="{DynamicResource SubTextBrush}" HorizontalAlignment="Center"/>
+                                                    <TextBlock x:Name="SpeedPingVal" Text="—" FontSize="14" FontWeight="Bold" FlowDirection="LeftToRight" Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Center" Margin="0,2,0,2"/>
+                                                    <Border x:Name="SpeedPingChip" CornerRadius="6" Padding="6,1" HorizontalAlignment="Center" Visibility="Collapsed" Background="#2622C55E">
+                                                        <TextBlock x:Name="SpeedPingChipText" Text="" FontSize="9.5" FontWeight="Bold" Foreground="#22C55E"/>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="6,8" Margin="2,0,2,0">
+                                                <StackPanel>
+                                                    <TextBlock Text="جیتر" FontSize="10.5" Foreground="{DynamicResource SubTextBrush}" HorizontalAlignment="Center"/>
+                                                    <TextBlock x:Name="SpeedJitterVal" Text="—" FontSize="14" FontWeight="Bold" FlowDirection="LeftToRight" Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Center" Margin="0,2,0,2"/>
+                                                    <Border x:Name="SpeedJitterChip" CornerRadius="6" Padding="6,1" HorizontalAlignment="Center" Visibility="Collapsed" Background="#2622C55E">
+                                                        <TextBlock x:Name="SpeedJitterChipText" Text="" FontSize="9.5" FontWeight="Bold" Foreground="#22C55E"/>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="6,8" Margin="2,0,2,0">
+                                                <StackPanel>
+                                                    <TextBlock Text="دانلود" FontSize="10.5" Foreground="{DynamicResource SubTextBrush}" HorizontalAlignment="Center"/>
+                                                    <TextBlock x:Name="SpeedDlVal" Text="—" FontSize="14" FontWeight="Bold" FlowDirection="LeftToRight" Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Center" Margin="0,2,0,2"/>
+                                                    <Border x:Name="SpeedDlChip" CornerRadius="6" Padding="6,1" HorizontalAlignment="Center" Visibility="Collapsed" Background="#2622C55E">
+                                                        <TextBlock x:Name="SpeedDlChipText" Text="" FontSize="9.5" FontWeight="Bold" Foreground="#22C55E"/>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="6,8" Margin="4,0,0,0">
+                                                <StackPanel>
+                                                    <TextBlock Text="آپلود" FontSize="10.5" Foreground="{DynamicResource SubTextBrush}" HorizontalAlignment="Center"/>
+                                                    <TextBlock x:Name="SpeedUlVal" Text="—" FontSize="14" FontWeight="Bold" FlowDirection="LeftToRight" Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Center" Margin="0,2,0,2"/>
+                                                    <Border x:Name="SpeedUlChip" CornerRadius="6" Padding="6,1" HorizontalAlignment="Center" Visibility="Collapsed" Background="#2622C55E">
+                                                        <TextBlock x:Name="SpeedUlChipText" Text="" FontSize="9.5" FontWeight="Bold" Foreground="#22C55E"/>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Border>
+                                        </UniformGrid>
+
+                                        <!-- Progress bar -->
+                                        <Border x:Name="SpeedProgressTrack" Height="5" CornerRadius="2.5" Background="{DynamicResource FieldBrush}" Margin="0,2,0,10">
+                                            <Border x:Name="SpeedProgressFill" Width="0" HorizontalAlignment="Left" CornerRadius="2.5" Background="{DynamicResource AccentBrush}"/>
+                                        </Border>
+
+                                        <!-- Action buttons -->
+                                        <Grid Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="2*"/>
+                                                <ColumnDefinition Width="8"/>
+                                                <ColumnDefinition Width="1*"/>
+                                                <ColumnDefinition Width="8"/>
+                                                <ColumnDefinition Width="1*"/>
+                                                <ColumnDefinition Width="8"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0" x:Name="SpeedBtnAll" Content="⚡ تست کامل (Full Test)" Style="{StaticResource PrimaryActionBtn}" Height="36" FontSize="11.5" FontWeight="SemiBold" Click="SpeedAll_Click"/>
+                                            <Button Grid.Column="2" x:Name="SpeedBtnDl" Content="⬇ فقط دانلود" Style="{StaticResource ActionBtn}" Height="36" FontSize="11" Click="SpeedDl_Click"/>
+                                            <Button Grid.Column="4" x:Name="SpeedBtnUl" Content="⬆ فقط آپلود" Style="{StaticResource ActionBtn}" Height="36" FontSize="11" Click="SpeedUl_Click"/>
+                                            <Button Grid.Column="6" x:Name="SpeedBtnStop" Content="⏹ توقف" Style="{StaticResource ActionBtn}" Height="36" FontSize="11" Padding="14,0" Click="SpeedStop_Click"/>
+                                        </Grid>
+
+                                        <TextBlock x:Name="SpeedWarnText" Text="⚠️ هر فاز حداکثر تا ۱۰ ثانیه اجرا می‌شود و از حجم اشتراک استفاده می‌کند." FontSize="10" Foreground="{DynamicResource SubTextBrush}" HorizontalAlignment="Center" TextAlignment="Center" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </DockPanel>
+                        </Grid>
 
                         <!-- ================= 5. SETTINGS PANEL ================= -->
                         <ScrollViewer x:Name="SettingsPanel" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">

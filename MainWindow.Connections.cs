@@ -65,6 +65,9 @@ namespace SmartVpn
         // پاپ‌آپ منوی اقدامات ردیفی که هم اکنون باز است — قبل از رفرش دوباره لیست باید بسته شود، ورنه رها/معلق روی صفحه می‌ماند
         private Popup? _openRowMenuPopup;
 
+        // کش پینگ سرورهای VPN Core به همراه وضعیت و مقدار تأخیر
+        internal static readonly Dictionary<string, (int ping, bool isUp, string text)> _vpnPingCache = new(StringComparer.OrdinalIgnoreCase);
+
         // پاپ‌آپ منوی آبشاری فیلتر نوع کانکشن — باز/بسته با کلیک روی دکمه بالای لیست (همون الگوی منوی سه‌نقطه ردیف‌ها)
         private Popup? _openFilterPopup;
 
@@ -505,6 +508,11 @@ namespace SmartVpn
             menuStack.Children.Add(menuConnectRow);
             menuStack.Children.Add(new Border { Height = 1, Margin = new Thickness(6, 2, 6, 2), Background = menuSepBrush });
 
+            var menuPingRow = MakeMenuRow("⚡", "Ping", menuTextNormal);
+            menuPingRow.Click += async (_, __) => { menuPopup.IsOpen = false; await PingSingleVpnProfileAsync(c); };
+            menuStack.Children.Add(menuPingRow);
+            menuStack.Children.Add(new Border { Height = 1, Margin = new Thickness(6, 2, 6, 2), Background = menuSepBrush });
+
             var menuEditRow = MakeMenuRow("✏", "Edit", menuTextNormal);
             menuEditRow.Click += (_, __) => { menuPopup.IsOpen = false; EditConn(c.Name); };
             menuStack.Children.Add(menuEditRow);
@@ -655,34 +663,103 @@ namespace SmartVpn
             };
 
             // سه‌نقطه همیشه سمت راست کارت است؛ برچسب وضعیت (در صورت وجود) کنار آن می‌آید — کتگوری اینجا نیست، جایش ثابت در ستون چپ (۰) است
-                        var rowRight = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-            var kuma = UptimeKumaClient.GetStatusForProfile(c.Name);
-            if (kuma != null)
+            var rowRight = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            
+            // نمایش دائمی پینگ سرور (Ping Pill) با امکان کلیک برای تست سریع
+            (int ping, bool isUp, string text) pingData = (-1, false, "");
+            if (_vpnPingCache.TryGetValue(c.Name, out var cachedPing))
             {
-                var pingColor = kuma.IsUp ? (kuma.Ping < 150 ? Color.FromRgb(0x22, 0xC5, 0x5E) : Color.FromRgb(0xF5, 0x9E, 0x0B)) : Color.FromRgb(0xEF, 0x44, 0x44);
-                var pingPill = new Border
-                {
-                    Background = new SolidColorBrush(Color.FromArgb(0x20, pingColor.R, pingColor.G, pingColor.B)),
-                    BorderBrush = new SolidColorBrush(pingColor),
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(5),
-                    Padding = new Thickness(5, 2, 5, 2),
-                    Margin = new Thickness(0, 0, 6, 0),
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Cursor = System.Windows.Input.Cursors.Hand,
-                    ToolTip = "وضعیت Uptime / پینگ سرور",
-                    Child = new StackPanel
-                    {
-                        Orientation = Orientation.Horizontal,
-                        Children = 
-                        {
-                            new Border { Background = new SolidColorBrush(pingColor), Width = 6, Height = 6, CornerRadius = new CornerRadius(3), Margin = new Thickness(0,0,4,0), VerticalAlignment = VerticalAlignment.Center },
-                            new TextBlock { Text = kuma.IsUp ? $"{kuma.Ping} ms" : "Down", FontSize = 9, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(pingColor), VerticalAlignment = VerticalAlignment.Center }
-                        }
-                    }
-                };
-                rowRight.Children.Add(pingPill);
+                pingData = cachedPing;
             }
+            else
+            {
+                var kuma = UptimeKumaClient.GetStatusForProfile(c.Name);
+                if (kuma != null)
+                {
+                    pingData = (kuma.Ping, kuma.IsUp, kuma.IsUp ? $"{kuma.Ping} ms" : "Down");
+                }
+            }
+
+            Color pingColor;
+            string pingText;
+            if (pingData.ping > 0)
+            {
+                pingColor = pingData.ping < 120 ? Color.FromRgb(0x22, 0xC5, 0x5E) :
+                            (pingData.ping < 250 ? Color.FromRgb(0xF5, 0x9E, 0x0B) : Color.FromRgb(0xEF, 0x44, 0x44));
+                pingText = pingData.text;
+            }
+            else if (pingData.text == "Timeout" || pingData.text == "Down")
+            {
+                pingColor = Color.FromRgb(0xEF, 0x44, 0x44);
+                pingText = pingData.text;
+            }
+            else if (pingData.text == "Pinging...")
+            {
+                pingColor = Color.FromRgb(0x3B, 0x82, 0xF6);
+                pingText = "...";
+            }
+            else
+            {
+                pingColor = light ? Color.FromRgb(0x64, 0x74, 0x8B) : Color.FromRgb(0x94, 0xA3, 0xB8);
+                pingText = "⚡ Ping";
+            }
+
+            var pingDot = new Border
+            {
+                Background = new SolidColorBrush(pingColor),
+                Width = 6,
+                Height = 6,
+                CornerRadius = new CornerRadius(3),
+                Margin = new Thickness(0, 0, 4, 0),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            var pingLabel = new TextBlock
+            {
+                Text = pingText,
+                FontSize = 9,
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush(pingColor),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            var pingPill = new Border
+            {
+                Background = new SolidColorBrush(Color.FromArgb(0x20, pingColor.R, pingColor.G, pingColor.B)),
+                BorderBrush = new SolidColorBrush(pingColor),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(5),
+                Padding = new Thickness(5, 2, 5, 2),
+                Margin = new Thickness(0, 0, 6, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                Cursor = System.Windows.Input.Cursors.Hand,
+                ToolTip = "تست پینگ زنده سرور (کلیک کنید)",
+                Child = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Children = { pingDot, pingLabel }
+                }
+            };
+
+            pingPill.MouseLeftButtonUp += async (s, e) =>
+            {
+                e.Handled = true;
+                pingLabel.Text = "...";
+                pingDot.Background = new SolidColorBrush(Color.FromRgb(0x3B, 0x82, 0xF6));
+                pingLabel.Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x82, 0xF6));
+                pingPill.BorderBrush = new SolidColorBrush(Color.FromRgb(0x3B, 0x82, 0xF6));
+                pingPill.Background = new SolidColorBrush(Color.FromArgb(0x20, 0x3B, 0x82, 0xF6));
+
+                var res = await MeasureVpnProfilePingAsync(c);
+                _vpnPingCache[c.Name] = res;
+
+                var col = res.isUp ? (res.ping < 120 ? Color.FromRgb(0x22, 0xC5, 0x5E) : (res.ping < 250 ? Color.FromRgb(0xF5, 0x9E, 0x0B) : Color.FromRgb(0xEF, 0x44, 0x44))) : Color.FromRgb(0xEF, 0x44, 0x44);
+                pingDot.Background = new SolidColorBrush(col);
+                pingLabel.Foreground = new SolidColorBrush(col);
+                pingLabel.Text = res.text;
+                pingPill.BorderBrush = new SolidColorBrush(col);
+                pingPill.Background = new SolidColorBrush(Color.FromArgb(0x20, col.R, col.G, col.B));
+            };
+
+            rowRight.Children.Add(pingPill);
             rowRight.Children.Add(dotsBtn);
             if (statusPill != null) rowRight.Children.Add(statusPill);
             Grid.SetColumn(rowRight, 2);
@@ -1517,6 +1594,148 @@ namespace SmartVpn
                 }
                 catch (Exception ex) { AppendConnLog("خطا در اکسپورت: " + ex.Message); }
             }
+        }
+
+        // ================= تست پینگ سرورهای VPN Core =================
+        private async void VpnPingAll_Click(object sender, RoutedEventArgs e)
+        {
+            await PingAllVpnProfilesAsync();
+        }
+
+        public async Task PingAllVpnProfilesAsync()
+        {
+            var profiles = _config.Connections.ToList();
+            if (profiles.Count == 0) return;
+
+            if (VpnPingAllBtn != null)
+            {
+                VpnPingAllBtn.IsEnabled = false;
+            }
+
+            try
+            {
+                foreach (var p in profiles)
+                {
+                    _vpnPingCache[p.Name] = (-1, false, "Pinging...");
+                }
+                RefreshList();
+
+                var tasks = profiles.Select(async p =>
+                {
+                    var res = await MeasureVpnProfilePingAsync(p);
+                    _vpnPingCache[p.Name] = res;
+                });
+
+                await Task.WhenAll(tasks);
+                RefreshList();
+            }
+            catch { }
+            finally
+            {
+                if (VpnPingAllBtn != null)
+                {
+                    VpnPingAllBtn.IsEnabled = true;
+                }
+            }
+        }
+
+        public async Task PingSingleVpnProfileAsync(ConnectionProfile c)
+        {
+            _vpnPingCache[c.Name] = (-1, false, "Pinging...");
+            RefreshList();
+            var res = await MeasureVpnProfilePingAsync(c);
+            _vpnPingCache[c.Name] = res;
+            RefreshList();
+        }
+
+        private static async Task<(int ping, bool isUp, string text)> MeasureVpnProfilePingAsync(ConnectionProfile c)
+        {
+            string host = "";
+            int port = 0;
+
+            if (c.Type.Equals("wireguard", StringComparison.OrdinalIgnoreCase) ||
+                c.Type.Equals("amneziawg", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.IsNullOrWhiteSpace(c.WireGuardConf))
+                {
+                    var (wgHost, wgPort) = WireGuardProvider.ParseEndpoint(c.WireGuardConf);
+                    if (!string.IsNullOrWhiteSpace(wgHost)) host = wgHost;
+                    if (wgPort.HasValue) port = wgPort.Value;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(host))
+            {
+                host = !string.IsNullOrWhiteSpace(c.ServerOverride) ? c.ServerOverride : c.Server;
+            }
+
+            if (port == 0 && c.Port.HasValue)
+            {
+                port = c.Port.Value;
+            }
+
+            if (string.IsNullOrWhiteSpace(host))
+            {
+                return (-1, false, "—");
+            }
+
+            host = host.Trim();
+            if (host.Contains("://"))
+            {
+                try { host = new Uri(host).Host; } catch { }
+            }
+            if (host.Contains(':'))
+            {
+                var parts = host.Split(':');
+                host = parts[0];
+                if (port == 0 && parts.Length > 1 && int.TryParse(parts[1], out var parsedPort))
+                {
+                    port = parsedPort;
+                }
+            }
+
+            // 1. Try TCP connect first if port is known
+            if (port > 0)
+            {
+                try
+                {
+                    var sw = Stopwatch.StartNew();
+                    using var client = new TcpClient();
+                    var connectTask = client.ConnectAsync(host, port);
+                    var delayTask = Task.Delay(2000);
+                    var completed = await Task.WhenAny(connectTask, delayTask);
+                    sw.Stop();
+
+                    if (completed == connectTask && !connectTask.IsFaulted)
+                    {
+                        int rtt = Math.Max(1, (int)sw.ElapsedMilliseconds);
+                        return (rtt, true, $"{rtt} ms");
+                    }
+                }
+                catch { }
+            }
+
+            // 2. Try ICMP Ping
+            try
+            {
+                using var pinger = new Ping();
+                var reply = await pinger.SendPingAsync(host, 2000);
+                if (reply.Status == IPStatus.Success)
+                {
+                    int rtt = Math.Max(1, (int)reply.RoundtripTime);
+                    return (rtt, true, $"{rtt} ms");
+                }
+            }
+            catch { }
+
+            // 3. Fallback to Uptime Kuma if available
+            var kuma = UptimeKumaClient.GetStatusForProfile(c.Name);
+            if (kuma != null && kuma.IsUp)
+            {
+                return (kuma.Ping, true, $"{kuma.Ping} ms");
+            }
+
+            return (-1, false, "Timeout");
         }
 
     }

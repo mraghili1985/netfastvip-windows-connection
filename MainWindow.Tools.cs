@@ -42,15 +42,7 @@ namespace SmartVpn
 
         private void SpeedTest_Click(object sender, RoutedEventArgs e)
         {
-            bool isVpnConnected = _engine.IsRunning;
-            bool isXrayConnected = _xrayIsConnected && SmartVpn.XrayCore.XrayEngine.IsRunning;
-            bool isConnected = isVpnConnected || isXrayConnected;
-            string connName = isXrayConnected
-                ? (!string.IsNullOrWhiteSpace(_xrayActiveProfile?.Alias) ? _xrayActiveProfile.Alias : (!string.IsNullOrWhiteSpace(XrayTxtActiveName?.Text) ? XrayTxtActiveName.Text : "Xray Service"))
-                : ActiveConnText.Text;
-
-            var dlg = new SpeedTestDialog(isConnected, connName, isXrayConnected) { Owner = this };
-            dlg.ShowDialog();
+            OpenSpeedTestView();
         }
 
         private const string MsgSubNotConfigured = "استعلام اشتراک در این نسخه پیکربندی نشده است (PortalApiUrl در config.json).";

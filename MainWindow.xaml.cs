@@ -506,6 +506,10 @@ namespace SmartVpn
         {
             ShowPanel("vpn");
             UpdateSidebarState("vpn");
+            if (_vpnPingCache.Count == 0 && _config.Connections.Count > 0)
+            {
+                _ = PingAllVpnProfilesAsync();
+            }
         }
 
         private void SidebarNavXrayCore_Click(object sender, RoutedEventArgs e)
