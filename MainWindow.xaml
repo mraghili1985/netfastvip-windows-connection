@@ -841,43 +841,360 @@
                             <Grid.RenderTransform>
                                 <TranslateTransform x:Name="VpnTransform"/>
                             </Grid.RenderTransform>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/> <!-- Action Toolbar -->
-                                <RowDefinition Height="*"/>    <!-- Server List -->
-                            </Grid.RowDefinitions>
 
-                            <!-- Toolbar with Title, Add, Filter, Import, Export, and Dashboard Back -->
-                            <Grid Grid.Row="0" Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="🛡️ VPN Core" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
-                                    <TextBlock Text="سرورهای WireGuard, OpenVPN, Amnezia, L2TP, SSTP" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="12,0,0,0" VerticalAlignment="Center"/>
-                                </StackPanel>
+                            <!-- VIEW 1: Connections List (Default) -->
+                            <Grid x:Name="VpnListView" Visibility="Visible">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/> <!-- Action Toolbar -->
+                                    <RowDefinition Height="*"/>    <!-- Server List -->
+                                </Grid.RowDefinitions>
 
-                                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                    <Button x:Name="AddBtn" Content="＋ Add" Style="{StaticResource PrimaryActionBtn}" Click="Add_Click" Margin="0,0,6,0"/>
-                                    <Button x:Name="FilterDropdownBtn" Style="{StaticResource ActionBtn}" Click="FilterDropdownBtn_Click" Margin="0,0,6,0">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock x:Name="FilterDropdownLabel" Text="همه" FontSize="11"/>
-                                            <TextBlock Text=" ⌄" FontSize="10" Margin="4,0,0,0"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Content="📁 Import" Style="{StaticResource ActionBtn}" Click="Import_Click" Margin="0,0,6,0"/>
-                                    <Button Content="💾 Export" Style="{StaticResource ActionBtn}" Click="Export_Click" Margin="0,0,6,0"/>
-                                    <Button Content="⌂ داشبورد" Style="{StaticResource ActionBtn}" Click="SidebarNavDashboard_Click"/>
-                                </StackPanel>
+                                <!-- Toolbar with Title, Prominent Add (+), Filter, Import, Export -->
+                                <Grid Grid.Row="0" Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="🛡️ VPN Core" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="سرورهای WireGuard, OpenVPN, Amnezia, L2TP, SSTP" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <!-- Prominent '+' Action Button -->
+                                        <Button x:Name="AddBtn" Style="{StaticResource PrimaryActionBtn}" Click="Add_Click" Margin="0,0,8,0" Width="38" Height="34" Padding="0" ToolTip="افزودن کانکشن جدید (Add Connection)">
+                                            <TextBlock Text="＋" FontSize="20" FontWeight="Bold" Margin="0,-2,0,0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Button>
+                                        <Button x:Name="FilterDropdownBtn" Style="{StaticResource ActionBtn}" Click="FilterDropdownBtn_Click" Margin="0,0,6,0">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock x:Name="FilterDropdownLabel" Text="همه" FontSize="11"/>
+                                                <TextBlock Text=" ⌄" FontSize="10" Margin="4,0,0,0"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Content="📁 Import" Style="{StaticResource ActionBtn}" Click="Import_Click" Margin="0,0,6,0"/>
+                                        <Button Content="💾 Export" Style="{StaticResource ActionBtn}" Click="Export_Click"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Full-Height Scrollable Connections List (ConnList) -->
+                                <Border Grid.Row="1" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}"
+                                        BorderThickness="1" CornerRadius="14" Padding="8,8">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <StackPanel x:Name="ConnList"/>
+                                    </ScrollViewer>
+                                </Border>
                             </Grid>
 
-                            <!-- Full-Height Scrollable Connections List (ConnList) -->
-                            <Border Grid.Row="1" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}"
-                                    BorderThickness="1" CornerRadius="14" Padding="8,8">
-                                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                    <StackPanel x:Name="ConnList"/>
-                                </ScrollViewer>
-                            </Border>
+                            <!-- VIEW 2: In-place Add / Edit Connection Form -->
+                            <Grid x:Name="VpnEditView" Visibility="Collapsed">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/> <!-- Header with Back Button & Quick Actions -->
+                                    <RowDefinition Height="*"/>    <!-- Scrollable Form Container -->
+                                </Grid.RowDefinitions>
+
+                                <!-- Header -->
+                                <Grid Grid.Row="0" Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Button Grid.Column="0" x:Name="VpnEditBackBtn" Style="{StaticResource ActionBtn}" Padding="10,6" Click="ConnFormCancel_Click" Margin="0,0,12,0" ToolTip="بازگشت به لیست کانکشن‌ها">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="←" FontSize="14" FontWeight="Bold" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="بازگشت" FontSize="11.5" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock x:Name="VpnEditTitleText" Text="افزودن کانکشن جدید" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextBrush}"/>
+                                        <TextBlock x:Name="VpnEditSubtitleText" Text="مشخصات و پارامترهای اتصال VPN را وارد نمایید" FontSize="10.5" Foreground="{DynamicResource SubTextBrush}"/>
+                                    </StackPanel>
+
+                                    <!-- Top Save / Cancel Quick Actions -->
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                        <Button x:Name="ConnFormTopSaveBtn" Content="💾 ذخیره" Style="{StaticResource PrimaryActionBtn}" Padding="14,6" Click="ConnFormSave_Click" Margin="0,0,6,0"/>
+                                        <Button x:Name="ConnFormTopCancelBtn" Content="انصراف" Style="{StaticResource ActionBtn}" Padding="12,6" Click="ConnFormCancel_Click"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Scrollable Form Body -->
+                                <Border Grid.Row="1" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}"
+                                        BorderThickness="1" CornerRadius="14" Padding="16,14">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <StackPanel Margin="0,0,10,0">
+
+                                            <!-- 1. General Info: Name & Protocol Type -->
+                                            <Grid Margin="0,0,0,12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="3*"/>
+                                                    <ColumnDefinition Width="12"/>
+                                                    <ColumnDefinition Width="2*"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="نام کانکشن *" Style="{StaticResource SectionTitle}" Margin="0,0,0,4"/>
+                                                    <TextBox x:Name="ConnFormNameBox" Height="34" Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="10,0" VerticalContentAlignment="Center" FontSize="12.5"/>
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Column="2">
+                                                    <TextBlock Text="نوع پروتکل *" Style="{StaticResource SectionTitle}" Margin="0,0,0,4"/>
+                                                    <ComboBox x:Name="ConnFormTypeCombo" Height="34" SelectionChanged="ConnFormType_Changed">
+                                                        <ComboBoxItem Content="OpenVPN" Tag="openvpn"/>
+                                                        <ComboBoxItem Content="WireGuard / AmneziaWG" Tag="wireguard"/>
+                                                        <ComboBoxItem Content="L2TP/IPsec" Tag="l2tp"/>
+                                                        <ComboBoxItem Content="SSTP" Tag="sstp"/>
+                                                        <ComboBoxItem Content="IKEv2" Tag="ikev2"/>
+                                                        <ComboBoxItem Content="PPTP" Tag="pptp"/>
+                                                    </ComboBox>
+                                                </StackPanel>
+                                            </Grid>
+
+                                            <!-- 2. Standard Panel (OpenVPN, L2TP, SSTP, IKEv2, PPTP) -->
+                                            <StackPanel x:Name="ConnFormStandardPanel">
+
+                                                <!-- Server Address & Port -->
+                                                <Grid Margin="0,0,0,12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="3*"/>
+                                                        <ColumnDefinition Width="12"/>
+                                                        <ColumnDefinition Width="1*"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <StackPanel Grid.Column="0">
+                                                        <TextBlock Text="آدرس سرور (Server Address) *" Style="{StaticResource SectionTitle}" Margin="0,0,0,4"/>
+                                                        <TextBox x:Name="ConnFormServerBox" Height="34" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="12" Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="10,0" VerticalContentAlignment="Center"/>
+                                                    </StackPanel>
+
+                                                    <StackPanel Grid.Column="2">
+                                                        <TextBlock Text="پورت (اختیاری)" Style="{StaticResource SectionTitle}" Margin="0,0,0,4"/>
+                                                        <TextBox x:Name="ConnFormPortBox" Height="34" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="12" Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="10,0" VerticalContentAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Grid>
+
+                                                <!-- OpenVPN Extras (Proto, Override, File Import) -->
+                                                <StackPanel x:Name="ConnFormOvpnPanel" Margin="0,0,0,12">
+                                                    <Grid Margin="0,0,0,8">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="1*"/>
+                                                            <ColumnDefinition Width="12"/>
+                                                            <ColumnDefinition Width="2*"/>
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <StackPanel Grid.Column="0">
+                                                            <TextBlock Text="پروتکل OpenVPN" Style="{StaticResource SectionTitle}" Margin="0,0,0,4"/>
+                                                            <ComboBox x:Name="ConnFormProtoCombo" Height="34" SelectedIndex="0">
+                                                                <ComboBoxItem Content="UDP" Tag="udp"/>
+                                                                <ComboBoxItem Content="TCP" Tag="tcp"/>
+                                                            </ComboBox>
+                                                        </StackPanel>
+
+                                                        <StackPanel Grid.Column="2">
+                                                            <TextBlock Text="Server Override (اختیاری)" Style="{StaticResource SectionTitle}" Margin="0,0,0,4"/>
+                                                            <TextBox x:Name="ConnFormOverrideBox" Height="34" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="12" Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="10,0" VerticalContentAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Grid>
+
+                                                    <Border Background="{DynamicResource FieldBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,4,0,0">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <Button Grid.Column="0" x:Name="ConnFormImportOvpnBtn" Content="📂 انتخاب فایل .ovpn" Style="{StaticResource ActionBtn}" Padding="12,6" Click="ConnFormImportOvpn_Click"/>
+                                                            <TextBlock Grid.Column="1" x:Name="ConnFormOvpnStatusText" Text="" FontSize="11" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis"/>
+                                                        </Grid>
+                                                    </Border>
+                                                </StackPanel>
+
+                                                <!-- Credentials: Username & Password -->
+                                                <Grid Margin="0,0,0,12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="1*"/>
+                                                        <ColumnDefinition Width="12"/>
+                                                        <ColumnDefinition Width="1*"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <StackPanel Grid.Column="0">
+                                                        <TextBlock Text="نام کاربری (Username)" Style="{StaticResource SectionTitle}" Margin="0,0,0,4"/>
+                                                        <TextBox x:Name="ConnFormUserBox" Height="34" FlowDirection="LeftToRight" FontSize="12" Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="10,0" VerticalContentAlignment="Center"/>
+                                                    </StackPanel>
+
+                                                    <StackPanel Grid.Column="2">
+                                                        <TextBlock Text="رمز عبور (Password)" Style="{StaticResource SectionTitle}" Margin="0,0,0,4"/>
+                                                        <PasswordBox x:Name="ConnFormPassBox" Height="34" FlowDirection="LeftToRight" FontSize="12" Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="10,0" VerticalContentAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Grid>
+
+                                                <!-- L2TP PSK -->
+                                                <StackPanel x:Name="ConnFormPskPanel" Margin="0,0,0,12" Visibility="Collapsed">
+                                                    <TextBlock Text="کلید مشترک (Pre-shared Key / PSK)" Style="{StaticResource SectionTitle}" Margin="0,0,0,4"/>
+                                                    <TextBox x:Name="ConnFormPskBox" Height="34" FlowDirection="LeftToRight" FontSize="12" Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="10,0" VerticalContentAlignment="Center"/>
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <!-- 3. WireGuard / AmneziaWG Panel -->
+                                            <StackPanel x:Name="ConnFormWgPanel" Visibility="Collapsed" Margin="0,0,0,12">
+
+                                                <!-- Import .conf button -->
+                                                <Border Background="{DynamicResource FieldBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,0,0,12">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Button Grid.Column="0" x:Name="ConnFormImportWgBtn" Content="📂 ایمپورت از فایل .conf (اختیاری)" Style="{StaticResource ActionBtn}" Padding="12,6" Click="ConnFormImportWgConf_Click"/>
+                                                        <TextBlock Grid.Column="1" x:Name="ConnFormWgStatusText" Text="یا فیلدهای زیر را دستی تکمیل کنید" FontSize="11" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis"/>
+                                                    </Grid>
+                                                </Border>
+
+                                                <!-- [Interface] -->
+                                                <Border Background="{DynamicResource FieldBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,0,0,12">
+                                                    <StackPanel>
+                                                        <TextBlock Text="─── Interface ───" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+
+                                                        <TextBlock Text="Private Key *" Style="{StaticResource SectionTitle}" Margin="0,0,0,4"/>
+                                                        <TextBox x:Name="ConnFormWgPrivateKeyBox" Height="34" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="8,0" VerticalContentAlignment="Center"/>
+
+                                                        <Grid Margin="0,8,0,0">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="8"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="8"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <StackPanel Grid.Column="0">
+                                                                <TextBlock Text="Address * (e.g. 10.0.0.2/32)" Style="{StaticResource SectionTitle}" Margin="0,0,0,4"/>
+                                                                <TextBox x:Name="ConnFormWgAddressBox" Height="32" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="8,0" VerticalContentAlignment="Center"/>
+                                                            </StackPanel>
+
+                                                            <StackPanel Grid.Column="2">
+                                                                <TextBlock Text="DNS (اختیاری)" Style="{StaticResource SectionTitle}" Margin="0,0,0,4"/>
+                                                                <TextBox x:Name="ConnFormWgDnsBox" Height="32" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="8,0" VerticalContentAlignment="Center"/>
+                                                            </StackPanel>
+
+                                                            <StackPanel Grid.Column="4">
+                                                                <TextBlock Text="MTU (اختیاری)" Style="{StaticResource SectionTitle}" Margin="0,0,0,4"/>
+                                                                <TextBox x:Name="ConnFormWgMtuBox" Height="32" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="8,0" VerticalContentAlignment="Center"/>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <!-- [Peer] -->
+                                                <Border Background="{DynamicResource FieldBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,0,0,12">
+                                                    <StackPanel>
+                                                        <TextBlock Text="─── Peer ───" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+
+                                                        <Grid Margin="0,0,0,8">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="2*"/>
+                                                                <ColumnDefinition Width="8"/>
+                                                                <ColumnDefinition Width="1*"/>
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <StackPanel Grid.Column="0">
+                                                                <TextBlock Text="Public Key *" Style="{StaticResource SectionTitle}" Margin="0,0,0,4"/>
+                                                                <TextBox x:Name="ConnFormWgPublicKeyBox" Height="32" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="8,0" VerticalContentAlignment="Center"/>
+                                                            </StackPanel>
+
+                                                            <StackPanel Grid.Column="2">
+                                                                <TextBlock Text="Endpoint * (host:port)" Style="{StaticResource SectionTitle}" Margin="0,0,0,4"/>
+                                                                <TextBox x:Name="ConnFormWgEndpointBox" Height="32" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="8,0" VerticalContentAlignment="Center"/>
+                                                            </StackPanel>
+                                                        </Grid>
+
+                                                        <Grid Margin="0,0,0,8">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="1*"/>
+                                                                <ColumnDefinition Width="8"/>
+                                                                <ColumnDefinition Width="1*"/>
+                                                                <ColumnDefinition Width="8"/>
+                                                                <ColumnDefinition Width="1*"/>
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <StackPanel Grid.Column="0">
+                                                                <TextBlock Text="Preshared Key (اختیاری)" Style="{StaticResource SectionTitle}" Margin="0,0,0,4"/>
+                                                                <TextBox x:Name="ConnFormWgPresharedKeyBox" Height="32" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="8,0" VerticalContentAlignment="Center"/>
+                                                            </StackPanel>
+
+                                                            <StackPanel Grid.Column="2">
+                                                                <TextBlock Text="Allowed IPs" Style="{StaticResource SectionTitle}" Margin="0,0,0,4"/>
+                                                                <TextBox x:Name="ConnFormWgAllowedIPsBox" Text="0.0.0.0/0" Height="32" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="8,0" VerticalContentAlignment="Center"/>
+                                                            </StackPanel>
+
+                                                            <StackPanel Grid.Column="4">
+                                                                <TextBlock Text="Keepalive (ثانیه)" Style="{StaticResource SectionTitle}" Margin="0,0,0,4"/>
+                                                                <TextBox x:Name="ConnFormWgKeepaliveBox" Height="32" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="8,0" VerticalContentAlignment="Center"/>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <!-- AmneziaWG Obfuscation Checkbox & Card -->
+                                                <Border Background="{DynamicResource FieldBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,0,0,12">
+                                                    <StackPanel>
+                                                        <CheckBox x:Name="ConnFormAwgCheckBox" FontSize="12" Checked="ConnFormAwgCheckBox_Changed" Unchecked="ConnFormAwgCheckBox_Changed">
+                                                            <TextBlock>
+                                                                <Run Text="AmneziaWG Obfuscation" FontWeight="SemiBold"/>
+                                                                <Run Text=" — پارامترهای ضد فیلترینگ پیشرفته (Jc, S, H)" FontSize="10.5" Foreground="{DynamicResource SubTextBrush}"/>
+                                                            </TextBlock>
+                                                        </CheckBox>
+
+                                                        <StackPanel x:Name="ConnFormAwgPanel" Visibility="Collapsed" Margin="0,10,0,0">
+                                                            <TextBlock Text="─── پارامترهای Junk و Obfuscation ───" FontSize="11" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+
+                                                            <!-- Jc / Jmin / Jmax -->
+                                                            <Grid Margin="0,0,0,6">
+                                                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                                <StackPanel Grid.Column="0"><TextBlock Text="Jc" Style="{StaticResource SectionTitle}" Margin="0,0,0,2"/><TextBox x:Name="ConnFormAwgJcBox" Height="30" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="6,0" VerticalContentAlignment="Center"/></StackPanel>
+                                                                <StackPanel Grid.Column="2"><TextBlock Text="Jmin" Style="{StaticResource SectionTitle}" Margin="0,0,0,2"/><TextBox x:Name="ConnFormAwgJminBox" Height="30" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="6,0" VerticalContentAlignment="Center"/></StackPanel>
+                                                                <StackPanel Grid.Column="4"><TextBlock Text="Jmax" Style="{StaticResource SectionTitle}" Margin="0,0,0,2"/><TextBox x:Name="ConnFormAwgJmaxBox" Height="30" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="6,0" VerticalContentAlignment="Center"/></StackPanel>
+                                                            </Grid>
+
+                                                            <!-- S1 / S2 / S3 / S4 -->
+                                                            <Grid Margin="0,0,0,6">
+                                                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="6"/><ColumnDefinition Width="*"/><ColumnDefinition Width="6"/><ColumnDefinition Width="*"/><ColumnDefinition Width="6"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                                <StackPanel Grid.Column="0"><TextBlock Text="S1" Style="{StaticResource SectionTitle}" Margin="0,0,0,2"/><TextBox x:Name="ConnFormAwgS1Box" Height="30" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="6,0" VerticalContentAlignment="Center"/></StackPanel>
+                                                                <StackPanel Grid.Column="2"><TextBlock Text="S2" Style="{StaticResource SectionTitle}" Margin="0,0,0,2"/><TextBox x:Name="ConnFormAwgS2Box" Height="30" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="6,0" VerticalContentAlignment="Center"/></StackPanel>
+                                                                <StackPanel Grid.Column="4"><TextBlock Text="S3" Style="{StaticResource SectionTitle}" Margin="0,0,0,2"/><TextBox x:Name="ConnFormAwgS3Box" Height="30" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="6,0" VerticalContentAlignment="Center"/></StackPanel>
+                                                                <StackPanel Grid.Column="6"><TextBlock Text="S4" Style="{StaticResource SectionTitle}" Margin="0,0,0,2"/><TextBox x:Name="ConnFormAwgS4Box" Height="30" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="6,0" VerticalContentAlignment="Center"/></StackPanel>
+                                                            </Grid>
+
+                                                            <!-- H1 / H2 / H3 / H4 -->
+                                                            <Grid Margin="0,0,0,6">
+                                                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="6"/><ColumnDefinition Width="*"/><ColumnDefinition Width="6"/><ColumnDefinition Width="*"/><ColumnDefinition Width="6"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                                <StackPanel Grid.Column="0"><TextBlock Text="H1" Style="{StaticResource SectionTitle}" Margin="0,0,0,2"/><TextBox x:Name="ConnFormAwgH1Box" Height="30" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="6,0" VerticalContentAlignment="Center"/></StackPanel>
+                                                                <StackPanel Grid.Column="2"><TextBlock Text="H2" Style="{StaticResource SectionTitle}" Margin="0,0,0,2"/><TextBox x:Name="ConnFormAwgH2Box" Height="30" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="6,0" VerticalContentAlignment="Center"/></StackPanel>
+                                                                <StackPanel Grid.Column="4"><TextBlock Text="H3" Style="{StaticResource SectionTitle}" Margin="0,0,0,2"/><TextBox x:Name="ConnFormAwgH3Box" Height="30" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="6,0" VerticalContentAlignment="Center"/></StackPanel>
+                                                                <StackPanel Grid.Column="6"><TextBlock Text="H4" Style="{StaticResource SectionTitle}" Margin="0,0,0,2"/><TextBox x:Name="ConnFormAwgH4Box" Height="30" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="6,0" VerticalContentAlignment="Center"/></StackPanel>
+                                                            </Grid>
+
+                                                            <TextBlock Text="پارامترهای اضافی (اختیاری)" Style="{StaticResource SectionTitle}" Margin="0,4,0,2"/>
+                                                            <TextBox x:Name="ConnFormAwgExtraBox" Height="50" TextWrapping="Wrap" AcceptsReturn="True" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="8,4"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Border>
+                                            </StackPanel>
+
+                                            <!-- Bottom Save / Cancel Action Buttons -->
+                                            <Grid Margin="0,8,0,4">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="12"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Button Grid.Column="0" Content="💾 ذخیره کانکشن (Save)" Style="{StaticResource PrimaryActionBtn}" Height="38" FontSize="12.5" FontWeight="SemiBold" Click="ConnFormSave_Click"/>
+                                                <Button Grid.Column="2" Content="انصراف (Cancel)" Style="{StaticResource ActionBtn}" Height="38" FontSize="12" Click="ConnFormCancel_Click"/>
+                                            </Grid>
+
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                </Border>
+                            </Grid>
                         </Grid>
 
                         <!-- ================= 2. SERVERS PANEL (XRAY & VPN CONNECTIONS) ================= -->
@@ -919,8 +1236,7 @@
                                             <TextBlock x:Name="XrayPingAllLabel" Text=" Ping All" Margin="4,0,0,0"/>
                                         </StackPanel>
                                     </Button>
-                                    <Button x:Name="XrayClearServersBtn" Content="🗑" Style="{StaticResource ActionBtn}" Click="XrayClearServers_Click" Margin="0,0,6,0" ToolTip="Clear Servers"/>
-                                    <Button Content="⌂ داشبورد" Style="{StaticResource ActionBtn}" Click="SidebarNavDashboard_Click"/>
+                                    <Button x:Name="XrayClearServersBtn" Content="🗑" Style="{StaticResource ActionBtn}" Click="XrayClearServers_Click" ToolTip="Clear Servers"/>
                                 </StackPanel>
                             </Grid>
 

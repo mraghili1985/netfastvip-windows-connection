@@ -774,32 +774,498 @@ namespace SmartVpn
 
         
         
+        private ConnectionProfile? _editingConnProfile;
+        private string _formOvpnInline = "";
+        private string _formWgConf = "";
+        private bool _connFormFiltersApplied;
+
         private void Add_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new ConnectionDialog { Owner = this, WindowStartupLocation = WindowStartupLocation.CenterOwner };
-            if (dlg.ShowDialog() == true && dlg.Result != null)
-            {
-                _config.Connections.Add(dlg.Result);
-                _config.Save();
-                _selectedName = dlg.Result.Name;
-                RefreshList();
-            }
+            OpenConnForm(null);
         }
 
         private void EditConn(string name)
         {
             var existing = _config.Connections.FirstOrDefault(c => c.Name == name);
             if (existing == null) return;
-            var dlg = new ConnectionDialog(existing) { Owner = this, WindowStartupLocation = WindowStartupLocation.CenterOwner };
-            if (dlg.ShowDialog() == true && dlg.Result != null)
+            OpenConnForm(existing);
+        }
+
+        private void OpenConnForm(ConnectionProfile? existing)
+        {
+            _editingConnProfile = existing;
+            _formOvpnInline = existing?.OvpnInline ?? "";
+            _formWgConf = existing?.WireGuardConf ?? "";
+
+            if (!_connFormFiltersApplied)
             {
-                // دیالوگ پروفایل جدید برمی‌گرداند؛ باید جایگزین قبلی شود
-                var i = _config.Connections.IndexOf(existing);
-                if (i >= 0) _config.Connections[i] = dlg.Result;
-                _config.Save();
-                _selectedName = dlg.Result.Name;
-                RefreshList();
+                AsciiInputFilter.ApplyTo(ConnFormUserBox);
+                AsciiInputFilter.ApplyTo(ConnFormPassBox);
+                AsciiInputFilter.ApplyTo(ConnFormPskBox);
+                AsciiInputFilter.ApplyTo(ConnFormWgPresharedKeyBox);
+                _connFormFiltersApplied = true;
             }
+
+            if (existing == null)
+            {
+                VpnEditTitleText.Text = Localization.T("افزودن کانکشن جدید");
+                VpnEditSubtitleText.Text = Localization.T("مشخصات و تنظیمات اتصال VPN را وارد نمایید");
+
+                ConnFormNameBox.Text = "";
+                ConnFormServerBox.Text = "";
+                ConnFormPortBox.Text = "";
+                ConnFormOverrideBox.Text = "";
+                ConnFormUserBox.Text = "";
+                ConnFormPassBox.Password = "";
+                ConnFormPskBox.Text = "";
+                ConnFormOvpnStatusText.Text = "";
+
+                ConnFormWgPrivateKeyBox.Text = "";
+                ConnFormWgAddressBox.Text = "";
+                ConnFormWgDnsBox.Text = "";
+                ConnFormWgMtuBox.Text = "";
+                ConnFormWgPublicKeyBox.Text = "";
+                ConnFormWgPresharedKeyBox.Text = "";
+                ConnFormWgEndpointBox.Text = "";
+                ConnFormWgAllowedIPsBox.Text = "0.0.0.0/0";
+                ConnFormWgKeepaliveBox.Text = "";
+                ConnFormAwgCheckBox.IsChecked = false;
+                ConnFormWgStatusText.Text = Localization.T("یا فیلدهای زیر را دستی تکمیل کنید");
+
+                ConnFormTypeCombo.SelectedIndex = 0;
+            }
+            else
+            {
+                VpnEditTitleText.Text = string.Format(Localization.T("ویرایش کانکشن: {0}"), existing.Name);
+                VpnEditSubtitleText.Text = string.Format(Localization.T("پروتکل {0} — ویرایش و به‌روزرسانی پارامترها"), existing.Type);
+
+                ConnFormNameBox.Text = existing.Name;
+
+                foreach (ComboBoxItem item in ConnFormTypeCombo.Items)
+                {
+                    if (string.Equals((string)item.Tag, existing.Type, StringComparison.OrdinalIgnoreCase))
+                    {
+                        ConnFormTypeCombo.SelectedItem = item;
+                        break;
+                    }
+                }
+
+                var isWg = existing.Type == "wireguard" || existing.Type == "amneziawg";
+                if (isWg)
+                {
+                    if (!string.IsNullOrWhiteSpace(_formWgConf))
+                    {
+                        ConnFormWgStatusText.Text = Localization.T("کانفیگ: بارگذاری شده ✔");
+                        PopulateFormWgFields(_formWgConf);
+                    }
+                    else
+                    {
+                        ConnFormWgStatusText.Text = Localization.T("یا فیلدهای زیر را دستی تکمیل کنید");
+                    }
+                }
+                else
+                {
+                    ConnFormServerBox.Text = existing.Server;
+                    ConnFormPortBox.Text = existing.Port?.ToString() ?? "";
+                    ConnFormOverrideBox.Text = existing.ServerOverride;
+                    ConnFormUserBox.Text = existing.Username;
+                    ConnFormPassBox.Password = existing.Password;
+                    ConnFormPskBox.Text = existing.Psk;
+
+                    foreach (ComboBoxItem item in ConnFormProtoCombo.Items)
+                    {
+                        if (string.Equals((string)item.Tag, existing.Proto, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ConnFormProtoCombo.SelectedItem = item;
+                            break;
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(_formOvpnInline))
+                        ConnFormOvpnStatusText.Text = Localization.T("پروفایل تعبیه‌شده موجود است ✔");
+                    else
+                        ConnFormOvpnStatusText.Text = "";
+                }
+            }
+
+            UpdateConnFormFieldVisibility();
+
+            VpnListView.Visibility = Visibility.Collapsed;
+            VpnEditView.Visibility = Visibility.Visible;
+        }
+
+        private void CloseConnForm()
+        {
+            _editingConnProfile = null;
+            VpnEditView.Visibility = Visibility.Collapsed;
+            VpnListView.Visibility = Visibility.Visible;
+        }
+
+        private void ConnFormCancel_Click(object sender, RoutedEventArgs e)
+        {
+            CloseConnForm();
+        }
+
+        private void ConnFormType_Changed(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateConnFormFieldVisibility();
+        }
+
+        private void UpdateConnFormFieldVisibility()
+        {
+            if (ConnFormStandardPanel == null || ConnFormWgPanel == null || ConnFormTypeCombo == null) return;
+
+            var selType = (ConnFormTypeCombo.SelectedItem as ComboBoxItem)?.Tag as string ?? "openvpn";
+            var isWg = selType == "wireguard" || selType == "amneziawg";
+
+            ConnFormStandardPanel.Visibility = isWg ? Visibility.Collapsed : Visibility.Visible;
+            ConnFormWgPanel.Visibility = isWg ? Visibility.Visible : Visibility.Collapsed;
+
+            if (!isWg)
+            {
+                ConnFormOvpnPanel.Visibility = selType == "openvpn" ? Visibility.Visible : Visibility.Collapsed;
+                ConnFormPskPanel.Visibility = selType == "l2tp" ? Visibility.Visible : Visibility.Collapsed;
+                UpdateConnFormCredsEnabled(selType);
+            }
+        }
+
+        private void UpdateConnFormCredsEnabled(string selType)
+        {
+            var certOnly = selType == "openvpn"
+                && _formOvpnInline.Trim().Length > 0
+                && !_formOvpnInline.Contains("auth-user-pass");
+            ConnFormUserBox.IsEnabled = !certOnly;
+            ConnFormPassBox.IsEnabled = !certOnly;
+        }
+
+        private void ConnFormAwgCheckBox_Changed(object sender, RoutedEventArgs e)
+        {
+            if (ConnFormAwgPanel == null) return;
+            ConnFormAwgPanel.Visibility = ConnFormAwgCheckBox.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void ConnFormImportOvpn_Click(object sender, RoutedEventArgs e)
+        {
+            var ofd = new OpenFileDialog { Filter = "OpenVPN profile (*.ovpn)|*.ovpn|All files (*.*)|*.*" };
+            if (ofd.ShowDialog(this) != true) return;
+
+            string norm;
+            try { norm = File.ReadAllText(ofd.FileName).Replace("\r\n", "\n"); }
+            catch { AskDialog.Info(this, "فایل .ovpn معتبر نیست."); return; }
+
+            var lines = norm.Split('\n');
+            if (!lines.Any(l => l.Trim() == "client") || !lines.Any(l => l.TrimStart().StartsWith("remote ")))
+            { AskDialog.Info(this, "فایل .ovpn معتبر نیست."); return; }
+
+            if (lines.Any(l => l.TrimStart().StartsWith("dev tap")))
+            { AskDialog.Info(this, "پروفایل TAP پشتیبانی نمی‌شود."); return; }
+
+            var host = ""; var port = 0; var proto = "";
+            foreach (var line in lines)
+            {
+                var t = line.Trim();
+                if (!t.StartsWith("remote ")) continue;
+                var parts = t.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length >= 2) host = parts[1];
+                if (parts.Length >= 3) int.TryParse(parts[2], out port);
+                if (parts.Length >= 4) proto = parts[3].ToLowerInvariant();
+                break;
+            }
+            if (proto.Length == 0)
+            {
+                var pl = lines.Select(l => l.Trim()).FirstOrDefault(t => t.StartsWith("proto "));
+                if (pl != null)
+                    proto = pl.Split(' ', StringSplitOptions.RemoveEmptyEntries).ElementAtOrDefault(1)?.ToLowerInvariant() ?? "";
+            }
+
+            var kept = lines.Where(l =>
+            {
+                var t = l.TrimStart();
+                return !(t.StartsWith("remote ") || t.StartsWith("proto ")
+                    || t.StartsWith("up ") || t.StartsWith("down ")
+                    || t.StartsWith("script-security"));
+            });
+            _formOvpnInline = string.Join(Environment.NewLine, kept);
+
+            if (ConnFormNameBox.Text.Trim().Length == 0)
+                ConnFormNameBox.Text = Path.GetFileNameWithoutExtension(ofd.FileName);
+            if (host.Length > 0) ConnFormServerBox.Text = host;
+            if (port > 0) ConnFormPortBox.Text = port.ToString();
+
+            if (proto.StartsWith("tcp"))
+            {
+                foreach (ComboBoxItem item in ConnFormProtoCombo.Items)
+                    if ((string)item.Tag == "tcp") { ConnFormProtoCombo.SelectedItem = item; break; }
+            }
+            else if (proto.StartsWith("udp"))
+            {
+                foreach (ComboBoxItem item in ConnFormProtoCombo.Items)
+                    if ((string)item.Tag == "udp") { ConnFormProtoCombo.SelectedItem = item; break; }
+            }
+
+            ConnFormOvpnStatusText.Text = Localization.T("پروفایل تعبیه‌شده: ") + Path.GetFileName(ofd.FileName);
+            UpdateConnFormCredsEnabled("openvpn");
+        }
+
+        private void ConnFormImportWgConf_Click(object sender, RoutedEventArgs e)
+        {
+            var ofd = new OpenFileDialog
+            {
+                Filter = "WireGuard / AmneziaWG config (*.conf)|*.conf|All files (*.*)|*.*",
+                Title = Localization.T("انتخاب فایل .conf")
+            };
+            if (ofd.ShowDialog(this) != true) return;
+
+            string conf;
+            try { conf = File.ReadAllText(ofd.FileName).Replace("\r\n", "\n"); }
+            catch { AskDialog.Info(this, "فایل .conf معتبر نیست."); return; }
+
+            if (!conf.Contains("[Interface]") || !conf.Contains("[Peer]"))
+            {
+                AskDialog.Info(this, "فایل .conf معتبر نیست (باید شامل [Interface] و [Peer] باشد).");
+                return;
+            }
+
+            _formWgConf = conf;
+            if (ConnFormNameBox.Text.Trim().Length == 0)
+                ConnFormNameBox.Text = Path.GetFileNameWithoutExtension(ofd.FileName);
+
+            PopulateFormWgFields(conf);
+            ConnFormWgStatusText.Text = Localization.T("کانفیگ بارگذاری شد: ") + Path.GetFileName(ofd.FileName) + " ✔";
+        }
+
+        private void PopulateFormWgFields(string conf)
+        {
+            var iface = ParseWgSection(conf, "[Interface]");
+            var peer = ParseWgSection(conf, "[Peer]");
+
+            ConnFormWgPrivateKeyBox.Text = iface.GetValueOrDefault("privatekey", "");
+            ConnFormWgAddressBox.Text = iface.GetValueOrDefault("address", "");
+            ConnFormWgDnsBox.Text = iface.GetValueOrDefault("dns", "");
+            ConnFormWgMtuBox.Text = iface.GetValueOrDefault("mtu", "");
+
+            ConnFormWgEndpointBox.Text = peer.GetValueOrDefault("endpoint", "");
+            ConnFormWgPublicKeyBox.Text = peer.GetValueOrDefault("publickey", "");
+            ConnFormWgPresharedKeyBox.Text = peer.GetValueOrDefault("presharedkey", "");
+            ConnFormWgAllowedIPsBox.Text = peer.GetValueOrDefault("allowedips", "0.0.0.0/0");
+            ConnFormWgKeepaliveBox.Text = peer.GetValueOrDefault("persistentkeepalive", "");
+
+            var isAmnezia = iface.ContainsKey("jc") || iface.ContainsKey("h1") ||
+                            iface.ContainsKey("jmin") || iface.ContainsKey("headerprotectionkey") ||
+                            conf.Contains("# amw", StringComparison.OrdinalIgnoreCase);
+
+            ConnFormAwgCheckBox.IsChecked = isAmnezia;
+            ConnFormAwgPanel.Visibility = isAmnezia ? Visibility.Visible : Visibility.Collapsed;
+
+            if (isAmnezia)
+            {
+                ConnFormAwgJcBox.Text = iface.GetValueOrDefault("jc", "—");
+                ConnFormAwgJminBox.Text = iface.GetValueOrDefault("jmin", "—");
+                ConnFormAwgJmaxBox.Text = iface.GetValueOrDefault("jmax", "—");
+                ConnFormAwgS1Box.Text = iface.GetValueOrDefault("s1", "—");
+                ConnFormAwgS2Box.Text = iface.GetValueOrDefault("s2", "—");
+                ConnFormAwgS3Box.Text = iface.GetValueOrDefault("s3", "—");
+                ConnFormAwgS4Box.Text = iface.GetValueOrDefault("s4", "—");
+                ConnFormAwgH1Box.Text = iface.GetValueOrDefault("h1", "—");
+                ConnFormAwgH2Box.Text = iface.GetValueOrDefault("h2", "—");
+                ConnFormAwgH3Box.Text = iface.GetValueOrDefault("h3", "—");
+                ConnFormAwgH4Box.Text = iface.GetValueOrDefault("h4", "—");
+
+                var knownKeys = new HashSet<string>
+                {
+                    "privatekey","address","dns","mtu",
+                    "jc","jmin","jmax","s1","s2","s3","s4",
+                    "h1","h2","h3","h4"
+                };
+                var extras = new System.Text.StringBuilder();
+                foreach (var kv in iface)
+                    if (!knownKeys.Contains(kv.Key))
+                        extras.AppendLine($"{kv.Key} = {kv.Value}");
+
+                ConnFormAwgExtraBox.Text = extras.ToString().Trim();
+            }
+        }
+
+        private static Dictionary<string, string> ParseWgSection(string conf, string header)
+        {
+            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var inSection = false;
+
+            foreach (var rawLine in conf.Split('\n'))
+            {
+                var line = rawLine.Trim();
+                if (line.StartsWith('#')) continue;
+
+                if (line.Equals(header, StringComparison.OrdinalIgnoreCase))
+                { inSection = true; continue; }
+
+                if (line.StartsWith('[') && inSection) break;
+
+                if (inSection && line.Contains('='))
+                {
+                    var eq = line.IndexOf('=');
+                    var key = line[..eq].Trim().ToLowerInvariant();
+                    var val = line[(eq + 1)..].Trim();
+                    result[key] = val;
+                }
+            }
+            return result;
+        }
+
+        private string BuildFormWgConf()
+        {
+            var priv = ConnFormWgPrivateKeyBox.Text.Trim();
+            var addr = ConnFormWgAddressBox.Text.Trim();
+            var pubKey = ConnFormWgPublicKeyBox.Text.Trim();
+            var endpoint = ConnFormWgEndpointBox.Text.Trim();
+
+            static bool Missing(string value) => string.IsNullOrWhiteSpace(value) || value == "—";
+
+            if (Missing(priv) || Missing(addr) || Missing(pubKey) || Missing(endpoint))
+                return "";
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("[Interface]");
+            sb.AppendLine($"PrivateKey = {priv}");
+            sb.AppendLine($"Address = {addr}");
+            var dns = ConnFormWgDnsBox.Text.Trim();
+            if (dns.Length > 0 && dns != "—") sb.AppendLine($"DNS = {dns}");
+            var mtu = ConnFormWgMtuBox.Text.Trim();
+            if (mtu.Length > 0 && mtu != "—") sb.AppendLine($"MTU = {mtu}");
+            if (ConnFormAwgCheckBox.IsChecked == true)
+            {
+                void A(string k, string v) { if (v.Length > 0 && v != "—") sb.AppendLine($"{k} = {v}"); }
+                A("Jc", ConnFormAwgJcBox.Text.Trim());
+                A("Jmin", ConnFormAwgJminBox.Text.Trim());
+                A("Jmax", ConnFormAwgJmaxBox.Text.Trim());
+                A("S1", ConnFormAwgS1Box.Text.Trim());
+                A("S2", ConnFormAwgS2Box.Text.Trim());
+                A("S3", ConnFormAwgS3Box.Text.Trim());
+                A("S4", ConnFormAwgS4Box.Text.Trim());
+                A("H1", ConnFormAwgH1Box.Text.Trim());
+                A("H2", ConnFormAwgH2Box.Text.Trim());
+                A("H3", ConnFormAwgH3Box.Text.Trim());
+                A("H4", ConnFormAwgH4Box.Text.Trim());
+                var extra = ConnFormAwgExtraBox.Text.Trim();
+                if (extra.Length > 0) sb.AppendLine(extra);
+            }
+            sb.AppendLine();
+            sb.AppendLine("[Peer]");
+            sb.AppendLine($"PublicKey = {pubKey}");
+            var presharedKey = ConnFormWgPresharedKeyBox.Text.Trim();
+            if (presharedKey.Length > 0 && presharedKey != "—")
+                sb.AppendLine($"PresharedKey = {presharedKey}");
+
+            sb.AppendLine($"Endpoint = {endpoint}");
+            var ips = ConnFormWgAllowedIPsBox.Text.Trim();
+            sb.AppendLine($"AllowedIPs = {(ips.Length > 0 && ips != "—" ? ips : "0.0.0.0/0")}");
+            var kpa = ConnFormWgKeepaliveBox.Text.Trim();
+            if (kpa.Length > 0 && kpa != "—") sb.AppendLine($"PersistentKeepalive = {kpa}");
+            return sb.ToString();
+        }
+
+        private void ConnFormSave_Click(object sender, RoutedEventArgs e)
+        {
+            var name = ConnFormNameBox.Text.Trim();
+            if (name.Length == 0)
+            {
+                AskDialog.Info(this, "نام الزامی است.");
+                return;
+            }
+
+            var selType = (ConnFormTypeCombo.SelectedItem as ComboBoxItem)?.Tag as string ?? "openvpn";
+            var isWg = selType == "wireguard" || selType == "amneziawg";
+
+            ConnectionProfile result;
+
+            if (isWg)
+            {
+                var built = BuildFormWgConf();
+                if (string.IsNullOrWhiteSpace(_formWgConf))
+                    _formWgConf = built;
+                else if (ConnFormAwgCheckBox.IsChecked == true && !_formWgConf.Contains("Jc =") && !_formWgConf.Contains("jc =") && built.Length > 0)
+                    _formWgConf = built;
+
+                if (_formWgConf.Trim().Length == 0)
+                {
+                    AskDialog.Info(this, "لطفاً Private Key، Address، Public Key و Endpoint را پر کنید.");
+                    return;
+                }
+
+                var ep = ConnFormWgEndpointBox.Text.Trim();
+                var server = "";
+                int? port = null;
+                if (ep != "—" && ep.Length > 0)
+                {
+                    var lastColon = ep.LastIndexOf(':');
+                    if (lastColon > 0)
+                    {
+                        server = ep[..lastColon];
+                        if (int.TryParse(ep[(lastColon + 1)..], out var pv) && pv > 0) port = pv;
+                    }
+                    else server = ep;
+                }
+
+                var realType = ConnFormAwgPanel.Visibility == Visibility.Visible ? "amneziawg" : "wireguard";
+
+                result = new ConnectionProfile
+                {
+                    Name = name,
+                    Type = realType,
+                    Server = server,
+                    Port = port,
+                    Proto = "udp",
+                    Source = _editingConnProfile?.Source ?? "custom",
+                    WireGuardConf = _formWgConf,
+                    OvpnInline = "",
+                    Username = "",
+                    Password = "",
+                    Psk = "",
+                };
+            }
+            else
+            {
+                var server = ConnFormServerBox.Text.Trim();
+                if (server.Length == 0)
+                {
+                    AskDialog.Info(this, "نام و آدرس سرور الزامی است.");
+                    return;
+                }
+
+                int? port = null;
+                if (int.TryParse(ConnFormPortBox.Text.Trim(), out var pv) && pv > 0) port = pv;
+
+                result = new ConnectionProfile
+                {
+                    Name = name,
+                    Type = selType,
+                    Server = server,
+                    Port = port,
+                    Proto = (ConnFormProtoCombo.SelectedItem as ComboBoxItem)?.Tag as string ?? "udp",
+                    Source = _editingConnProfile?.Source ?? "custom",
+                    OvpnInline = selType == "openvpn" ? _formOvpnInline : "",
+                    ServerOverride = selType == "openvpn" ? ConnFormOverrideBox.Text.Trim() : "",
+                    WireGuardConf = "",
+                    Username = ConnFormUserBox.Text.Trim(),
+                    Password = ConnFormPassBox.Password,
+                    Psk = ConnFormPskBox.Text,
+                };
+            }
+
+            if (_editingConnProfile == null)
+            {
+                _config.Connections.Add(result);
+            }
+            else
+            {
+                var idx = _config.Connections.IndexOf(_editingConnProfile);
+                if (idx >= 0) _config.Connections[idx] = result;
+            }
+
+            _config.Save();
+            _selectedName = result.Name;
+            RefreshList();
+            CloseConnForm();
         }
 
         private void DeleteConn(string name)
