@@ -106,9 +106,186 @@ namespace SmartVpn
             ResetSpeedCards();
             SetSpeedProgress(0);
 
+            if (SpeedClientIpText != null) SpeedClientIpText.Text = "در حال شناسایی...";
+            if (SpeedClientLocText != null) SpeedClientLocText.Text = "—";
+            if (SpeedServerNameText != null) SpeedServerNameText.Text = "در حال انتخاب سرور...";
+            if (SpeedServerLocText != null) SpeedServerLocText.Text = "—";
+
+            _cachedOoklaServer = null;
+            _ = DetectSpeedEndpointsAsync();
+
             ToolboxHomeView.Visibility = Visibility.Collapsed;
             ToolboxSpeedTestView.Visibility = Visibility.Visible;
         }
+
+        private void SpeedEngineCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (SpeedServerNameText == null) return;
+            _ = UpdateSpeedServerTargetInfoAsync();
+        }
+
+        private void SpeedClientCard_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (SpeedClientIpText != null) SpeedClientIpText.Text = "در حال شناسایی...";
+            if (SpeedClientLocText != null) SpeedClientLocText.Text = "—";
+            _ = DetectSpeedClientInfoAsync();
+        }
+
+        private async Task DetectSpeedEndpointsAsync()
+        {
+            _ = DetectSpeedClientInfoAsync();
+            await UpdateSpeedServerTargetInfoAsync();
+        }
+
+        private async Task DetectSpeedClientInfoAsync()
+        {
+            try
+            {
+                var http = GetSpeedHttpClient();
+
+                // 1. اولویت اول: سرویس کامل ipwho.is برای دریافت IP، پرچم، کشور، شهر و ISP
+                try
+                {
+                    var json = await http.GetStringAsync("https://ipwho.is/");
+                    using var doc = JsonDocument.Parse(json);
+                    var root = doc.RootElement;
+                    if (root.TryGetProperty("success", out var s) && s.GetBoolean())
+                    {
+                        var ip = root.TryGetProperty("ip", out var ipEl) ? ipEl.GetString() : "";
+                        var city = root.TryGetProperty("city", out var cityEl) ? cityEl.GetString() : "";
+                        var country = root.TryGetProperty("country", out var cEl) ? cEl.GetString() : "";
+                        var flag = root.TryGetProperty("flag", out var flagEl) && flagEl.TryGetProperty("emoji", out var emojiEl) ? emojiEl.GetString() : "";
+
+                        string isp = "";
+                        if (root.TryGetProperty("connection", out var connEl) && connEl.TryGetProperty("isp", out var ispEl))
+                        {
+                            isp = ispEl.GetString() ?? "";
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(ip))
+                        {
+                            Dispatcher.Invoke(() =>
+                            {
+                                if (SpeedClientIpText != null) SpeedClientIpText.Text = ip;
+                                var locParts = new List<string>();
+                                if (!string.IsNullOrWhiteSpace(flag) || !string.IsNullOrWhiteSpace(country))
+                                    locParts.Add($"{flag} {country}".Trim());
+                                if (!string.IsNullOrWhiteSpace(city)) locParts.Add(city);
+                                if (!string.IsNullOrWhiteSpace(isp)) locParts.Add(isp);
+
+                                if (SpeedClientLocText != null)
+                                    SpeedClientLocText.Text = locParts.Count > 0 ? string.Join(" • ", locParts) : "—";
+                            });
+                            return;
+                        }
+                    }
+                }
+                catch { }
+
+                // 2. فال‌بک: سرویس cloudflare trace
+                try
+                {
+                    var trace = await http.GetStringAsync("https://cloudflare.com/cdn-cgi/trace");
+                    string? ip = null;
+                    string loc = "";
+                    foreach (var line in trace.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        if (line.StartsWith("ip=")) ip = line.Substring(3).Trim();
+                        if (line.StartsWith("loc=")) loc = line.Substring(4).Trim();
+                    }
+                    if (!string.IsNullOrWhiteSpace(ip))
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (SpeedClientIpText != null) SpeedClientIpText.Text = ip;
+                            if (SpeedClientLocText != null) SpeedClientLocText.Text = !string.IsNullOrWhiteSpace(loc) ? $"Country/Region: {loc}" : "—";
+                        });
+                        return;
+                    }
+                }
+                catch { }
+
+                // 3. در صورت قطعی شبکه خارجی، استفاده از GeoIP کش‌شده روی صفحه اصلی
+                if (GeoIpText != null && !string.IsNullOrWhiteSpace(GeoIpText.Text) && !GeoIpText.Text.Contains("0.0.0.0"))
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        if (SpeedClientIpText != null) SpeedClientIpText.Text = GeoIpText.Text;
+                        if (SpeedClientLocText != null) SpeedClientLocText.Text = "Connected VPN Node";
+                    });
+                    return;
+                }
+
+                Dispatcher.Invoke(() =>
+                {
+                    if (SpeedClientIpText != null) SpeedClientIpText.Text = "نامشخص";
+                    if (SpeedClientLocText != null) SpeedClientLocText.Text = "امکان دریافت موقعیت وجود ندارد";
+                });
+            }
+            catch { }
+        }
+
+        private async Task UpdateSpeedServerTargetInfoAsync()
+        {
+            int engine = 0;
+            Dispatcher.Invoke(() => { engine = SpeedEngineCombo != null ? SpeedEngineCombo.SelectedIndex : 0; });
+
+            if (engine == 0) // Ookla
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    if (SpeedServerNameText != null) SpeedServerNameText.Text = "در حال یافتن نزدیک‌ترین سرور Ookla...";
+                    if (SpeedServerLocText != null) SpeedServerLocText.Text = "Speedtest.net Anycast";
+                });
+
+                try
+                {
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(6));
+                    var s = await PickBestOoklaServerAsync(cts.Token);
+                    if (s != null)
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            string sName = !string.IsNullOrWhiteSpace(s.sponsor)
+                                ? $"{s.sponsor} ({s.name})"
+                                : (!string.IsNullOrWhiteSpace(s.name) ? s.name : "Ookla Server");
+                            if (SpeedServerNameText != null) SpeedServerNameText.Text = sName;
+
+                            var parts = new List<string>();
+                            if (!string.IsNullOrWhiteSpace(s.country)) parts.Add(s.country);
+                            if (!string.IsNullOrWhiteSpace(s.host)) parts.Add(s.host);
+                            if (SpeedServerLocText != null)
+                                SpeedServerLocText.Text = parts.Count > 0 ? string.Join(" • ", parts) : "Speedtest Server";
+                        });
+                        return;
+                    }
+                }
+                catch { }
+
+                Dispatcher.Invoke(() =>
+                {
+                    if (SpeedServerNameText != null) SpeedServerNameText.Text = "Speedtest.net Server";
+                    if (SpeedServerLocText != null) SpeedServerLocText.Text = "Ookla Global Network";
+                });
+            }
+            else if (engine == 1) // Cloudflare
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    if (SpeedServerNameText != null) SpeedServerNameText.Text = "Cloudflare Edge Anycast";
+                    if (SpeedServerLocText != null) SpeedServerLocText.Text = "speed.cloudflare.com • Global PoP";
+                });
+            }
+            else // M-Lab NDT7
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    if (SpeedServerNameText != null) SpeedServerNameText.Text = "M-Lab NDT7 Server";
+                    if (SpeedServerLocText != null) SpeedServerLocText.Text = "locate.measurementlab.net • Nearest Edge";
+                });
+            }
+        }
+
 
         private void CloseSpeedTestView()
         {
@@ -358,6 +535,7 @@ namespace SmartVpn
             public string? host { get; set; }
             public string? name { get; set; }
             public string? country { get; set; }
+            public string? sponsor { get; set; }
         }
 
         private OoklaServerInfo? _cachedOoklaServer;
@@ -379,6 +557,7 @@ namespace SmartVpn
                         host = first.TryGetProperty("host", out var h) ? h.GetString() : null,
                         name = first.TryGetProperty("name", out var n) ? n.GetString() : null,
                         country = first.TryGetProperty("country", out var c) ? c.GetString() : null,
+                        sponsor = first.TryGetProperty("sponsor", out var sp) ? sp.GetString() : null,
                     };
                     return _cachedOoklaServer;
                 }

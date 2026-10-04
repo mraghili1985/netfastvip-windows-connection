@@ -1511,12 +1511,59 @@
                                                     BorderThickness="1" CornerRadius="10" Padding="10,6">
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                     <TextBlock Text="موتور تست:" FontSize="11" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                                    <ComboBox x:Name="SpeedEngineCombo" MinWidth="150" Height="28" FontSize="11" VerticalAlignment="Center">
+                                                    <ComboBox x:Name="SpeedEngineCombo" MinWidth="150" Height="28" FontSize="11" VerticalAlignment="Center" SelectionChanged="SpeedEngineCombo_SelectionChanged">
                                                         <ComboBoxItem Content="Speedtest.net (Ookla)"/>
                                                         <ComboBoxItem Content="Cloudflare"/>
                                                         <ComboBoxItem Content="M-Lab (NDT7)"/>
                                                     </ComboBox>
                                                 </StackPanel>
+                                            </Border>
+                                        </Grid>
+
+                                        <!-- Dual Telemetry Cards: Client IP/Loc & Server IP/Loc -->
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="10"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Card 1: Your Client IP & Location -->
+                                            <Border Grid.Column="0" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}"
+                                                    BorderThickness="1" CornerRadius="12" Padding="12,9" Cursor="Hand" ToolTip="موقعیت و آی‌پی شما (برای بروزرسانی کلیک کنید)" MouseLeftButtonUp="SpeedClientCard_Click">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Grid.Column="0" Width="32" Height="32" CornerRadius="8" Background="#183B82F6" Margin="0,0,10,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="📍" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <TextBlock Text="موقعیت و آی‌پی شما (Your IP)" FontSize="10" Foreground="{DynamicResource SubTextBrush}"/>
+                                                        <TextBlock x:Name="SpeedClientIpText" Text="در حال شناسایی..." FontSize="12.5" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" Margin="0,1,0,0" FontFamily="Consolas"/>
+                                                        <TextBlock x:Name="SpeedClientLocText" Text="—" FontSize="10" Foreground="{DynamicResource SubTextBrush}" TextTrimming="CharacterEllipsis" Margin="0,1,0,0"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+
+                                            <!-- Card 2: Test Server Target IP & Location -->
+                                            <Border Grid.Column="2" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}"
+                                                    BorderThickness="1" CornerRadius="12" Padding="12,9">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Grid.Column="0" Width="32" Height="32" CornerRadius="8" Background="#1822C55E" Margin="0,0,10,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="🎯" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <TextBlock Text="سرور مقصد تست (Test Server)" FontSize="10" Foreground="{DynamicResource SubTextBrush}"/>
+                                                        <TextBlock x:Name="SpeedServerNameText" Text="در حال انتخاب سرور..." FontSize="12.5" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" Margin="0,1,0,0" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock x:Name="SpeedServerLocText" Text="—" FontSize="10" Foreground="{DynamicResource SubTextBrush}" TextTrimming="CharacterEllipsis" Margin="0,1,0,0"/>
+                                                    </StackPanel>
+                                                </Grid>
                                             </Border>
                                         </Grid>
 
