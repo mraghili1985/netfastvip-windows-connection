@@ -738,6 +738,7 @@ namespace SmartVpn
                     {
                         if (item.isXray && item.rawObj is ProxyProfile p)
                         {
+                            MainWindow.LastConnectionType = "xray";
                             _xraySelectedProfile = p;
                             if (XrayProxyList != null) XrayProxyList.SelectedItem = p;
                             UpdateActiveProfileInfo(p);
@@ -747,6 +748,7 @@ namespace SmartVpn
                         }
                         else if (!item.isXray && item.rawObj is ConnectionProfile cp)
                         {
+                            MainWindow.LastConnectionType = "vpn";
                             _selectedName = cp.Name;
                             ActiveConnText.Text = $"{CategoryLabel(cp.Type)} {cp.Name}";
                             ServerSubText.Text = cp.ServerLine;

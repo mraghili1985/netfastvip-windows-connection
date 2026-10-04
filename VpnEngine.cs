@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using SmartVpn; // WireGuardProvider
 
 public sealed class VpnEngine
@@ -12,6 +12,7 @@ public sealed class VpnEngine
     private CancellationTokenSource? _cts;
     private Task? _runTask;
     private IConnectionProvider? _active;
+    private IConnectionProvider? _currentConnecting;
     private volatile bool _forceReconnect;
 
     public bool IsRunning => _runTask is { IsCompleted: false };
@@ -41,10 +42,12 @@ public sealed class VpnEngine
             }
             finally
             {
-                if (_active is not null)
+                var toClean = _active ?? _currentConnecting;
+                if (toClean is not null)
                 {
-                    try { await _active.DisconnectAsync(CancellationToken.None); } catch { }
+                    try { await toClean.DisconnectAsync(CancellationToken.None); } catch { }
                     _active = null;
+                    _currentConnecting = null;
                 }
                 Stopped?.Invoke();
             }
@@ -54,6 +57,16 @@ public sealed class VpnEngine
     public async Task StopAsync()
     {
         _cts?.Cancel();
+        if (_currentConnecting is not null)
+        {
+            try { await _currentConnecting.DisconnectAsync(CancellationToken.None); } catch { }
+            _currentConnecting = null;
+        }
+        if (_active is not null)
+        {
+            try { await _active.DisconnectAsync(CancellationToken.None); } catch { }
+            _active = null;
+        }
         if (_runTask is not null)
         {
             try { await _runTask; } catch { }
@@ -164,7 +177,18 @@ public sealed class VpnEngine
                 }
 
                 Log?.Invoke($"[{provider.Type}] connecting...");
-                if (await provider.ConnectAsync(connectionHost, ct))
+                _currentConnecting = provider;
+                bool success = false;
+                try
+                {
+                    success = await provider.ConnectAsync(connectionHost, ct);
+                }
+                finally
+                {
+                    _currentConnecting = null;
+                }
+
+                if (success)
                 {
                     _active = provider;
                     activeProfile = p;

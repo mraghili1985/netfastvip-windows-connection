@@ -29,7 +29,8 @@ namespace SmartVpn
         // ================= Power / Engine =================
         private async void Power_Click(object sender, RoutedEventArgs e)
         {
-            if (_xrayIsConnected)
+            // ۱. اگر هر نوع اتصالی در حال حاضر فعال است، کلیک روی پاور یعنی قطع اتصال
+            if (_xrayIsConnected || XrayEngine.IsRunning)
             {
                 XrayBtnPower_Click(sender, e);
                 return;
@@ -39,11 +40,18 @@ namespace SmartVpn
                 await StopManuallyAsync();
                 return;
             }
-            if (_xrayActiveProfile != null && string.IsNullOrEmpty(_selectedName))
+
+            // ۲. اگر کانکشن انتخاب‌شده در حال حاضر از نوع Xray است
+            bool isXraySelected = MainWindow.LastConnectionType == "xray" ||
+                                 (_xraySelectedProfile != null && MainWindow.LastConnectionType != "vpn");
+
+            if (isXraySelected)
             {
                 XrayBtnPower_Click(sender, e);
                 return;
             }
+
+            // ۳. در غیر این صورت، کانکشن انتخاب‌شده VPN Core را وصل کن
             ConnectSelected();
         }
 
@@ -200,6 +208,15 @@ namespace SmartVpn
         // اتصال کانکشن انتخاب‌شده (بدنه قبلی Power_Click)
         private void ConnectSelected()
         {
+            MainWindow.LastConnectionType = "vpn";
+            if (_xrayIsConnected || XrayEngine.IsRunning)
+            {
+                XrayEngine.Stop();
+                _xrayIsConnected = false;
+                _xrayTimer?.Stop();
+                if (XrayTxtActiveName != null) XrayTxtActiveName.Text = "—";
+            }
+
             var run = BuildRunList();
             if (run == null) return; // کاربر دیالوگ یوزر/پس را لغو کرد
             if (run.Count == 0) { AskDialog.Info(this, MsgNoConn); return; }
@@ -246,15 +263,6 @@ namespace SmartVpn
 
             // عکس از routeهای /32 فعلی — routeهای بازمانده از اتصال‌های قبلی در ویندوز می‌مانند؛
             // بعد از اتصال، فقط routeای که «جدید اضافه شده» ملاک IP سرور واقعی است
-            // اگر سرویس Xray فعال است، ابتدا آن را قطع می‌کنیم
-            if (_xrayIsConnected)
-            {
-                XrayEngine.Stop();
-                _xrayIsConnected = false;
-                _xrayTimer?.Stop();
-                if (XrayTxtActiveName != null) XrayTxtActiveName.Text = "—";
-            }
-
             _tunnelPeerIp = null; // شروع تمیز — IP سرور فقط از همین اتصال جدید خوانده شود
 
             SetStatusText(TxtConnecting);
@@ -272,6 +280,7 @@ namespace SmartVpn
         // بدون این وقفه، مخصوصاً در OpenVPN/WARP ممکن است اتصال جدید بالا بیاید ولی ترافیک هنوز از مسیر قبلی/معمولی برود.
         private async Task SwitchToConnectionAsync(ConnectionProfile profile)
         {
+            MainWindow.LastConnectionType = "vpn";
             _selectedName = profile.Name;
             ActiveConnText.Text = $"{CategoryLabel(profile.Type)} {profile.Name}";
             ServerSubText.Text = profile.ServerLine;
@@ -294,11 +303,28 @@ namespace SmartVpn
         private List<ConnectionProfile>? BuildRunList()
         {
             var smart = _config.SmartSwitch;
-            var list = smart
-                ? _config.Connections.ToList()
-                : _config.Connections.Where(c => c.Name == _selectedName).ToList();
-            if (!smart && list.Count == 0 && _config.Connections.Count > 0)
-                list = new List<ConnectionProfile> { _config.Connections[0] };
+            List<ConnectionProfile> list;
+            var target = _config.Connections.FirstOrDefault(c => c.Name == _selectedName);
+
+            if (smart)
+            {
+                list = new List<ConnectionProfile>();
+                if (target != null)
+                {
+                    list.Add(target);
+                    list.AddRange(_config.Connections.Where(c => c != target));
+                }
+                else
+                {
+                    list.AddRange(_config.Connections);
+                }
+            }
+            else
+            {
+                list = target != null ? new List<ConnectionProfile> { target } : new List<ConnectionProfile>();
+                if (list.Count == 0 && _config.Connections.Count > 0)
+                    list = new List<ConnectionProfile> { _config.Connections[0] };
+            }
 
             var run = new List<ConnectionProfile>();
             foreach (var p in list)

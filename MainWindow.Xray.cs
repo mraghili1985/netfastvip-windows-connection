@@ -442,6 +442,7 @@ namespace SmartVpn
         private void UpdateActiveProfileInfo(ProxyProfile? item)
         {
             if (item == null) return;
+            MainWindow.LastConnectionType = "xray";
             if (XrayTxtActiveName != null) XrayTxtActiveName.Text = item.Alias;
             string sec = !string.IsNullOrEmpty(item.Tls) ? $" + {item.Tls.ToUpper()}" : "";
             if (XrayTxtActiveProtocol != null) XrayTxtActiveProtocol.Text = $"{item.Protocol.ToUpper()} / {item.Network.ToUpper()}{sec}";
@@ -742,6 +743,7 @@ namespace SmartVpn
             var menuConnectRow = MakeMenuRow("🔌", connected ? Localization.T("قطع اتصال") : Localization.T("اتصال به سرور"), connected ? menuTextDanger : menuTextNormal);
             menuConnectRow.Click += (_, __) =>
             {
+                MainWindow.LastConnectionType = "xray";
                 menuPopup.IsOpen = false;
                 _xraySelectedProfile = profile;
                 XrayProxyList.SelectedItem = profile;
@@ -854,6 +856,7 @@ namespace SmartVpn
 
             row.MouseLeftButtonUp += (_, e) =>
             {
+                MainWindow.LastConnectionType = "xray";
                 _xraySelectedProfile = profile;
                 XrayProxyList.SelectedItem = profile;
                 UpdateActiveProfileInfo(profile);
@@ -865,6 +868,7 @@ namespace SmartVpn
                 if (e.ClickCount == 2)
                 {
                     e.Handled = true;
+                    MainWindow.LastConnectionType = "xray";
                     _xraySelectedProfile = profile;
                     XrayProxyList.SelectedItem = profile;
                     XrayConnectBtn_Click(this, new RoutedEventArgs());
@@ -1532,12 +1536,18 @@ namespace SmartVpn
                 return;
             }
 
+            if (XrayProxyList.SelectedItem == null && _xraySelectedProfile != null)
+            {
+                XrayProxyList.SelectedItem = _xraySelectedProfile;
+            }
+
             if (XrayProxyList.SelectedItem == null && XrayProxies.Count > 0)
             {
                 XrayProxyList.SelectedIndex = 0;
+                _xraySelectedProfile = XrayProxies[0];
             }
 
-            if (XrayProxyList.SelectedItem != null)
+            if (XrayProxyList.SelectedItem != null || _xraySelectedProfile != null)
             {
                 XrayConnectBtn_Click(this, new RoutedEventArgs());
             }
@@ -1552,6 +1562,7 @@ namespace SmartVpn
             if (XrayProxyList.SelectedItem is ProxyProfile profile)
             {
                 if (_xrayIsConnected && XrayTxtActiveName?.Text == profile.Alias) return;
+                MainWindow.LastConnectionType = "xray";
                 XrayConnectBtn_Click(this, new RoutedEventArgs());
             }
         }
@@ -1563,11 +1574,17 @@ namespace SmartVpn
                 var item = _xraySelectedProfile ?? XrayProxyList.SelectedItem as ProxyProfile;
                 if (item != null)
                 {
-                    if (_engine.IsRunning && sender != null)
+                    MainWindow.LastConnectionType = "xray";
+                    if (_engine.IsRunning)
                     {
-                        var q = string.Format(MsgSwitchConfirm, ActiveConnText.Text, item.Alias);
-                        if (!AskDialog.Confirm(this, q)) return;
-                        _ = StopManuallyAsync();
+                        if (sender != null && sender != this)
+                        {
+                            var q = string.Format(MsgSwitchConfirm, ActiveConnText.Text, item.Alias);
+                            if (!AskDialog.Confirm(this, q)) return;
+                        }
+                        await StopManuallyAsync();
+                        for (int i = 0; i < 20 && _engine.IsRunning; i++)
+                            await Task.Delay(150);
                     }
 
                     // Show connecting state

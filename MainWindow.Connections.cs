@@ -476,6 +476,7 @@ namespace SmartVpn
             var menuConnectRow = MakeMenuRow("🔌", connected ? "Disconnect" : "Connect", connected ? menuTextDanger : menuTextNormal);
             menuConnectRow.Click += async (_, __) =>
             {
+                MainWindow.LastConnectionType = "vpn";
                 menuPopup.IsOpen = false;
                 if (connected)
                 {
@@ -730,6 +731,7 @@ namespace SmartVpn
             // کلیک تک روی کارت = فقط انتخاب/هایلایت — دبل‌کلیک = سوال تایید و اتصال/سوییچ واقعی
             card.MouseLeftButtonUp += (_, __) =>
             {
+                MainWindow.LastConnectionType = "vpn";
                 if (_engine.IsRunning)
                 {
                     if (c.Name == _connectedName) return;
@@ -746,6 +748,7 @@ namespace SmartVpn
             card.MouseLeftButtonDown += async (_, e) =>
             {
                 if (e.ClickCount != 2) return;
+                MainWindow.LastConnectionType = "vpn";
                 if (_engine.IsRunning)
                 {
                     if (c.Name == _connectedName) return;

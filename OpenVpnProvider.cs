@@ -243,6 +243,18 @@ public sealed class OpenVpnProvider : IConnectionProvider
     // اجباری شده و openvpn فرصت پاک‌سازی خودش را نداشته) + تأیید فعال محو شدن آداپتور قبلی
     // به‌جای حدس‌زدن با یک مهلت ثابت.
 
+    private static void KillLingeringOpenVpnProcesses()
+    {
+        try
+        {
+            foreach (var proc in Process.GetProcessesByName("openvpn"))
+            {
+                try { proc.Kill(entireProcessTree: true); } catch { }
+            }
+        }
+        catch { }
+    }
+
     // اگر Kill اجباری شود، openvpn فرصت اجرای پاک‌سازی روت داخلی خودش را ندارد و روت‌های
     // اسپلیت-دیفالت قبلی یتیم می‌مانند — این‌ها را همیشه صریحاً حذف می‌کنیم (بی‌خطر اگر وجود نداشته باشند).
     private static async Task CleanupStaleRoutesAsync(CancellationToken ct)
@@ -433,22 +445,40 @@ public sealed class OpenVpnProvider : IConnectionProvider
         _proc.ErrorDataReceived += (_, e) => OnLine(e.Data);
         _proc.Exited += (_, _) => connected.TrySetResult(false);
 
+        // اطمینان از بسته بودن پروسه‌های قبلی و گیرکرده OpenVPN
+        KillLingeringOpenVpnProcesses();
+
         _proc.Start();
         KillOnCloseJob.Add(_proc); // اگر اپ کرش یا End Task شد، ویندوز خودش openvpn را می‌کشد و تانل قطع می‌شود
         _proc.BeginOutputReadLine();
         _proc.BeginErrorReadLine();
 
-        var winner = await Task.WhenAny(connected.Task, Task.Delay(35000, ct));
-        if (winner != connected.Task)
+        try
         {
-            Log?.Invoke($"[{Type}] timeout — وصل نشد");
-            await DisconnectAsync(ct);
-            return false;
+            var winner = await Task.WhenAny(connected.Task, Task.Delay(35000, ct));
+            if (winner != connected.Task)
+            {
+                Log?.Invoke($"[{Type}] timeout — وصل نشد");
+                await DisconnectAsync(CancellationToken.None);
+                return false;
+            }
+            var ok = await connected.Task;
+            if (!ok)
+            {
+                await DisconnectAsync(CancellationToken.None);
+                return false;
+            }
         }
-        var ok = await connected.Task;
-        if (!ok)
+        catch (OperationCanceledException)
         {
-            await DisconnectAsync(ct);
+            Log?.Invoke($"[{Type}] اتصال لغو گردید — پاک‌سازی فوری پروسه");
+            await DisconnectAsync(CancellationToken.None);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Log?.Invoke($"[{Type}] خطای اتصال: {ex.Message}");
+            await DisconnectAsync(CancellationToken.None);
             return false;
         }
 
