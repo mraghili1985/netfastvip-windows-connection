@@ -60,6 +60,40 @@ namespace SmartVpn
             _config.Save();
         }
 
+        // ================= فونت برنامه =================
+        private void FontRb_Click(object sender, RoutedEventArgs e)
+        {
+            string font = sender == FontVazirRb ? "vazir" : "segoe";
+            ApplyFontChoice(font);
+            _config.Font = font;
+            _config.Save();
+        }
+
+        internal void ApplyFontChoice(string font)
+        {
+            try
+            {
+                string familyName = font == "vazir"
+                    ? "./Fonts/#Vazirmatn, Vazirmatn, Segoe UI, Tahoma"
+                    : "Segoe UI, Segoe UI Variable, Tahoma, ./Fonts/#Vazirmatn, Vazirmatn";
+
+                var ff = new FontFamily(familyName);
+                this.FontFamily = ff;
+
+                if (FontSegoeRb != null) FontSegoeRb.IsChecked = font != "vazir";
+                if (FontVazirRb != null) FontVazirRb.IsChecked = font == "vazir";
+
+                if (Application.Current != null)
+                {
+                    foreach (Window w in Application.Current.Windows)
+                    {
+                        try { w.FontFamily = ff; } catch { }
+                    }
+                }
+            }
+            catch { }
+        }
+
         private void RefreshThemeSurfaces()
         {
             // The window uses custom transparent chrome, so explicitly rebind
@@ -255,6 +289,9 @@ namespace SmartVpn
             ThemeDarkRb.Content   = T("تیره");
             ThemeLightRb.Content  = T("روشن");
             ThemeSystemRb.Content = T("سیستم");
+            if (FontLabel != null) FontLabel.Text = T("فونت برنامه");
+            if (FontSegoeRb != null) FontSegoeRb.Content = T("Segoe UI (ویندوز ۱۱)");
+            if (FontVazirRb != null) FontVazirRb.Content = T("Vazirmatn (وزیرمتن)");
 
             // --- Settings Expander headers ---
             AppearanceExpander.Header = T("🎨 ظاهر برنامه");

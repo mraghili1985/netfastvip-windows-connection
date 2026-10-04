@@ -324,6 +324,7 @@ namespace SmartVpn
             }
             ApplyLocalizationToNamedElements();
             ApplyThemeChoice(_config.Theme);
+            ApplyFontChoice(_config.Font ?? "segoe");
             InitStartupToggle();
 
             EnableElevatedDragDrop();

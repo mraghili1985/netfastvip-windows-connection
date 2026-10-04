@@ -248,6 +248,10 @@ public static class Localization
             "Move the app folder to a writable location such as C:\\NETFASTVIP.",
         ["نصب خودکار و بی‌صداست. الان نصب شود؟"] = "Installation is automatic and silent. Install now?",
 
+        ["فونت برنامه"] = "Application font",
+        ["Segoe UI (ویندوز ۱۱)"] = "Segoe UI (Windows 11)",
+        ["Vazirmatn (وزیرمتن)"] = "Vazirmatn",
+
         // --- HeaderTitle ---
         ["ابزارها و گزارش"] = "Tools & logs",
         ["گزارش کانکشن‌ها"] = "Connection logs",

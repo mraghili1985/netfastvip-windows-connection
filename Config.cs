@@ -17,6 +17,7 @@ public sealed class AppConfig
     // --- New in step 11.6 ---
     public string Theme { get; set; } = "system"; // dark | light | system (پیش‌فرض: تم سیستم)
     public string Language { get; set; } = "fa"; // fa | en
+    public string Font { get; set; } = "segoe"; // segoe | vazir
 	public string SplitTunnelMode { get; set; } = "off"; // off | deny | allow
 	public List<string> SplitTunnelList { get; set; } = [];
     public string BaseOvpn { get; set; } = "";    // base.ovpn content kept inside config (self-healing)

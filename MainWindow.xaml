@@ -9,7 +9,7 @@
         ResizeMode="NoResize"
         AllowsTransparency="True"
         Background="Transparent"
-        FontFamily="./Fonts/#Vazirmatn, Vazirmatn, Segoe UI, Tahoma"
+        FontFamily="Segoe UI, Segoe UI Variable, Tahoma, ./Fonts/#Vazirmatn, Vazirmatn"
         TextOptions.TextFormattingMode="Display"
         AllowDrop="True" PreviewDragOver="Window_PreviewDragOver" DragOver="Window_DragOver" PreviewDrop="Window_PreviewDrop" Drop="Window_Drop"
         Loaded="Window_Loaded" Closing="Window_Closing">
@@ -1683,6 +1683,11 @@
                                             <RadioButton x:Name="ThemeDarkRb" GroupName="Theme" Content="Dark" Margin="0,0,16,0" Checked="ThemeRb_Click"/>
                                             <RadioButton x:Name="ThemeLightRb" GroupName="Theme" Content="Light" Margin="0,0,16,0" Checked="ThemeRb_Click"/>
                                             <RadioButton x:Name="ThemeSystemRb" GroupName="Theme" Content="System" Checked="ThemeRb_Click"/>
+                                        </StackPanel>
+                                        <TextBlock x:Name="FontLabel" Text="Application font" Foreground="{DynamicResource SubTextBrush}" Margin="0,14,0,6"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <RadioButton x:Name="FontSegoeRb" GroupName="FontChoice" Content="Segoe UI (ویندوز)" Margin="0,0,16,0" IsChecked="True" Checked="FontRb_Click"/>
+                                            <RadioButton x:Name="FontVazirRb" GroupName="FontChoice" Content="Vazirmatn (وزیرمتن)" Checked="FontRb_Click"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </Expander>
