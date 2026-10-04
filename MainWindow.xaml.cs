@@ -527,7 +527,7 @@ namespace SmartVpn
         {
             try
             {
-                var activeBg = (Brush)FindResource("CardHoverBrush");
+                var activeBg = (Brush)FindResource("SidebarActiveBrush");
                 var transparent = Brushes.Transparent;
 
                 void SetBtn(Button? btn, Border? indicator, bool isActive)

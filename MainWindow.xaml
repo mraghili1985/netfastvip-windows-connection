@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:TextOptions="clr-namespace:System.Windows.Media;assembly=PresentationCore"
-        Title="NETFASTVIP" Width="880" Height="580"
+        Title="NETFASTVIP" Width="896" Height="596"
         FlowDirection="LeftToRight"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
@@ -199,11 +199,14 @@
     </Window.Resources>
 
     <!-- Outer Window Frame with Fluent Glass Rounded Border -->
-    <Border x:Name="WindowSurface" Margin="0"
+    <Border x:Name="WindowSurface" Margin="8"
             Background="{DynamicResource BgBrush}"
             BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"
-            CornerRadius="14" ClipToBounds="True">
-        <Grid>
+            CornerRadius="12">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="16" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.45"/>
+        </Border.Effect>
+        <Grid ClipToBounds="True">
             <Grid.RowDefinitions>
                 <RowDefinition x:Name="TitleBarRow" Height="34"/>
                 <RowDefinition Height="*"/>
@@ -211,7 +214,7 @@
 
             <!-- Minimalist Windows 11 Title Bar -->
             <Border x:Name="AppTitleBar" Grid.Row="0" Height="34"
-                    CornerRadius="13,13,0,0" ClipToBounds="True"
+                    CornerRadius="11,11,0,0" ClipToBounds="True"
                     Background="{DynamicResource SidebarBrush}"
                     BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="0,0,0,1"
                     MouseLeftButtonDown="AppTitleBar_MouseLeftButtonDown">
@@ -269,7 +272,7 @@
                                 Click="TitleCloseButton_Click">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
-                                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="0,13,0,0">
+                                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="0,11,0,0">
                                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                     <ControlTemplate.Triggers>

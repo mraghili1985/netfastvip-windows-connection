@@ -3,22 +3,23 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <SolidColorBrush x:Key="BgBrush" Color="#80090E1A"/>
-        <SolidColorBrush x:Key="SidebarBrush" Color="#8D080D18"/>
-        <SolidColorBrush x:Key="CardBrush" Color="#45111B2E"/>
-        <SolidColorBrush x:Key="CardHoverBrush" Color="#6018263F"/>
-        <SolidColorBrush x:Key="FieldBrush" Color="#40142136"/>
-        <SolidColorBrush x:Key="LineBrush" Color="#253554"/>
-        <SolidColorBrush x:Key="TextBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="BgBrush" Color="#0F172A"/>
+        <SolidColorBrush x:Key="SidebarBrush" Color="#0B1120"/>
+        <SolidColorBrush x:Key="SidebarActiveBrush" Color="#1E293B"/>
+        <SolidColorBrush x:Key="CardBrush" Color="#1E293B"/>
+        <SolidColorBrush x:Key="CardHoverBrush" Color="#2A374A"/>
+        <SolidColorBrush x:Key="FieldBrush" Color="#0F172A"/>
+        <SolidColorBrush x:Key="LineBrush" Color="#334155"/>
+        <SolidColorBrush x:Key="TextBrush" Color="#F8FAFC"/>
         <SolidColorBrush x:Key="SubTextBrush" Color="#94A3B8"/>
         <SolidColorBrush x:Key="AccentBrush" Color="#38BDF8"/>
         <SolidColorBrush x:Key="Accent2Brush" Color="#22C55E"/>
         <SolidColorBrush x:Key="DangerBrush" Color="#EF4444"/>
-        <SolidColorBrush x:Key="HoverBrush" Color="#3020304D"/>
-        <SolidColorBrush x:Key="RowCardBrush" Color="#40162339"/>
+        <SolidColorBrush x:Key="HoverBrush" Color="#1E293B"/>
+        <SolidColorBrush x:Key="RowCardBrush" Color="#1E293B"/>
         <SolidColorBrush x:Key="RowLineBrush" Color="#152033"/>
-        <SolidColorBrush x:Key="GlassBrush" Color="#38101A2D"/>
-        <SolidColorBrush x:Key="GlassBorderBrush" Color="#304A70"/>
+        <SolidColorBrush x:Key="GlassBrush" Color="#1E293B"/>
+        <SolidColorBrush x:Key="GlassBorderBrush" Color="#2E405E"/>
 
         <!-- Glowing Gradients -->
         <LinearGradientBrush x:Key="PrimaryGlowBrush" StartPoint="0,0" EndPoint="1,1">

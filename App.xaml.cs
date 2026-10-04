@@ -187,54 +187,49 @@ public partial class App : Application
         };
         _isDark = dark;
 
-        string accentHex;
-        if (theme == "system")
-        {
-            var sysColor = GetWindowsAccentColor();
-            accentHex = $"#{sysColor.R:X2}{sysColor.G:X2}{sysColor.B:X2}";
-        }
-        else
-        {
-            accentHex = dark ? "#38BDF8" : "#2563EB";
-        }
+        // در هر دو حالت تیره و سیستم، از رنگ اکسنت ملایم و رسمی Fluent Sky/Blue استفاده می‌شود
+        // تا رنگ‌های بنفش و تند شخصی ویندوز تم برنامه را به هم نریزند
+        string accentHex = dark ? "#38BDF8" : "#0284C7";
 
         if (dark)
         {
-            SetBrush("BgBrush", "#80090E1A");
-            SetBrush("SidebarBrush", "#8D080D18");
-            SetBrush("CardBrush", "#45111B2E");
-            SetBrush("CardHoverBrush", "#6018263F");
-            SetBrush("FieldBrush", "#40142136");
-            SetBrush("LineBrush", "#253554");
-            SetBrush("TextBrush", "#FFFFFF");
+            SetBrush("BgBrush", "#0F172A");
+            SetBrush("SidebarBrush", "#0B1120");
+            SetBrush("SidebarActiveBrush", "#1E293B");
+            SetBrush("CardBrush", "#1E293B");
+            SetBrush("CardHoverBrush", "#2A374A");
+            SetBrush("FieldBrush", "#0F172A");
+            SetBrush("LineBrush", "#334155");
+            SetBrush("TextBrush", "#F8FAFC");
             SetBrush("SubTextBrush", "#94A3B8");
             SetBrush("AccentBrush", accentHex);
             SetBrush("Accent2Brush", "#22C55E");
             SetBrush("DangerBrush", "#EF4444");
-            SetBrush("HoverBrush", "#3020304D");
-            SetBrush("RowCardBrush", "#40162339");
+            SetBrush("HoverBrush", "#1E293B");
+            SetBrush("RowCardBrush", "#1E293B");
             SetBrush("RowLineBrush", "#152033");
-            SetBrush("GlassBrush", "#38101A2D");
-            SetBrush("GlassBorderBrush", "#304A70");
+            SetBrush("GlassBrush", "#1E293B");
+            SetBrush("GlassBorderBrush", "#2E405E");
         }
         else
         {
-            // پالت روشن روان (Fluent Light) با کنتراست شفاف و متن‌های تیره اسلیت
-            SetBrush("BgBrush", "#F1F5F9");
-            SetBrush("SidebarBrush", "#E2E8F0");
+            // پالت روشن روان (Fluent Light) با کنتراست ملایم و چشم‌نواز
+            SetBrush("BgBrush", "#F8FAFC");
+            SetBrush("SidebarBrush", "#F1F5F9");
+            SetBrush("SidebarActiveBrush", "#E2E8F0");
             SetBrush("CardBrush", "#FFFFFF");
-            SetBrush("CardHoverBrush", "#F8FAFC");
+            SetBrush("CardHoverBrush", "#F1F5F9");
             SetBrush("FieldBrush", "#FFFFFF");
-            SetBrush("LineBrush", "#CBD5E1");
+            SetBrush("LineBrush", "#E2E8F0");
             SetBrush("TextBrush", "#0F172A");
-            SetBrush("SubTextBrush", "#475569");
+            SetBrush("SubTextBrush", "#64748B");
             SetBrush("AccentBrush", accentHex);
             SetBrush("Accent2Brush", "#16A34A");
             SetBrush("DangerBrush", "#EF4444");
             SetBrush("HoverBrush", "#E2E8F0");
             SetBrush("RowCardBrush", "#FFFFFF");
             SetBrush("RowLineBrush", "#E2E8F0");
-            SetBrush("GlassBrush", "#F8FAFC");
+            SetBrush("GlassBrush", "#F1F5F9");
             SetBrush("GlassBorderBrush", "#CBD5E1");
         }
 
