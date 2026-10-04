@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -1023,19 +1024,31 @@ namespace SmartVpn
 
         private void ConnFormImportOvpn_Click(object sender, RoutedEventArgs e)
         {
-            var ofd = new OpenFileDialog { Filter = "OpenVPN profile (*.ovpn)|*.ovpn|All files (*.*)|*.*" };
+            var ofd = new OpenFileDialog { Filter = "OpenVPN profile (*.ovpn;*.vpn)|*.ovpn;*.vpn|All files (*.*)|*.*" };
             if (ofd.ShowDialog(this) != true) return;
 
             string norm;
-            try { norm = File.ReadAllText(ofd.FileName).Replace("\r\n", "\n"); }
+            try { norm = File.ReadAllText(ofd.FileName); }
             catch { AskDialog.Info(this, "فایل .ovpn معتبر نیست."); return; }
 
+            if (!LoadOvpnContentIntoForm(norm, Path.GetFileNameWithoutExtension(ofd.FileName), ofd.FileName))
+            {
+                AskDialog.Info(this, "فایل .ovpn معتبر نیست.");
+            }
+        }
+
+        private bool LoadOvpnContentIntoForm(string norm, string? customName = null, string? sourceUrlOrFile = null)
+        {
+            norm = norm.Replace("\r\n", "\n");
             var lines = norm.Split('\n');
-            if (!lines.Any(l => l.Trim() == "client") || !lines.Any(l => l.TrimStart().StartsWith("remote ")))
-            { AskDialog.Info(this, "فایل .ovpn معتبر نیست."); return; }
+            if (!lines.Any(l => l.Trim() == "client") && !lines.Any(l => l.TrimStart().StartsWith("remote ")) && !norm.Contains("<ca>"))
+                return false;
 
             if (lines.Any(l => l.TrimStart().StartsWith("dev tap")))
-            { AskDialog.Info(this, "پروفایل TAP پشتیبانی نمی‌شود."); return; }
+            {
+                AskDialog.Info(this, "پروفایل TAP پشتیبانی نمی‌شود.");
+                return false;
+            }
 
             var host = ""; var port = 0; var proto = "";
             foreach (var line in lines)
@@ -1064,8 +1077,40 @@ namespace SmartVpn
             });
             _formOvpnInline = string.Join(Environment.NewLine, kept);
 
-            if (ConnFormNameBox.Text.Trim().Length == 0)
-                ConnFormNameBox.Text = Path.GetFileNameWithoutExtension(ofd.FileName);
+            ShowPanel("vpn");
+            UpdateSidebarState("vpn");
+            OpenConnForm(null);
+
+            string name = !string.IsNullOrWhiteSpace(customName) ? customName : "";
+            if (string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(sourceUrlOrFile))
+            {
+                try
+                {
+                    if (sourceUrlOrFile.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var uri = new Uri(sourceUrlOrFile);
+                        name = Path.GetFileNameWithoutExtension(uri.LocalPath);
+                        if (string.IsNullOrWhiteSpace(name) || name == "/" || name.Length <= 1) name = uri.Host;
+                    }
+                    else
+                    {
+                        name = Path.GetFileNameWithoutExtension(sourceUrlOrFile);
+                    }
+                }
+                catch { }
+            }
+            if (string.IsNullOrWhiteSpace(name)) name = host.Length > 0 ? host : "OpenVPN Profile";
+
+            ConnFormNameBox.Text = name;
+            foreach (ComboBoxItem item in ConnFormTypeCombo.Items)
+            {
+                if (string.Equals((string)item.Tag, "openvpn", StringComparison.OrdinalIgnoreCase))
+                {
+                    ConnFormTypeCombo.SelectedItem = item;
+                    break;
+                }
+            }
+
             if (host.Length > 0) ConnFormServerBox.Text = host;
             if (port > 0) ConnFormPortBox.Text = port.ToString();
 
@@ -1074,14 +1119,15 @@ namespace SmartVpn
                 foreach (ComboBoxItem item in ConnFormProtoCombo.Items)
                     if ((string)item.Tag == "tcp") { ConnFormProtoCombo.SelectedItem = item; break; }
             }
-            else if (proto.StartsWith("udp"))
+            else
             {
                 foreach (ComboBoxItem item in ConnFormProtoCombo.Items)
                     if ((string)item.Tag == "udp") { ConnFormProtoCombo.SelectedItem = item; break; }
             }
 
-            ConnFormOvpnStatusText.Text = Localization.T("پروفایل تعبیه‌شده: ") + Path.GetFileName(ofd.FileName);
+            ConnFormOvpnStatusText.Text = Localization.T("پروفایل تعبیه‌شده لود گردید ✔");
             UpdateConnFormCredsEnabled("openvpn");
+            return true;
         }
 
         private void ConnFormImportWgConf_Click(object sender, RoutedEventArgs e)
@@ -1460,24 +1506,80 @@ namespace SmartVpn
 
         private void HandleDroppedFiles(string[] files)
         {
+            if (files == null || files.Length == 0) return;
+
+            // ۱. اگر یک فایل تکی کشیده و رها شده: تشخیص هوشمند پروتکل و لود مستقیم در فرم
+            if (files.Length == 1)
+            {
+                var f = files[0];
+                var ext = Path.GetExtension(f).ToLowerInvariant();
+
+                string content = "";
+                try { content = File.ReadAllText(f).Replace("\r\n", "\n"); } catch { }
+
+                // الف: تشخیص کانفیگ WireGuard یا AmneziaWG (.conf یا هر فایلی که Interface و Peer دارد)
+                if ((content.Contains("[Interface]", StringComparison.OrdinalIgnoreCase) && 
+                     content.Contains("[Peer]", StringComparison.OrdinalIgnoreCase)) || ext == ".conf")
+                {
+                    if (content.Contains("[Interface]", StringComparison.OrdinalIgnoreCase) && content.Contains("[Peer]", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ShowPanel("vpn");
+                        UpdateSidebarState("vpn");
+                        OpenConnForm(null);
+
+                        var isAmnezia = content.Contains("jc", StringComparison.OrdinalIgnoreCase) ||
+                                        content.Contains("h1", StringComparison.OrdinalIgnoreCase) ||
+                                        content.Contains("jmin", StringComparison.OrdinalIgnoreCase) ||
+                                        content.Contains("# amw", StringComparison.OrdinalIgnoreCase);
+
+                        foreach (ComboBoxItem item in ConnFormTypeCombo.Items)
+                        {
+                            if (string.Equals((string)item.Tag, isAmnezia ? "amneziawg" : "wireguard", StringComparison.OrdinalIgnoreCase))
+                            {
+                                ConnFormTypeCombo.SelectedItem = item;
+                                break;
+                            }
+                        }
+
+                        ConnFormNameBox.Text = Path.GetFileNameWithoutExtension(f);
+                        _formWgConf = content;
+                        PopulateFormWgFields(content);
+                        ConnFormWgStatusText.Text = Localization.T("کانفیگ: بارگذاری شده ✔");
+                        AskDialog.Info(this, string.Format("کانفیگ {0} با موفقیت شناسایی و در فرم لود شد. می‌توانید مشخصات را بررسی و ذخیره نمایید.", isAmnezia ? "AmneziaWG" : "WireGuard"));
+                        return;
+                    }
+                }
+
+                // ب: تشخیص کانفیگ OpenVPN (.ovpn یا .vpn یا فایل متنی با client/remote/<ca>)
+                if (ext == ".ovpn" || ext == ".vpn" || content.Contains("client") || (content.Contains("remote ") && content.Contains("dev tun")) || content.Contains("<ca>"))
+                {
+                    if (LoadOvpnContentIntoForm(content, Path.GetFileNameWithoutExtension(f), f))
+                    {
+                        AskDialog.Info(this, "کانفیگ OpenVPN با موفقیت شناسایی و در فرم بارگذاری شد. می‌توانید مشخصات را بررسی و ذخیره نمایید.");
+                        return;
+                    }
+                }
+
+                // ج: تشخیص پکیج یا بک‌آپ کانکشن‌ها (.json یا .pkg)
+                if (ext == ".json" || ext == ".pkg")
+                {
+                    if (ImportPackage(f))
+                    {
+                        RefreshList();
+                        AskDialog.Info(this, MsgImported);
+                        return;
+                    }
+                }
+            }
+
+            // در صورتی که چندین فایل همزمان دراگ شده باشند
             var imported = 0;
             foreach (var f in files)
             {
                 var ext = Path.GetExtension(f).ToLowerInvariant();
-                switch (ext)
+                if (ext == ".ovpn" || ext == ".vpn" || ext == ".json" || ext == ".pkg")
                 {
-                    case ".ovpn":   // کانفیگ OpenVPN ← کانکشن سفارشی جدید
-                    case ".json":   // پکیج رسمی
-                    case ".pkg":
-                        if (ImportPackage(f)) imported++;
-                        break;
-                    case ".conf":   // وایرگارد — فعلاً فقط تشخیص؛ افزودن کانکشن در فاز WireGuard
-                        AppendConnLog(MsgWgDetected);
-                        AskDialog.Info(this, MsgWgDetected);
-                        break;
-                    default:
-                        AppendConnLog(string.Format(MsgDropUnsupportedFmt, Path.GetFileName(f)));
-                        break;
+                    if (ImportPackage(f)) imported++;
                 }
             }
             if (imported > 0)
@@ -1485,16 +1587,133 @@ namespace SmartVpn
                 RefreshList();
                 AskDialog.Info(this, MsgImported);
             }
+            else
+            {
+                AppendConnLog(string.Format(MsgDropUnsupportedFmt, Path.GetFileName(files[0])));
+            }
+        }
+
+        // ================= دریافت کانکشن OpenVPN از لینک اینترنتی (Add from URL) =================
+        private void VpnAddUrl_Click(object sender, RoutedEventArgs e)
+        {
+            if (VpnUrlImportNameInput != null) VpnUrlImportNameInput.Text = "";
+            if (VpnUrlImportUrlInput != null) VpnUrlImportUrlInput.Text = "";
+            if (VpnUrlImportOverlay != null) VpnUrlImportOverlay.Visibility = Visibility.Visible;
+        }
+
+        private void ConnFormDownloadOvpnUrl_Click(object sender, RoutedEventArgs e)
+        {
+            if (VpnUrlImportNameInput != null) VpnUrlImportNameInput.Text = ConnFormNameBox?.Text ?? "";
+            if (VpnUrlImportUrlInput != null) VpnUrlImportUrlInput.Text = "";
+            if (VpnUrlImportOverlay != null) VpnUrlImportOverlay.Visibility = Visibility.Visible;
+        }
+
+        private void VpnUrlImportCancel_Click(object sender, RoutedEventArgs e)
+        {
+            if (VpnUrlImportOverlay != null) VpnUrlImportOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private void VpnUrlImportOverlay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (VpnUrlImportOverlay != null) VpnUrlImportOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private void VpnUrlImportModal_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            e.Handled = true;
+        }
+
+        private void VpnUrlImportPaste_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (Clipboard.ContainsText() && VpnUrlImportUrlInput != null)
+                {
+                    VpnUrlImportUrlInput.Text = Clipboard.GetText().Trim();
+                }
+            }
+            catch { }
+        }
+
+        private void VpnUrlImportUrlInput_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                VpnUrlImportSubmit_Click(this, new RoutedEventArgs());
+            }
+            else if (e.Key == Key.Escape)
+            {
+                VpnUrlImportCancel_Click(this, new RoutedEventArgs());
+            }
+        }
+
+        private async void VpnUrlImportSubmit_Click(object sender, RoutedEventArgs e)
+        {
+            var url = VpnUrlImportUrlInput?.Text.Trim();
+            if (string.IsNullOrWhiteSpace(url) || (!url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
+            {
+                AskDialog.Info(this, "لطفاً یک لینک معتبر با http:// یا https:// وارد نمایید.");
+                return;
+            }
+
+            if (VpnUrlImportSubmitBtn != null)
+            {
+                VpnUrlImportSubmitBtn.IsEnabled = false;
+                VpnUrlImportSubmitBtn.Content = "در حال دریافت...";
+            }
+
+            try
+            {
+                using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+                http.DefaultRequestHeaders.Add("User-Agent", "SmartVpn/3.0");
+                var content = await http.GetStringAsync(url);
+
+                if (string.IsNullOrWhiteSpace(content))
+                {
+                    AskDialog.Info(this, "محتوایی از آدرس مشخص‌شده دریافت نشد.");
+                    return;
+                }
+
+                var customName = VpnUrlImportNameInput?.Text.Trim();
+                var ok = LoadOvpnContentIntoForm(content, customName, url);
+                if (ok)
+                {
+                    if (VpnUrlImportOverlay != null) VpnUrlImportOverlay.Visibility = Visibility.Collapsed;
+                    AskDialog.Info(this, "کانفیگ OpenVPN با موفقیت از لینک دریافت و در فرم بارگذاری شد.");
+                }
+                else
+                {
+                    AskDialog.Info(this, "محتوای دانلودشده معتبر نیست یا فایل OpenVPN استاندارد نمی‌باشد.");
+                }
+            }
+            catch (Exception ex)
+            {
+                AskDialog.Info(this, "خطا در دریافت فایل از لینک:\n" + ex.Message);
+            }
+            finally
+            {
+                if (VpnUrlImportSubmitBtn != null)
+                {
+                    VpnUrlImportSubmitBtn.IsEnabled = true;
+                    VpnUrlImportSubmitBtn.Content = "دریافت و بارگذاری";
+                }
+            }
         }
 
         private void Import_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new OpenFileDialog
             {
-                Filter = "NETFASTVIP package / OpenVPN config|*.json;*.pkg;*.ovpn|JSON package (*.json)|*.json|OpenVPN config (*.ovpn)|*.ovpn"
+                Filter = "NETFASTVIP package / VPN configs|*.json;*.pkg;*.ovpn;*.vpn;*.conf|OpenVPN config (*.ovpn;*.vpn)|*.ovpn;*.vpn|WireGuard config (*.conf)|*.conf|JSON package (*.json)|*.json"
             };
             if (dlg.ShowDialog() == true)
             {
+                var ext = Path.GetExtension(dlg.FileName).ToLowerInvariant();
+                if (ext == ".conf")
+                {
+                    HandleDroppedFiles(new[] { dlg.FileName });
+                    return;
+                }
                 var ok = ImportPackage(dlg.FileName);
                 RefreshList();
                 if (ok) AskDialog.Info(this, MsgImported);
@@ -1506,7 +1725,7 @@ namespace SmartVpn
             try
             {
                 var ext = Path.GetExtension(path).ToLowerInvariant();
-                if (ext == ".ovpn")
+                if (ext == ".ovpn" || ext == ".vpn")
                 {
                     var rawOvpn = File.ReadAllText(path);
                     var content = SanitizeOvpn(rawOvpn);

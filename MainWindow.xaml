@@ -861,8 +861,14 @@
 
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                         <!-- Prominent '+' Action Button -->
-                                        <Button x:Name="AddBtn" Style="{StaticResource PrimaryActionBtn}" Click="Add_Click" Margin="0,0,8,0" Width="38" Height="34" Padding="0" ToolTip="افزودن کانکشن جدید (Add Connection)">
+                                        <Button x:Name="AddBtn" Style="{StaticResource PrimaryActionBtn}" Click="Add_Click" Margin="0,0,6,0" Width="38" Height="34" Padding="0" ToolTip="افزودن کانکشن جدید (Add Connection)">
                                             <TextBlock Text="＋" FontSize="20" FontWeight="Bold" Margin="0,-2,0,0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Button>
+                                        <Button x:Name="VpnAddUrlBtn" Style="{StaticResource ActionBtn}" Click="VpnAddUrl_Click" Margin="0,0,6,0" ToolTip="دریافت کانکشن OpenVPN از لینک (Add from URL)">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="🌐" FontSize="11"/>
+                                                <TextBlock Text=" Add URL" Margin="4,0,0,0"/>
+                                            </StackPanel>
                                         </Button>
                                         <Button x:Name="VpnPingAllBtn" Style="{StaticResource ActionBtn}" Click="VpnPingAll_Click" Margin="0,0,6,0" ToolTip="Ping All Servers">
                                             <StackPanel Orientation="Horizontal">
@@ -1005,10 +1011,12 @@
                                                         <Grid>
                                                             <Grid.ColumnDefinitions>
                                                                 <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="Auto"/>
                                                                 <ColumnDefinition Width="*"/>
                                                             </Grid.ColumnDefinitions>
                                                             <Button Grid.Column="0" x:Name="ConnFormImportOvpnBtn" Content="📂 انتخاب فایل .ovpn" Style="{StaticResource ActionBtn}" Padding="12,6" Click="ConnFormImportOvpn_Click"/>
-                                                            <TextBlock Grid.Column="1" x:Name="ConnFormOvpnStatusText" Text="" FontSize="11" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis"/>
+                                                            <Button Grid.Column="1" x:Name="ConnFormDownloadOvpnUrlBtn" Content="🌐 دریافت از لینک URL" Style="{StaticResource ActionBtn}" Padding="12,6" Margin="8,0,0,0" Click="ConnFormDownloadOvpnUrl_Click"/>
+                                                            <TextBlock Grid.Column="2" x:Name="ConnFormOvpnStatusText" Text="" FontSize="11" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis"/>
                                                         </Grid>
                                                     </Border>
                                                 </StackPanel>
@@ -1815,6 +1823,34 @@
                             <Button Style="{StaticResource DrawerNavBtn}" Margin="0,5,0,0" Click="HotspotNavSettings_Click"><TextBlock x:Name="DrawerNavSettingsText" Text="⚙ Settings" Foreground="{DynamicResource TextBrush}"/></Button>
                         </StackPanel>
                     </Grid>
+                </Border>
+            </Grid>
+
+            <!-- IN-APP VPN URL IMPORT MODAL OVERLAY -->
+            <Grid x:Name="VpnUrlImportOverlay" Grid.RowSpan="2" Background="#B0000000" Visibility="Collapsed" Panel.ZIndex="998" MouseLeftButtonDown="VpnUrlImportOverlay_MouseLeftButtonDown">
+                <Border HorizontalAlignment="Center" VerticalAlignment="Center" Width="380" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" CornerRadius="14" Padding="20,18" MouseLeftButtonDown="VpnUrlImportModal_MouseLeftButtonDown">
+                    <Border.Effect><DropShadowEffect BlurRadius="30" ShadowDepth="0" Color="#000000" Opacity="0.7"/></Border.Effect>
+                    <StackPanel>
+                        <Grid Margin="0,0,0,14">
+                            <TextBlock x:Name="VpnUrlImportTitleText" Text="🌐 دریافت کانکشن OpenVPN از لینک" Foreground="{DynamicResource TextBrush}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <Button HorizontalAlignment="Right" Width="28" Height="28" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="VpnUrlImportCancel_Click">
+                                <Path Data="M18 6L6 18M6 6l12 12" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2" Stretch="Uniform" Width="12" Height="12"/>
+                            </Button>
+                        </Grid>
+                        <TextBlock Text="نام کانکشن (اختیاری):" Foreground="{DynamicResource SubTextBrush}" FontSize="11" Margin="0,0,0,4"/>
+                        <TextBox x:Name="VpnUrlImportNameInput" Height="34" Padding="8,6" Margin="0,0,0,10" Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" FontSize="11.5" VerticalContentAlignment="Center"/>
+                        <TextBlock Text="لینک مستقیم فایل کانفیگ (.ovpn):" Foreground="{DynamicResource SubTextBrush}" FontSize="11" Margin="0,0,0,6"/>
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox x:Name="VpnUrlImportUrlInput" Grid.Column="0" Height="34" Padding="8,6" Background="{DynamicResource FieldBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" FontSize="11.5" VerticalContentAlignment="Center" KeyDown="VpnUrlImportUrlInput_KeyDown"/>
+                            <Button Grid.Column="1" Content="📋 Paste" Style="{StaticResource ActionBtn}" Padding="10,0" Height="34" Margin="6,0,0,0" FontSize="11" Click="VpnUrlImportPaste_Click"/>
+                        </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" x:Name="VpnUrlImportSubmitBtn" Content="دریافت و بارگذاری" Style="{StaticResource PrimaryActionBtn}" Height="36" FontSize="12" FontWeight="SemiBold" Margin="0,0,6,0" Click="VpnUrlImportSubmit_Click"/>
+                            <Button Grid.Column="1" Content="انصراف" Style="{StaticResource ActionBtn}" Height="36" FontSize="12" Margin="6,0,0,0" Click="VpnUrlImportCancel_Click"/>
+                        </Grid>
+                    </StackPanel>
                 </Border>
             </Grid>
 
