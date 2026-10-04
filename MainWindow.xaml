@@ -211,7 +211,7 @@
 
             <!-- Minimalist Windows 11 Title Bar -->
             <Border x:Name="AppTitleBar" Grid.Row="0" Height="34"
-                    CornerRadius="14,14,0,0" ClipToBounds="True"
+                    CornerRadius="13,13,0,0" ClipToBounds="True"
                     Background="{DynamicResource SidebarBrush}"
                     BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="0,0,0,1"
                     MouseLeftButtonDown="AppTitleBar_MouseLeftButtonDown">
@@ -269,7 +269,7 @@
                                 Click="TitleCloseButton_Click">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
-                                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="0,14,0,0">
+                                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="0,13,0,0">
                                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                     <ControlTemplate.Triggers>

@@ -103,6 +103,14 @@ namespace SmartVpn
                         BorderThickness = new Thickness(1),
                         CornerRadius = new CornerRadius(10),
                         Padding = new Thickness(14, 9, 14, 9),
+                        Margin = new Thickness(8),
+                        Effect = new System.Windows.Media.Effects.DropShadowEffect
+                        {
+                            Color = Colors.Black,
+                            BlurRadius = 10,
+                            ShadowDepth = 2,
+                            Opacity = 0.45
+                        },
                         Child = text,
                     };
                     var toast = new Window
@@ -117,6 +125,19 @@ namespace SmartVpn
                         FlowDirection = FlowDirection.RightToLeft,
                         FontFamily = FontFamily,
                         Content = border,
+                    };
+                    toast.SourceInitialized += (_, _) =>
+                    {
+                        try
+                        {
+                            var helper = new WindowInteropHelper(toast);
+                            if (helper.Handle != IntPtr.Zero)
+                            {
+                                int doNotRound = 1; // DWMWCP_DONOTROUND
+                                DwmSetWindowAttribute(helper.Handle, 33 /* DWMWA_WINDOW_CORNER_PREFERENCE */, ref doNotRound, sizeof(int));
+                            }
+                        }
+                        catch { }
                     };
                     toast.MouseLeftButtonDown += (_, _) => toast.Close();
                     toast.Loaded += (_, _) =>

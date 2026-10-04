@@ -212,6 +212,7 @@ namespace SmartVpn
 
         private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
         private const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
+        private const int DWMWCP_DONOTROUND = 1;
         private const int DWMWCP_ROUND = 2;
         private const int DWMWA_CAPTION_COLOR = 35;
         private const int DWMWA_TEXT_COLOR = 36;
@@ -234,44 +235,6 @@ namespace SmartVpn
             public int SizeOfData;
         }
 
-        private void EnableAcrylicBlur(IntPtr hwnd)
-        {
-            try
-            {
-                // 1. Windows 11 22H2+ System Backdrop (Acrylic = 3, Mica = 2)
-                int backdrop = 3;
-                if (DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, ref backdrop, sizeof(int)) != 0)
-                {
-                    backdrop = 2;
-                    DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, ref backdrop, sizeof(int));
-                }
-
-                // 2. Windows 10 & 11 Acrylic BlurBehind
-                var accent = new AccentPolicy
-                {
-                    AccentState = 4, // ACCENT_ENABLE_ACRYLICBLURBEHIND
-                    AccentFlags = 2,
-                    GradientColor = unchecked((int)0x99090E1A),
-                    AnimationId = 0
-                };
-
-                int accentSize = Marshal.SizeOf(accent);
-                IntPtr accentPtr = Marshal.AllocHGlobal(accentSize);
-                Marshal.StructureToPtr(accent, accentPtr, false);
-
-                var data = new WindowCompositionAttributeData
-                {
-                    Attribute = 19, // WCA_ACCENT_POLICY
-                    Data = accentPtr,
-                    SizeOfData = accentSize
-                };
-
-                SetWindowCompositionAttribute(hwnd, ref data);
-                Marshal.FreeHGlobal(accentPtr);
-            }
-            catch { }
-        }
-
         private void ApplyDarkTitleBar()
         {
             try
@@ -287,10 +250,11 @@ namespace SmartVpn
                 DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref darkMode, sizeof(int));
                 DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, ref caption, sizeof(int));
                 DwmSetWindowAttribute(hwnd, DWMWA_TEXT_COLOR, ref text, sizeof(int));
-                int cornerPreference = DWMWCP_ROUND;
-                DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerPreference, sizeof(int));
 
-                EnableAcrylicBlur(hwnd);
+                // برای پنجره بدون حاشیه با AllowsTransparency=True، از DWMWCP_DONOTROUND استفاده می‌شود
+                // تا ویندوز ۱۱ هاله سفید مستطیلی یا ماسک گوشه روی پس‌زمینه شفاف نیندازد.
+                int cornerPreference = DWMWCP_DONOTROUND;
+                DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerPreference, sizeof(int));
             }
             catch { }
         }
