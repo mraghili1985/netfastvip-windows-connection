@@ -2,17 +2,25 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:TextOptions="clr-namespace:System.Windows.Media;assembly=PresentationCore"
-        Title="NETFASTVIP" Width="896" Height="596"
+        Title="NETFASTVIP" Width="880" Height="580"
         FlowDirection="LeftToRight"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         ResizeMode="NoResize"
-        AllowsTransparency="True"
-        Background="Transparent"
+        AllowsTransparency="False"
+        Background="{DynamicResource BgBrush}"
         FontFamily="Segoe UI, Segoe UI Variable, Tahoma, ./Fonts/#Vazirmatn, Vazirmatn"
         TextOptions.TextFormattingMode="Display"
         AllowDrop="True" PreviewDragOver="Window_PreviewDragOver" DragOver="Window_DragOver" PreviewDrop="Window_PreviewDrop" Drop="Window_Drop"
         Loaded="Window_Loaded" Closing="Window_Closing">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="34"
+                      CornerRadius="12"
+                      GlassFrameThickness="0"
+                      ResizeBorderThickness="0"
+                      UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
 
     <Window.Resources>
         <!-- Button Styles -->
@@ -198,15 +206,11 @@
         </Storyboard>
     </Window.Resources>
 
-    <!-- Outer Window Frame with Fluent Glass Rounded Border -->
-    <Border x:Name="WindowSurface" Margin="8"
+    <!-- Main Window Root Surface -->
+    <Border x:Name="WindowSurface" Margin="0"
             Background="{DynamicResource BgBrush}"
-            BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"
-            CornerRadius="12">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="16" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.45"/>
-        </Border.Effect>
-        <Grid ClipToBounds="True">
+            BorderThickness="0">
+        <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition x:Name="TitleBarRow" Height="34"/>
                 <RowDefinition Height="*"/>
@@ -214,7 +218,6 @@
 
             <!-- Minimalist Windows 11 Title Bar -->
             <Border x:Name="AppTitleBar" Grid.Row="0" Height="34"
-                    CornerRadius="11,11,0,0" ClipToBounds="True"
                     Background="{DynamicResource SidebarBrush}"
                     BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="0,0,0,1"
                     MouseLeftButtonDown="AppTitleBar_MouseLeftButtonDown">
@@ -228,11 +231,13 @@
                     </StackPanel>
 
                     <!-- Right: Window Caption Controls -->
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Stretch">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Stretch"
+                                WindowChrome.IsHitTestVisibleInChrome="True">
                         <Button x:Name="TitleMinimizeButton" Width="44" Height="34"
                                 Content="—" FontSize="13" Padding="0"
                                 Background="Transparent" Foreground="{DynamicResource SubTextBrush}"
                                 BorderThickness="0" Cursor="Hand" ToolTip="کمینه‌سازی"
+                                WindowChrome.IsHitTestVisibleInChrome="True"
                                 Click="TitleMinimizeButton_Click">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
@@ -251,6 +256,7 @@
                                 Content="▢" FontSize="12" Padding="0"
                                 Background="Transparent" Foreground="{DynamicResource SubTextBrush}"
                                 BorderThickness="0" Cursor="Hand" ToolTip="بزرگ‌نمایی"
+                                WindowChrome.IsHitTestVisibleInChrome="True"
                                 Click="TitleMaximizeButton_Click">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
@@ -269,10 +275,11 @@
                                 Content="✕" FontSize="14" Padding="0"
                                 Background="Transparent" Foreground="{DynamicResource SubTextBrush}"
                                 BorderThickness="0" Cursor="Hand" ToolTip="بستن"
+                                WindowChrome.IsHitTestVisibleInChrome="True"
                                 Click="TitleCloseButton_Click">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
-                                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="0,11,0,0">
+                                    <Border x:Name="Bd" Background="{TemplateBinding Background}">
                                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                     <ControlTemplate.Triggers>

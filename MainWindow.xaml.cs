@@ -251,9 +251,9 @@ namespace SmartVpn
                 DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, ref caption, sizeof(int));
                 DwmSetWindowAttribute(hwnd, DWMWA_TEXT_COLOR, ref text, sizeof(int));
 
-                // برای پنجره بدون حاشیه با AllowsTransparency=True، از DWMWCP_DONOTROUND استفاده می‌شود
-                // تا ویندوز ۱۱ هاله سفید مستطیلی یا ماسک گوشه روی پس‌زمینه شفاف نیندازد.
-                int cornerPreference = DWMWCP_DONOTROUND;
+                // با داشتن WindowChrome نیتیو (AllowsTransparency=False)، کرنل DWM ویندوز ۱۱
+                // لبه‌های پنجره را به صورت سخت‌افزاری و بدون هیچ هاله یا کادر اضافه، ۱۲ پیکسل گرد می‌کند.
+                int cornerPreference = DWMWCP_ROUND;
                 DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerPreference, sizeof(int));
             }
             catch { }
