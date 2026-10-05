@@ -64,5 +64,9 @@
   "DnsMode": "auto",
   "DnsPrimary": "",
   "DnsSecondary": "",
-  "ConnectionsUpdateUrl": "https://dl.netfast.vip/connections.json"
+  "ConnectionsUpdateUrl": "https://dl.netfast.vip/connections.json",
+  "TelegramUrl": "https://t.me/netfastvip",
+  "GithubUrl": "https://github.com/mraghili1985/netfastvip-windows-connection",
+  "PortalApiUrl": "https://panel.v2moon.shop",
+  "PanelUrl": "https://panel.v2moon.shop"
 }
