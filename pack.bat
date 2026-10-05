@@ -7,7 +7,7 @@ REM         pack.bat 3.0.1    (override version)
 REM ============================================================
 setlocal
 cd /d "%~dp0"
-set VER=3.0.1
+set VER=3.0.2
 if not "%~1"=="" set VER=%~1
 set PUB=bin\Release\net10.0-windows\win-x64\publish
 set STAGE=stage

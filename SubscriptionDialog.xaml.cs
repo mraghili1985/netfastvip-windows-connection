@@ -30,14 +30,26 @@ public partial class SubscriptionDialog : Window
     private const string BtnChecking       = "⏳ در حال استعلام...";
 
     private readonly string _portalBaseUrl;
+    private readonly AppConfig _appConfig;
     public Action<string, string>? OnSaveCredentials;
+    public Action? OnLoggedOut;
+    public Action? OnSyncCompleted;
 
-    public SubscriptionDialog(string portalBaseUrl, string username, string password)
+    public AppConfig Config => _appConfig;
+
+    public SubscriptionDialog(string portalBaseUrl, string username, string password, AppConfig? appConfig = null)
     {
         InitializeComponent();
+        _appConfig = appConfig ?? AppConfig.Load();
         AsciiInputFilter.ApplyTo(UserBox);
         AsciiInputFilter.ApplyTo(PassBox);
         _portalBaseUrl = portalBaseUrl;
+
+        if (string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(_appConfig.CustomerUsername))
+            username = _appConfig.CustomerUsername;
+        if (string.IsNullOrWhiteSpace(password) && !string.IsNullOrWhiteSpace(_appConfig.CustomerPassword))
+            password = _appConfig.CustomerPassword;
+
         UserBox.Text = username;
         PassBox.Password = password;
         SourceInitialized += (_, __) => ApplyDarkTitleBar();
@@ -99,17 +111,81 @@ public partial class SubscriptionDialog : Window
                     StatusText.Visibility  = Visibility.Collapsed;
                     ResultPanel.Visibility = Visibility.Visible;
 
-                    // سینک خودکار کانکشن‌ها و سرورها
-                    var cfg = AppConfig.Load();
-                    await PortalSyncService.SyncFromCustomerAppAsync(appClient, cfg);
-                    cfg.Save();
+                    // ثبت توکن‌ها و اطلاعات کاربر روی کانفیگ
+                    _appConfig.CustomerAccessToken = appClient.AccessToken;
+                    _appConfig.CustomerRefreshToken = appClient.RefreshToken;
+                    _appConfig.CustomerTokenExpiresAt = appClient.TokenExpiresAt;
+                    _appConfig.CustomerDeviceId = appClient.CurrentDevice?.Id;
+                    _appConfig.CustomerLoginMode = appClient.CurrentAccount?.Kind ?? "radius";
+                    _appConfig.CustomerUsername = user;
+                    _appConfig.CustomerPassword = pass;
+                    _appConfig.CustomerPackageName = primarySvc.PackageName ?? primarySvc.Name;
+                    _appConfig.CustomerStatus = primarySvc.Status;
 
+                    // سینک خودکار کانکشن‌ها و سرورها روی نمونه فعال کانفیگ برنامه
+                    await PortalSyncService.SyncFromCustomerAppAsync(appClient, _appConfig);
+                    _appConfig.Save();
+
+                    OnSyncCompleted?.Invoke();
                     if (SaveCheck.IsChecked == true) OnSaveCredentials?.Invoke(user, pass);
                     handled = true;
                 }
             }
             catch (CustomerDeviceLimitException devEx)
             {
+                var oldest = devEx.Devices.OrderBy(d => d.LastSeenAt ?? d.CreatedAt).FirstOrDefault();
+                if (oldest != null)
+                {
+                    bool replace = AskDialog.Confirm(this,
+                        $"{devEx.Message}\n\nآیا مایلید دستگاه قدیمی «{oldest.Name}» ({oldest.Platform}) خارج شده و این سیستم جایگزین آن شود؟",
+                        "بله، جایگزین شود", "خیر");
+                    if (replace)
+                    {
+                        try
+                        {
+                            var appClient = new CustomerAppApiClient(_portalBaseUrl);
+                            CustomerLoginResponse loginRes;
+                            if (user.StartsWith("09") || user.StartsWith("+") || user.Contains("@"))
+                                loginRes = await appClient.LoginCustomerAsync(user, pass, replaceDeviceId: oldest.Id);
+                            else
+                                loginRes = await appClient.LoginRadiusAsync(user, pass, replaceDeviceId: oldest.Id);
+
+                            var services = await appClient.GetServicesAsync();
+                            var primarySvc = services.FirstOrDefault();
+                            if (primarySvc != null)
+                            {
+                                var dashboard = CustomerAppApiClient.ConvertToPortalDashboard(primarySvc);
+                                Populate(dashboard, primarySvc.CanConnect);
+                                StatusText.Visibility  = Visibility.Collapsed;
+                                ResultPanel.Visibility = Visibility.Visible;
+
+                                // ثبت توکن‌ها و اطلاعات کاربر روی کانفیگ
+                                _appConfig.CustomerAccessToken = appClient.AccessToken;
+                                _appConfig.CustomerRefreshToken = appClient.RefreshToken;
+                                _appConfig.CustomerTokenExpiresAt = appClient.TokenExpiresAt;
+                                _appConfig.CustomerDeviceId = appClient.CurrentDevice?.Id;
+                                _appConfig.CustomerLoginMode = appClient.CurrentAccount?.Kind ?? "radius";
+                                _appConfig.CustomerUsername = user;
+                                _appConfig.CustomerPassword = pass;
+                                _appConfig.CustomerPackageName = primarySvc.PackageName ?? primarySvc.Name;
+                                _appConfig.CustomerStatus = primarySvc.Status;
+
+                                await PortalSyncService.SyncFromCustomerAppAsync(appClient, _appConfig);
+                                _appConfig.Save();
+
+                                OnSyncCompleted?.Invoke();
+                                if (SaveCheck.IsChecked == true) OnSaveCredentials?.Invoke(user, pass);
+                                handled = true;
+                                return;
+                            }
+                        }
+                        catch (Exception repEx)
+                        {
+                            ShowStatus($"خطا در جایگزینی دستگاه: {repEx.Message}", true);
+                            return;
+                        }
+                    }
+                }
                 ShowStatus(devEx.Message, true);
                 return;
             }
@@ -156,23 +232,50 @@ public partial class SubscriptionDialog : Window
 
     private void Populate(PortalDashboard d, bool canConnect)
     {
-        var expired = string.Equals(d.Account.Status, "expired", StringComparison.OrdinalIgnoreCase)
-                      || d.Account.RemainingDays <= 0;
+        bool notStarted = d.Account.ExpireAt == null && d.Account.FirstLoginAt == null;
+        bool unlimitedDuration = d.Account.ExpireAt == null && d.Account.FirstLoginAt != null;
 
-        // وضعیت اشتراک
-        StatusValue.Text = expired ? Localization.T(StExpired) : Localization.T(StActive);
-        StatusValue.Foreground = new SolidColorBrush(
-            expired ? Color.FromRgb(0xEF, 0x44, 0x44) : Color.FromRgb(0x22, 0xC5, 0x5E));
+        var expired = string.Equals(d.Account.Status, "expired", StringComparison.OrdinalIgnoreCase)
+                      || string.Equals(d.Account.Status, "suspended", StringComparison.OrdinalIgnoreCase)
+                      || (d.Account.ExpireAt.HasValue && d.Account.ExpireAt.Value.ToLocalTime() <= DateTime.Now)
+                      || (!notStarted && !unlimitedDuration && d.Account.RemainingDays == 0);
+
+        // وضعیت اشتراک و تاریخ انقضا
+        if (expired)
+        {
+            StatusValue.Text = Localization.T(StExpired);
+            StatusValue.Foreground = new SolidColorBrush(Color.FromRgb(0xEF, 0x44, 0x44));
+            ExpireValue.Text = FormatExpire(d.Account.ExpireAt);
+            ExpireValue.ToolTip = d.Account.ExpireAt?.ToString("yyyy-MM-dd") ?? "";
+            RemainValue.Text = Localization.T(StExpired);
+        }
+        else if (notStarted)
+        {
+            StatusValue.Text = "شروع پس از اتصال ⏳";
+            StatusValue.Foreground = new SolidColorBrush(Color.FromRgb(0x38, 0xBD, 0xF8)); // Sky Blue
+            ExpireValue.Text = "پس از اولین اتصال";
+            ExpireValue.ToolTip = "مدت اشتراک از لحظه اولین اتصال موفق آغاز می‌گردد.";
+            RemainValue.Text = "شروع نشده ⏳";
+        }
+        else if (unlimitedDuration)
+        {
+            StatusValue.Text = Localization.T(StActive);
+            StatusValue.Foreground = new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E));
+            ExpireValue.Text = "بدون تاریخ انقضا (نامحدود)";
+            ExpireValue.ToolTip = "";
+            RemainValue.Text = "نامحدود";
+        }
+        else
+        {
+            StatusValue.Text = Localization.T(StActive);
+            StatusValue.Foreground = new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E));
+            ExpireValue.Text = FormatExpire(d.Account.ExpireAt);
+            ExpireValue.ToolTip = d.Account.ExpireAt?.ToString("yyyy-MM-dd") ?? "";
+            RemainValue.Text = FormatRemaining(d.Account.ExpireAt, false);
+        }
 
         // سرویس / پکیج
         GroupValue.Text = d.Package.Name.Length > 0 ? d.Package.Name : "—";
-
-        // تاریخ انقضا (شمسی)
-        ExpireValue.Text    = FormatExpire(d.Account.ExpireAt);
-        ExpireValue.ToolTip = d.Account.ExpireAt?.ToString("yyyy-MM-dd") ?? "";
-
-        // زمان باقیمانده (از expireAt محاسبه میشه)
-        RemainValue.Text = FormatRemaining(d.Account.ExpireAt, expired);
 
         // وضعیت اتصال
         OnlineValue.Text = canConnect ? Localization.T(OnlineText) : Localization.T(OfflineText);
@@ -180,13 +283,15 @@ public partial class SubscriptionDialog : Window
             canConnect ? Color.FromRgb(0x22, 0xC5, 0x5E) : Color.FromRgb(0x9C, 0xA3, 0xAF));
 
         // اطلاعات اکانت
-        UsernameValue.Text  = d.Account.Username.Length > 0 ? d.Account.Username : "—";
-        FirstLoginValue.Text = "—";
+        UsernameValue.Text = d.Account.Username.Length > 0 ? d.Account.Username : "—";
+        FirstLoginValue.Text = d.Account.FirstLoginAt.HasValue
+            ? FormatExpire(d.Account.FirstLoginAt)
+            : "ثبت نشده (استارت نخورده)";
 
         // ترافیک
-        var usedGb    = d.Traffic.UsedMb      / 1024.0;
-        var totalGb   = d.Traffic.TotalMb     / 1024.0;
-        var remainGb  = d.Traffic.RemainingMb / 1024.0;
+        var usedGb   = d.Traffic.UsedMb      / 1024.0;
+        var totalGb  = d.Traffic.TotalMb     / 1024.0;
+        var remainGb = d.Traffic.RemainingMb / 1024.0;
 
         if (totalGb > 0)
         {
@@ -215,8 +320,13 @@ public partial class SubscriptionDialog : Window
             TrafficSummaryText.Text = Localization.T("نامحدود");
             TrafficBar.Width        = 0;
             UsageText.Text          = $"Used: {usedGb:0.0}GB";
-            RemainTrafficText.Text  = "—";
+            RemainTrafficText.Text  = "نامحدود";
         }
+
+        _appConfig.CustomerPackageName = !string.IsNullOrWhiteSpace(d.Package.Name) ? d.Package.Name : "—";
+        _appConfig.CustomerRemainingTime = RemainValue.Text;
+        _appConfig.CustomerRemainingTraffic = totalGb > 0 ? $"{remainGb:0.#} " + Localization.T("گیگ") : Localization.T("نامحدود");
+        _appConfig.CustomerStatus = StatusValue.Text;
     }
 
     private static string FormatExpire(DateTime? dt)
@@ -234,12 +344,12 @@ public partial class SubscriptionDialog : Window
     private static string FormatRemaining(DateTime? expireAt, bool expired)
     {
         if (expired) return StExpired;
-        if (expireAt == null) return "—";
+        if (expireAt == null) return "نامحدود";
         var rem = expireAt.Value.ToLocalTime() - DateTime.Now;
         if (rem.TotalSeconds <= 0) return StExpired;
         var days  = (int)rem.TotalDays;
         var hours = rem.Hours;
-        if (days == 0 && hours == 0) return StExpired;
+        if (days == 0 && hours == 0) return "< 1H";
         if (days == 0) return $"{hours}H";
         if (hours == 0) return $"{days}D";
         return $"{days}D-{hours}H";
@@ -263,5 +373,31 @@ public partial class SubscriptionDialog : Window
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
         catch { }
+    }
+
+    private async void LogoutBtn_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var appClient = new CustomerAppApiClient(_portalBaseUrl);
+            await appClient.LogoutAsync();
+        }
+        catch { }
+
+        _appConfig.CustomerAccessToken = null;
+        _appConfig.CustomerRefreshToken = null;
+        _appConfig.CustomerTokenExpiresAt = null;
+        _appConfig.CustomerUsername = null;
+        _appConfig.CustomerPassword = null;
+        _appConfig.CustomerPackageName = null;
+        _appConfig.CustomerRemainingTime = null;
+        _appConfig.CustomerRemainingTraffic = null;
+        _appConfig.CustomerStatus = null;
+        // حذف کانکشن‌های پورتال هنگام خروج
+        _appConfig.Connections.RemoveAll(c => string.Equals(c.Source, "portal", StringComparison.OrdinalIgnoreCase));
+        _appConfig.Save();
+
+        OnLoggedOut?.Invoke();
+        Close();
     }
 }

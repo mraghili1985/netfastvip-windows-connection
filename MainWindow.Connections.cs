@@ -399,8 +399,8 @@ namespace SmartVpn
             var card = new Border
             {
                 Background = cardBg,
-                BorderBrush = new SolidColorBrush(light ? Color.FromArgb(0x28, 0x0F, 0x17, 0x2A) : Color.FromArgb(0x22, 0x94, 0xA3, 0xB8)),
-                BorderThickness = light ? new Thickness(0, 1, 1, 1) : new Thickness(0), // در تم روشن یک حاشیه ظریف برای تفکیک کارت از پس‌زمینه
+                BorderBrush = new SolidColorBrush(light ? Color.FromArgb(0x28, 0x0F, 0x17, 0x2A) : Color.FromArgb(0x35, 0x46, 0x60, 0x88)),
+                BorderThickness = new Thickness(0, 1, 1, 1),
                 CornerRadius = new CornerRadius(0, 8, 8, 0),
                 Padding = new Thickness(7, 4, 6, 4),
             };
@@ -499,10 +499,12 @@ namespace SmartVpn
                 var qConnect = string.Format(MsgConnectConfirm, c.Name);
                 if (!AskDialog.Confirm(this, qConnect)) return;
                 _selectedName = c.Name;
+                MainWindow.LastConnectionType = "vpn";
                 ActiveConnText.Text = $"{CategoryLabel(c.Type)} {c.Name}";
                 ServerSubText.Text = c.ServerLine;
                 UpdateActiveBadge(c.Name, c.Type);
                 RefreshList();
+                UpdateCoreSwitcherCards();
                 ConnectSelected();
                 ShowPanel("home");
             };
@@ -541,9 +543,10 @@ namespace SmartVpn
             var subtitle = new TextBlock
             {
                 Text = string.IsNullOrWhiteSpace(c.Subtitle) ? c.EffectiveServer : c.Subtitle,
-                FontSize = 9,
+                FontSize = 9.5,
+                FontWeight = FontWeights.SemiBold,
                 Margin = new Thickness(0, 1, 0, 0),
-                Foreground = new SolidColorBrush(light ? Color.FromRgb(0x47, 0x55, 0x69) : Color.FromRgb(0x94, 0xA3, 0xB8)),
+                Foreground = new SolidColorBrush(light ? Color.FromRgb(0x47, 0x55, 0x69) : Color.FromRgb(0xCB, 0xD5, 0xE1)),
                 TextTrimming = TextTrimming.CharacterEllipsis,
                 TextAlignment = TextAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -818,10 +821,12 @@ namespace SmartVpn
                     return;
                 }
                 _selectedName = c.Name;
+                MainWindow.LastConnectionType = "vpn";
                 ActiveConnText.Text = $"{CategoryLabel(c.Type)} {c.Name}";
                 ServerSubText.Text = c.ServerLine;
                 UpdateActiveBadge(c.Name, c.Type);
                 RefreshList();
+                UpdateCoreSwitcherCards();
             };
             card.MouseLeftButtonDown += async (_, e) =>
             {
@@ -839,10 +844,12 @@ namespace SmartVpn
                 var qConnect = string.Format(MsgConnectConfirm, c.Name);
                 if (!AskDialog.Confirm(this, qConnect)) return;
                 _selectedName = c.Name;
+                MainWindow.LastConnectionType = "vpn";
                 ActiveConnText.Text = $"{CategoryLabel(c.Type)} {c.Name}";
                 ServerSubText.Text = c.ServerLine;
                 UpdateActiveBadge(c.Name, c.Type);
                 RefreshList();
+                UpdateCoreSwitcherCards();
                 ConnectSelected();
                 ShowPanel("home");
             };

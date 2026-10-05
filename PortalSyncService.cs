@@ -106,9 +106,10 @@ public static class PortalSyncService
             return new SyncResult { Errors = { $"خطا در دریافت لیست سرویس‌ها: {ex.Message}" } };
         }
 
-        // حذف کانکشن‌های قبلی پورتال
+        // حذف کانکشن‌های قبلی پورتال و هاست رسمی قدیمی تا سرورهای اختصاصی پنل جایگزین شوند
         var removed = config.Connections.RemoveAll(c =>
-            string.Equals(c.Source, "portal", StringComparison.OrdinalIgnoreCase));
+            string.Equals(c.Source, "portal", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(c.Source, "official", StringComparison.OrdinalIgnoreCase));
 
         foreach (var svc in services)
         {
@@ -136,7 +137,26 @@ public static class PortalSyncService
                     added++;
                 }
 
-                // ۳. ساب‌اسکریپشن V2Ray
+                // ۳. ساب‌اسکریپشن و کانکشن‌های هسته Xray / V2Ray
+                var allProxies = new List<SmartVpn.XrayCore.ProxyProfile>();
+                SmartVpn.XrayCore.UserAccountInfo? subUserInfo = null;
+                string? subTitle = null;
+
+                // ۳.۱. استخراج لینک‌های مستقیم (Direct Links)
+                if (connData.V2Ray?.Links != null && connData.V2Ray.Links.Count > 0)
+                {
+                    foreach (var link in connData.V2Ray.Links)
+                    {
+                        try
+                        {
+                            var parsed = SmartVpn.XrayCore.UrlParser.Parse(link);
+                            if (parsed != null) allProxies.Add(parsed);
+                        }
+                        catch { }
+                    }
+                }
+
+                // ۳.۲. دریافت ساب‌اسکریپشن از آدرس پورتال
                 var v2Sub = connData.V2Ray?.SubscriptionUrl ?? connData.WireGuard?.SubscriptionUrl;
                 if (!string.IsNullOrWhiteSpace(v2Sub))
                 {
@@ -146,35 +166,85 @@ public static class PortalSyncService
                         var (proxies, userInfo, suggestedTitle, err) = await SmartVpn.XrayCore.SubscriptionManager.FetchSubscriptionAsync(subUrl);
                         if (proxies != null && proxies.Count > 0)
                         {
-                            var existingGroups = SmartVpn.XrayCore.SubscriptionGroupManager.LoadGroups();
-                            var group = existingGroups.FirstOrDefault(g => string.Equals(g.Url, subUrl, StringComparison.OrdinalIgnoreCase));
-                            if (group == null)
-                            {
-                                group = new SmartVpn.XrayCore.SubscriptionGroup
-                                {
-                                    Name = !string.IsNullOrWhiteSpace(suggestedTitle) ? suggestedTitle : $"اشتراک {svc.Name}",
-                                    Url = subUrl
-                                };
-                                existingGroups.Add(group);
-                            }
-                            group.Profiles.Clear();
-                            foreach (var p in proxies)
-                            {
-                                p.GroupId = group.Id;
-                                p.GroupName = group.Name;
-                                group.Profiles.Add(p);
-                            }
-                            if (userInfo != null)
-                            {
-                                group.DataRemaining = userInfo.GetRemainingDataString();
-                                group.TotalData = userInfo.GetTotalDataString();
-                                group.DaysRemaining = userInfo.GetExpireString();
-                            }
-                            group.LastUpdated = DateTime.Now;
-                            SmartVpn.XrayCore.SubscriptionGroupManager.SaveGroups(existingGroups);
+                            allProxies.AddRange(proxies);
+                            subUserInfo = userInfo;
+                            subTitle = suggestedTitle;
                         }
                     }
                     catch { }
+                }
+
+                // ذخیره کانکشن‌های استخراج‌شده در گروه‌های Xray
+                if (allProxies.Count > 0 || !string.IsNullOrWhiteSpace(v2Sub))
+                {
+                    var existingGroups = SmartVpn.XrayCore.SubscriptionGroupManager.LoadGroups();
+                    // حذف گروه‌های خالی اولیه (مانند «اشتراک ۱») تا با سرورهای پنل تداخل ایجاد نکند
+                    existingGroups.RemoveAll(g => (g.Name == "اشتراک ۱" || string.IsNullOrWhiteSpace(g.Url)) && g.Profiles.Count == 0);
+
+                    var groupUrl = v2Sub?.Trim() ?? "";
+                    var groupName = !string.IsNullOrWhiteSpace(subTitle) ? subTitle : $"اشتراک {svc.Name}";
+                    var group = existingGroups.FirstOrDefault(g => (!string.IsNullOrWhiteSpace(groupUrl) && string.Equals(g.Url, groupUrl, StringComparison.OrdinalIgnoreCase)) ||
+                                                                  string.Equals(g.Name, groupName, StringComparison.OrdinalIgnoreCase));
+                    if (group == null)
+                    {
+                        group = new SmartVpn.XrayCore.SubscriptionGroup
+                        {
+                            Name = groupName,
+                            Url = groupUrl,
+                            IsExpanded = true
+                        };
+                        existingGroups.Add(group);
+                    }
+                    else
+                    {
+                        group.Name = groupName;
+                        if (!string.IsNullOrWhiteSpace(groupUrl)) group.Url = groupUrl;
+                        group.IsExpanded = true;
+                    }
+
+                    group.Profiles.Clear();
+                    foreach (var p in allProxies)
+                    {
+                        p.GroupId = group.Id;
+                        p.GroupName = group.Name;
+                        group.Profiles.Add(p);
+                    }
+
+                    if (subUserInfo != null)
+                    {
+                        group.DataRemaining = subUserInfo.GetRemainingDataString();
+                        group.TotalData = subUserInfo.GetTotalDataString();
+                        group.DaysRemaining = subUserInfo.GetExpireString();
+                    }
+                    else
+                    {
+                        if (svc.TotalTrafficBytes.HasValue && svc.TotalTrafficBytes.Value > 0)
+                        {
+                            double totalGb = svc.TotalTrafficBytes.Value / (1024.0 * 1024.0 * 1024.0);
+                            double usedGb = (svc.UsedTrafficBytes ?? 0) / (1024.0 * 1024.0 * 1024.0);
+                            double leftGb = Math.Max(0, totalGb - usedGb);
+                            group.DataRemaining = $"{leftGb:0.#} GB / {totalGb:0.#} GB";
+                            group.TotalData = $"{totalGb:0.#} GB";
+                        }
+                        else
+                        {
+                            group.DataRemaining = "نامحدود";
+                            group.TotalData = "نامحدود";
+                        }
+
+                        if (svc.ExpireAt.HasValue)
+                        {
+                            var daysLeft = (int)Math.Max(0, Math.Ceiling((svc.ExpireAt.Value.ToLocalTime() - DateTime.Now).TotalDays));
+                            group.DaysRemaining = $"{daysLeft} روز";
+                        }
+                        else
+                        {
+                            group.DaysRemaining = "شروع پس از اتصال ⏳";
+                        }
+                    }
+
+                    group.LastUpdated = DateTime.Now;
+                    SmartVpn.XrayCore.SubscriptionGroupManager.SaveGroups(existingGroups);
                 }
             }
             catch (Exception ex)

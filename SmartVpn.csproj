@@ -14,9 +14,9 @@
     <Company>NETFASTVIP</Company>
     <Product>NETFASTVIP VPN Client</Product>
     <Copyright>© 2026 NETFASTVIP</Copyright>
-    <AssemblyVersion>3.0.0.0</AssemblyVersion>
-    <FileVersion>3.0.0.0</FileVersion>
-    <InformationalVersion>3.0.0</InformationalVersion>
+    <AssemblyVersion>3.0.2.0</AssemblyVersion>
+    <FileVersion>3.0.2.0</FileVersion>
+    <InformationalVersion>3.0.2</InformationalVersion>
     <!-- قبلاً اینجا PublishSingleFile/IncludeNativeLibrariesForSelfExtract فعال بود: همه‌چی در یک NETFASTVIP.exe تکی جمع می‌شد. این exe تکی در واقع یک
          bootstrapper بومی بود که هنگام اجرا دهها DLL داخلی را در یک پوشه‌ی موقت (%TEMP%) اکسترکت
          می‌کرد — همین رفتار دروپرماننده باعث false-positive آنتی‌ویروسی/Defender می‌شد. تاکیدشده: برنامه
@@ -63,6 +63,11 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <TargetPath>Data\flags\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </None>
+    <None Include="Fonts\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <TargetPath>Fonts\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
     </None>
   </ItemGroup>
 

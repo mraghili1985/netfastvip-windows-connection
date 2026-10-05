@@ -3,37 +3,82 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <SolidColorBrush x:Key="BgBrush" Color="#0F172A"/>
-        <SolidColorBrush x:Key="SidebarBrush" Color="#0B1120"/>
+        <SolidColorBrush x:Key="BgBrush" Color="#0B1120"/>
+        <SolidColorBrush x:Key="SidebarBrush" Color="#070B14"/>
         <SolidColorBrush x:Key="SidebarActiveBrush" Color="#1E293B"/>
-        <SolidColorBrush x:Key="CardBrush" Color="#1E293B"/>
-        <SolidColorBrush x:Key="CardHoverBrush" Color="#2A374A"/>
+        <SolidColorBrush x:Key="CardBrush" Color="#151F32"/>
+        <SolidColorBrush x:Key="CardHoverBrush" Color="#1E293B"/>
         <SolidColorBrush x:Key="FieldBrush" Color="#0F172A"/>
-        <SolidColorBrush x:Key="LineBrush" Color="#334155"/>
+        <SolidColorBrush x:Key="LineBrush" Color="#243248"/>
         <SolidColorBrush x:Key="TextBrush" Color="#F8FAFC"/>
-        <SolidColorBrush x:Key="SubTextBrush" Color="#94A3B8"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="#38BDF8"/>
-        <SolidColorBrush x:Key="Accent2Brush" Color="#22C55E"/>
+        <SolidColorBrush x:Key="SubTextBrush" Color="#CBD5E1"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#3B82F6"/>
+        <SolidColorBrush x:Key="Accent2Brush" Color="#10B981"/>
         <SolidColorBrush x:Key="DangerBrush" Color="#EF4444"/>
-        <SolidColorBrush x:Key="HoverBrush" Color="#1E293B"/>
-        <SolidColorBrush x:Key="RowCardBrush" Color="#1E293B"/>
-        <SolidColorBrush x:Key="RowLineBrush" Color="#152033"/>
-        <SolidColorBrush x:Key="GlassBrush" Color="#1E293B"/>
-        <SolidColorBrush x:Key="GlassBorderBrush" Color="#2E405E"/>
+        <SolidColorBrush x:Key="HoverBrush" Color="#1A2538"/>
+        <SolidColorBrush x:Key="RowCardBrush" Color="#151F32"/>
+        <SolidColorBrush x:Key="RowLineBrush" Color="#243248"/>
+        <SolidColorBrush x:Key="GlassBrush" Color="#151F32"/>
+        <SolidColorBrush x:Key="GlassBorderBrush" Color="#243248"/>
+
+        <!-- 3D Elevated Card Brushes (React / Tailwind UI Deep 3D Style) -->
+        <LinearGradientBrush x:Key="ElevatedCardBrush" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#18253B" Offset="0"/>
+            <GradientStop Color="#111827" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="ElevatedCardBorderBrush" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#466088" Offset="0"/>
+            <GradientStop Color="#28394E" Offset="0.35"/>
+            <GradientStop Color="#162232" Offset="1"/>
+        </LinearGradientBrush>
 
         <!-- Glowing Gradients -->
         <LinearGradientBrush x:Key="PrimaryGlowBrush" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#38BDF8" Offset="0"/>
-            <GradientStop Color="#0284C7" Offset="1"/>
+            <GradientStop Color="#3B82F6" Offset="0"/>
+            <GradientStop Color="#1D4ED8" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="SpeedGradientBrush" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#8B5CF6" Offset="0"/>
+            <GradientStop Color="#3B82F6" Offset="0"/>
             <GradientStop Color="#06B6D4" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="SuccessGlowBrush" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#00FF87" Offset="0"/>
-            <GradientStop Color="#38BDF8" Offset="1"/>
+            <GradientStop Color="#10B981" Offset="0"/>
+            <GradientStop Color="#3B82F6" Offset="1"/>
         </LinearGradientBrush>
+
+        <!-- فونت و تایپوگرافی یکپارچه سراسر برنامه -->
+        <Style TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="./Fonts/#Inter, Inter, Segoe UI Variable Text, Segoe UI, ./Fonts/#Vazirmatn, Vazirmatn"/>
+        </Style>
+
+        <!-- استایل جامع و تاریک ToolTip (هماهنگ با تم تیره و کارت‌های شیشه‌ای) -->
+        <Style TargetType="ToolTip">
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="12,9"/>
+            <Setter Property="HasDropShadow" Value="True"/>
+            <Setter Property="FontFamily" Value="./Fonts/#Inter, Inter, Segoe UI Variable Text, Segoe UI, ./Fonts/#Vazirmatn, Vazirmatn"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToolTip">
+                        <Border Background="{DynamicResource CardBrush}"
+                                BorderBrush="{DynamicResource GlassBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="10"
+                                Padding="{TemplateBinding Padding}">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#000000" BlurRadius="20" ShadowDepth="4" Direction="270" Opacity="0.75"/>
+                            </Border.Effect>
+                            <ContentPresenter/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
         <!-- اسکرول‌بار باریک مدرن — سراسر برنامه (لاگ، لیست‌ها، تنظیمات، کمبوها) -->
         <Style TargetType="ScrollBar">

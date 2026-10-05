@@ -5,7 +5,7 @@
         Width="360" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize" ShowInTaskbar="False"
-        FontFamily="./Fonts/#Vazirmatn, Vazirmatn, Segoe UI, Tahoma" FontSize="12.5"
+        FontFamily="./Fonts/#Inter, Inter, ./Fonts/#Vazirmatn, Vazirmatn, Segoe UI, Tahoma" FontSize="12.5"
         Background="{DynamicResource BgBrush}">
 
     <Window.Resources>
@@ -72,12 +72,12 @@
 
     <StackPanel Margin="14,12,14,14">
         <!-- عنوان -->
-        <TextBlock Text="استعلام زنده وضعیت اشتراک از سرور" FontWeight="Bold" FontSize="13"
+        <TextBlock x:Name="DlgTitleText" Text="ورود به حساب کاربری و دریافت سرورها" FontWeight="Bold" FontSize="13"
                    TextWrapping="Wrap" Foreground="{DynamicResource TextBrush}"
                    FlowDirection="RightToLeft" Margin="0,0,0,10"/>
 
         <!-- ورود -->
-        <TextBlock Text="نام کاربری" Style="{StaticResource DlgLabel}" FlowDirection="RightToLeft"/>
+        <TextBlock Text="نام کاربری (یا شماره موبایل)" Style="{StaticResource DlgLabel}" FlowDirection="RightToLeft"/>
         <TextBox x:Name="UserBox" Style="{StaticResource DlgBox}" FlowDirection="LeftToRight"/>
         <TextBlock Text="پسورد" Style="{StaticResource DlgLabel}" FlowDirection="RightToLeft"/>
         <PasswordBox x:Name="PassBox"
@@ -85,7 +85,7 @@
                      BorderBrush="{DynamicResource LineBrush}" CaretBrush="{DynamicResource TextBrush}"
                      Padding="6,5" FlowDirection="LeftToRight"/>
 
-        <Button x:Name="CheckBtn" Content="📊 استعلام وضعیت" IsDefault="True" Click="Check_Click"
+        <Button x:Name="CheckBtn" Content="🔑 ورود به حساب و دریافت سرورها" IsDefault="True" Click="Check_Click"
                 Style="{StaticResource DlgBtn}" Margin="0,12,0,0"
                 FlowDirection="RightToLeft"/>
 
@@ -191,6 +191,16 @@
                     </StackPanel>
                 </Grid>
             </Border>
+
+            <!-- دکمه‌های همگام‌سازی مجدد و خروج -->
+            <Grid Margin="0,10,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" x:Name="SyncAgainBtn" Content="🔄 همگام‌سازی مجدد سرورها" Style="{StaticResource DlgBtn}" Click="Check_Click" Margin="0,0,6,0" FlowDirection="RightToLeft"/>
+                <Button Grid.Column="1" x:Name="LogoutBtn" Content="🚪 خروج از حساب" Style="{StaticResource DlgBtn}" Background="#20EF4444" Foreground="#EF4444" Click="LogoutBtn_Click" FlowDirection="RightToLeft"/>
+            </Grid>
 
         </StackPanel>
 

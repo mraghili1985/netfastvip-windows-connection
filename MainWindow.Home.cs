@@ -13,6 +13,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -650,8 +651,10 @@ namespace SmartVpn
         private void MoreInfoToggle_Click(object sender, RoutedEventArgs e)
         {
             var open = MoreInfoPanel.Visibility != Visibility.Visible;
-            MoreInfoArrow.Text = open ? "⌃" : "⌄";
-            MoreInfoText.Text = open ? Localization.T("بستن جزئیات") : Localization.T("نمایش جزئیات");
+            MoreInfoArrow.Text = open ? " ▴" : " ▾";
+            MoreInfoText.Text = open ? Localization.T("بستن جزئیات") : Localization.T("جزئیات بیشتر");
+            _config.HomeDetailsExpanded = open;
+            _config.Save();
 
             // باز/بسته‌شدن نرم به جای توگل لحظه‌ای Visibility — ۲۰۰ میلی‌ثانیه بر روی Opacity
             var anim = new DoubleAnimation
@@ -673,12 +676,13 @@ namespace SmartVpn
                 anim.To = 0;
                 anim.Completed += (_, __) =>
                 {
-                    // اگر در این فاصله دوباره باز شده باشد، بسته‌شدن را لفو نکند
-                    if (MoreInfoPanel.Visibility != Visibility.Collapsed && MoreInfoArrow.Text == "⌄")
+                    // اگر در این فاصله دوباره باز شده باشد، بسته‌شدن را لغو نکند
+                    if (MoreInfoPanel.Visibility != Visibility.Collapsed && MoreInfoArrow.Text == " ▾")
                         MoreInfoPanel.Visibility = Visibility.Collapsed;
                 };
                 MoreInfoPanel.BeginAnimation(OpacityProperty, anim);
             }
+            _ = Dispatcher.InvokeAsync(() => RedrawGraph(), System.Windows.Threading.DispatcherPriority.Background);
         }
 
         // کپی IP با یک کلیک روی مقدار IP سرور/تانل در بخش Details — بازخورد کوتاه با تقییر رنگ تایید کپی
@@ -721,22 +725,60 @@ namespace SmartVpn
                 "connecting" or "reconnecting" => new SolidColorBrush(Color.FromRgb(0x3B, 0x82, 0xF6)),
                 "connected" => new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E)),
                 "error" => new SolidColorBrush(Color.FromRgb(0xEF, 0x44, 0x44)),
-                _ => new SolidColorBrush(Color.FromRgb(0x33, 0x41, 0x55)),
+                _ => new SolidColorBrush(Color.FromRgb(0x1E, 0x29, 0x3B)),
             };
             PowerBtn.Background = brush;
             if (MiniPowerBtn != null) MiniPowerBtn.Background = brush;
             if (XrayBtnPower != null) XrayBtnPower.Background = brush;
-            PowerHintText.Text = Localization.T(state == "connected"
-                ? "برای قطع اتصال کلیک کنید" : "روشن/خاموش اتصال");
-            if (PowerStateText != null)
+
+            if (PowerOuterRing != null)
             {
-                PowerStateText.Text = state switch
+                PowerOuterRing.BorderBrush = state switch
                 {
-                    "connected" => "ON",
-                    "connecting" or "reconnecting" => "...",
-                    _ => "OFF"
+                    "connecting" or "reconnecting" => new SolidColorBrush(Color.FromArgb(0x70, 0x3B, 0x82, 0xF6)),
+                    "connected" => new SolidColorBrush(Color.FromArgb(0x70, 0x22, 0xC5, 0x5E)),
+                    "error" => new SolidColorBrush(Color.FromArgb(0x70, 0xEF, 0x44, 0x44)),
+                    _ => (Brush)FindResource("GlassBorderBrush"),
                 };
             }
+
+            PowerHintText.Text = Localization.T(state switch
+            {
+                "connected" => "برای قطع اتصال کلیک کنید",
+                "connecting" or "reconnecting" => "لطفاً شکیبا باشید...",
+                "error" => "جهت تلاش مجدد کلیک کنید",
+                _ => "جهت اتصال کلیک کنید"
+            });
+
+            if (PowerStateText != null)
+            {
+                PowerStateText.Text = Localization.T(state switch
+                {
+                    "connected" => "متصل و ایمن",
+                    "connecting" or "reconnecting" => "در حال اتصال...",
+                    "error" => "خطا در اتصال",
+                    _ => "خاموش"
+                });
+                PowerStateText.Foreground = state switch
+                {
+                    "connected" => new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E)),
+                    "connecting" or "reconnecting" => new SolidColorBrush(Color.FromRgb(0x38, 0xBD, 0xF8)),
+                    "error" => new SolidColorBrush(Color.FromRgb(0xEF, 0x44, 0x44)),
+                    _ => (Brush)FindResource("TextBrush"),
+                };
+            }
+
+            if (StatusText != null)
+            {
+                StatusText.Foreground = state switch
+                {
+                    "connected" => new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E)),
+                    "connecting" or "reconnecting" => new SolidColorBrush(Color.FromRgb(0x38, 0xBD, 0xF8)),
+                    "error" => new SolidColorBrush(Color.FromRgb(0xEF, 0x44, 0x44)),
+                    _ => (Brush)FindResource("SubTextBrush"),
+                };
+            }
+
             // نقطه وضعیت کنار متن هم همان پیام رنگی را می‌دهد
             if (StatusDot != null)
                 StatusDot.Fill = state == "off" ? new SolidColorBrush(Color.FromRgb(0x64, 0x74, 0x8B)) : brush;
@@ -751,18 +793,16 @@ namespace SmartVpn
                 MiniPowerGlow.Opacity = state == "off" ? 0.0 : 0.45;
             }
 
-            // باگ: درخشش (Glow) دور دکمه پاور در XAML همیشه به‌صورت ثابت سبز (#22C55E) بود و هیچ‌وقت به‌روز نمی‌شد؛
-            // نتیجه: حتی وقتی وصل قطع بود/خاموش بود (متن "Click to Connect")، همان درخشش سبز مدل وصل دورش دیده می‌شد — همان چیزی که باعث می‌شد کاربر فکر کند اتصال برقرار است در حالی که قطع بوده
             if (PowerBtn.Effect is DropShadowEffect glow)
             {
                 glow.Color = state switch
                 {
-                    "connecting" => Color.FromRgb(0x3B, 0x82, 0xF6),
+                    "connecting" or "reconnecting" => Color.FromRgb(0x3B, 0x82, 0xF6),
                     "connected" => Color.FromRgb(0x22, 0xC5, 0x5E),
                     "error" => Color.FromRgb(0xEF, 0x44, 0x44),
                     _ => Color.FromRgb(0x33, 0x41, 0x55),
                 };
-                glow.Opacity = state == "off" ? 0.0 : 0.35;
+                glow.Opacity = state == "off" ? 0.0 : 0.45;
             }
 
             if (XrayBtnPower?.Effect is DropShadowEffect xrayGlow)
@@ -804,9 +844,37 @@ namespace SmartVpn
                     _ => (Brush)FindResource("SubTextBrush")
                 };
             }
+
+            UpdateCoreSwitcherCards();
+            UpdateKillProcsState();
         }
 
+        public void UpdateKillProcsState()
+        {
+            bool isBusyOrConnected = _engine.IsRunning
+                                  || _xrayIsConnected
+                                  || XrayEngine.IsRunning
+                                  || _currentPowerState is "connected" or "connecting" or "reconnecting";
 
+            if (DashToolKillCard != null)
+            {
+                DashToolKillCard.IsEnabled = !isBusyOrConnected;
+                DashToolKillCard.Opacity = isBusyOrConnected ? 0.38 : 1.0;
+                DashToolKillCard.Cursor = isBusyOrConnected ? System.Windows.Input.Cursors.Arrow : System.Windows.Input.Cursors.Hand;
+                DashToolKillCard.ToolTip = isBusyOrConnected
+                    ? Localization.T("در زمان اتصال فعال، امکان بستن پروسس‌ها وجود ندارد")
+                    : Localization.T("بستن تمام پروسس‌های گیرکرده و ریست آداپتورها");
+            }
+
+            if (KillProcBtn != null)
+            {
+                KillProcBtn.IsEnabled = !isBusyOrConnected;
+                KillProcBtn.Opacity = isBusyOrConnected ? 0.38 : 1.0;
+                KillProcBtn.ToolTip = isBusyOrConnected
+                    ? Localization.T("در زمان اتصال فعال، امکان بستن پروسس‌ها وجود ندارد")
+                    : Localization.T("بستن پروسه‌های گیرکرده");
+            }
+        }
 
         private void SetLocked(bool locked)
         {
@@ -815,10 +883,10 @@ namespace SmartVpn
             ExportBtn.IsEnabled = !locked;
             UpdateBaseBtn.IsEnabled = !locked;
             RenewIpBtn.IsEnabled = !locked;
-            KillProcBtn.IsEnabled = !locked;
             ProxyOffBtn.IsEnabled = !locked;
             ResetAdapterBtn.IsEnabled = !locked;
             PowerBtn.IsEnabled = true;
+            UpdateKillProcsState();
         }
 
 
@@ -832,5 +900,361 @@ namespace SmartVpn
         {
             ShowPanel("home");
         }
-}
+
+        private void HomeVpnTile_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            SidebarNavVpnCore_Click(sender, new RoutedEventArgs());
+        }
+
+        private void HomeXrayTile_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            SidebarNavXrayCore_Click(sender, new RoutedEventArgs());
+        }
+
+        public void UpdateCoreSwitcherCards()
+        {
+            if (HomeVpnTile == null || HomeXrayTile == null) return;
+
+            bool isVpnRunning = _engine.IsRunning;
+            bool isXrayRunning = _xrayIsConnected || XrayEngine.IsRunning;
+            bool isConnected = _currentPowerState == "connected" || isVpnRunning || isXrayRunning;
+            bool isConnecting = _currentPowerState is "connecting" or "reconnecting";
+
+            // Determine which core owns the active or selected connection
+            bool isXray;
+            if (_xrayIsConnected || XrayEngine.IsRunning)
+            {
+                isXray = true;
+            }
+            else if (_engine.IsRunning)
+            {
+                isXray = false;
+            }
+            else
+            {
+                string activeText = ActiveConnText?.Text ?? "";
+                bool isVpnProfile = (_config.Connections != null && _config.Connections.Any(c => !string.IsNullOrEmpty(c.Name) && activeText.Contains(c.Name, StringComparison.OrdinalIgnoreCase)))
+                                 || activeText.StartsWith("WireGuard", StringComparison.OrdinalIgnoreCase)
+                                 || activeText.StartsWith("OpenVPN", StringComparison.OrdinalIgnoreCase)
+                                 || activeText.StartsWith("Cisco", StringComparison.OrdinalIgnoreCase)
+                                 || activeText.StartsWith("Shadowsocks", StringComparison.OrdinalIgnoreCase);
+
+                bool isXrayProfile = (XrayProxies != null && XrayProxies.Any(x => !string.IsNullOrEmpty(x.Alias) && activeText.Equals(x.Alias, StringComparison.OrdinalIgnoreCase)))
+                                  || (_xraySelectedProfile != null && activeText.Equals(_xraySelectedProfile.Alias, StringComparison.OrdinalIgnoreCase));
+
+                if (isVpnProfile)
+                {
+                    isXray = false;
+                }
+                else if (isXrayProfile)
+                {
+                    isXray = true;
+                }
+                else
+                {
+                    isXray = MainWindow.LastConnectionType == "xray";
+                }
+            }
+
+            var borderNeutral = (Brush)FindResource("GlassBorderBrush");
+            var neutralBadgeBg = new SolidColorBrush(Color.FromArgb(0x15, 0x64, 0x74, 0x8B));
+            var subtextBrush = (Brush)FindResource("SubTextBrush");
+
+            bool isDark = App.IsDark;
+
+            // VPN Core Accent Colors (Royal Blue in Dark, Sapphire Blue in Light)
+            var vpnBorderAccent = isDark ? new SolidColorBrush(Color.FromArgb(0x75, 0x3B, 0x82, 0xF6)) : new SolidColorBrush(Color.FromArgb(0xA0, 0x25, 0x63, 0xEB));
+            var vpnBadgeBg = isDark ? new SolidColorBrush(Color.FromArgb(0x28, 0x3B, 0x82, 0xF6)) : new SolidColorBrush(Color.FromArgb(0x20, 0x25, 0x63, 0xEB));
+            var vpnTextAccent = isDark ? new SolidColorBrush(Color.FromRgb(0x3B, 0x82, 0xF6)) : new SolidColorBrush(Color.FromRgb(0x25, 0x63, 0xEB));
+
+            // Xray Core Accent Colors (Electric Purple in Dark, Vivid Purple in Light)
+            var xrayBorderAccent = isDark ? new SolidColorBrush(Color.FromArgb(0x75, 0xA8, 0x55, 0xF7)) : new SolidColorBrush(Color.FromArgb(0xA0, 0x93, 0x33, 0xEA));
+            var xrayBadgeBg = isDark ? new SolidColorBrush(Color.FromArgb(0x28, 0xA8, 0x55, 0xF7)) : new SolidColorBrush(Color.FromArgb(0x20, 0x93, 0x33, 0xEA));
+            var xrayTextAccent = isDark ? new SolidColorBrush(Color.FromRgb(0xC0, 0x84, 0xFC)) : new SolidColorBrush(Color.FromRgb(0x7E, 0x22, 0xCE));
+
+            // Dynamic binding to FieldBrush so cards always adapt seamlessly to dark/light theme
+            HomeVpnTile.SetResourceReference(Border.BackgroundProperty, "FieldBrush");
+            HomeXrayTile.SetResourceReference(Border.BackgroundProperty, "FieldBrush");
+
+            if (isXray)
+            {
+                // Xray is active/selected
+                HomeXrayTile.BorderBrush = xrayBorderAccent;
+                HomeXrayTile.BorderThickness = new Thickness(1.5);
+                if (HomeXrayStatusBadge != null)
+                {
+                    HomeXrayStatusBadge.Background = xrayBadgeBg;
+                    HomeXrayStatusBadge.BorderBrush = xrayBorderAccent;
+                }
+                if (HomeXrayStatusText != null)
+                {
+                    HomeXrayStatusText.Text = isConnected ? Localization.T("● متصل") :
+                                              isConnecting ? Localization.T("در حال اتصال...") :
+                                              Localization.T("● انتخاب‌شده");
+                    HomeXrayStatusText.Foreground = xrayTextAccent;
+                }
+
+                // VPN Core is idle/inactive
+                HomeVpnTile.BorderBrush = borderNeutral;
+                HomeVpnTile.BorderThickness = new Thickness(1);
+                if (HomeVpnStatusBadge != null)
+                {
+                    HomeVpnStatusBadge.Background = neutralBadgeBg;
+                    HomeVpnStatusBadge.BorderBrush = borderNeutral;
+                }
+                if (HomeVpnStatusText != null)
+                {
+                    HomeVpnStatusText.Text = Localization.T("ورود →");
+                    HomeVpnStatusText.Foreground = subtextBrush;
+                }
+
+                // Tier 1 Hero Card Badge
+                if (ActiveCoreTypePill != null && ActiveCoreTypeText != null)
+                {
+                    ActiveCoreTypePill.Visibility = Visibility.Visible;
+                    ActiveCoreTypeText.Text = "⚡ Xray Core";
+                    ActiveCoreTypeText.Foreground = xrayTextAccent;
+                    ActiveCoreTypePill.Background = xrayBadgeBg;
+                    ActiveCoreTypePill.BorderBrush = xrayBorderAccent;
+                }
+            }
+            else
+            {
+                // VPN Core is active/selected
+                HomeVpnTile.BorderBrush = vpnBorderAccent;
+                HomeVpnTile.BorderThickness = new Thickness(1.5);
+                if (HomeVpnStatusBadge != null)
+                {
+                    HomeVpnStatusBadge.Background = vpnBadgeBg;
+                    HomeVpnStatusBadge.BorderBrush = vpnBorderAccent;
+                }
+                if (HomeVpnStatusText != null)
+                {
+                    HomeVpnStatusText.Text = isConnected ? Localization.T("● متصل") :
+                                            isConnecting ? Localization.T("در حال اتصال...") :
+                                            Localization.T("● انتخاب‌شده");
+                    HomeVpnStatusText.Foreground = vpnTextAccent;
+                }
+
+                // Xray Core is idle/inactive
+                HomeXrayTile.BorderBrush = borderNeutral;
+                HomeXrayTile.BorderThickness = new Thickness(1);
+                if (HomeXrayStatusBadge != null)
+                {
+                    HomeXrayStatusBadge.Background = neutralBadgeBg;
+                    HomeXrayStatusBadge.BorderBrush = borderNeutral;
+                }
+                if (HomeXrayStatusText != null)
+                {
+                    HomeXrayStatusText.Text = Localization.T("ورود →");
+                    HomeXrayStatusText.Foreground = subtextBrush;
+                }
+
+                // Tier 1 Hero Card Badge
+                if (ActiveCoreTypePill != null && ActiveCoreTypeText != null)
+                {
+                    ActiveCoreTypePill.Visibility = Visibility.Visible;
+                    ActiveCoreTypeText.Text = "🛡️ VPN Core";
+                    ActiveCoreTypeText.Foreground = vpnTextAccent;
+                    ActiveCoreTypePill.Background = vpnBadgeBg;
+                    ActiveCoreTypePill.BorderBrush = vpnBorderAccent;
+                }
+            }
+        }
+
+        public void ApplyDashboardBottomWidgetMode()
+        {
+            if (RecentServersCard == null) return;
+
+            int mode = _config.DashboardBottomWidgetMode;
+            if (mode < 0 || mode > 2) mode = 0;
+
+            if (mode == 0)
+            {
+                if (RecentServersList != null) RecentServersList.Visibility = Visibility.Visible;
+                if (DashSecurityControlsView != null) DashSecurityControlsView.Visibility = Visibility.Collapsed;
+                if (DashQuickToolsView != null) DashQuickToolsView.Visibility = Visibility.Collapsed;
+
+                if (DashBottomWidgetModeBadge != null) DashBottomWidgetModeBadge.Text = Localization.T("سرورها");
+                if (RecentCardIcon != null) RecentCardIcon.Text = "⭐";
+                if (RecentCardTitle != null) RecentCardTitle.Text = Localization.T("⭐ سرورهای منتخب و اخیر");
+                if (RecentCardSubtitle != null) RecentCardSubtitle.Text = Localization.T("اتصال سریع با یک کلیک به آخرین کانکشن‌ها");
+
+                RenderRecentServersList();
+            }
+            else if (mode == 1)
+            {
+                if (RecentServersList != null) RecentServersList.Visibility = Visibility.Collapsed;
+                if (DashSecurityControlsView != null) DashSecurityControlsView.Visibility = Visibility.Visible;
+                if (DashQuickToolsView != null) DashQuickToolsView.Visibility = Visibility.Collapsed;
+
+                if (DashBottomWidgetModeBadge != null) DashBottomWidgetModeBadge.Text = Localization.T("امنیت");
+                if (RecentCardIcon != null) RecentCardIcon.Text = "🛡️";
+                if (RecentCardTitle != null) RecentCardTitle.Text = Localization.T("کنترل‌های سریع امنیتی");
+                if (RecentCardSubtitle != null) RecentCardSubtitle.Text = Localization.T("وضعیت کیل‌سوئیچ، اسپلیت تانل و DNS");
+
+                UpdateDashboardSecurityControls();
+            }
+            else // mode == 2
+            {
+                if (RecentServersList != null) RecentServersList.Visibility = Visibility.Collapsed;
+                if (DashSecurityControlsView != null) DashSecurityControlsView.Visibility = Visibility.Collapsed;
+                if (DashQuickToolsView != null) DashQuickToolsView.Visibility = Visibility.Visible;
+
+                if (DashBottomWidgetModeBadge != null) DashBottomWidgetModeBadge.Text = Localization.T("ابزارها");
+                if (RecentCardIcon != null) RecentCardIcon.Text = "🧰";
+                if (RecentCardTitle != null) RecentCardTitle.Text = Localization.T("ابزارهای سریع شبکه");
+                if (RecentCardSubtitle != null) RecentCardSubtitle.Text = Localization.T("فلاش DNS، بستن پروسس‌ها و تست سرعت");
+            }
+        }
+
+        public void UpdateDashboardSecurityControls()
+        {
+            if (DashKsText != null && DashKsPill != null)
+            {
+                bool ks = _config.KillSwitchEnabled;
+                DashKsText.Text = ks ? Localization.T("فعال") : Localization.T("غیرفعال");
+                DashKsText.Foreground = ks ? new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E)) : (Brush)FindResource("SubTextBrush");
+                DashKsPill.Background = new SolidColorBrush(ks ? Color.FromArgb(0x25, 0x22, 0xC5, 0x5E) : Color.FromArgb(0x18, 0x64, 0x74, 0x8B));
+            }
+
+            if (DashStText != null && DashStPill != null)
+            {
+                bool stActive = _config.SplitTunnelMode != "off";
+                DashStText.Text = stActive ? Localization.T("هوشمند") : Localization.T("کل ترافیک");
+                DashStText.Foreground = stActive ? (Brush)FindResource("AccentBrush") : (Brush)FindResource("SubTextBrush");
+                DashStPill.Background = new SolidColorBrush(stActive ? Color.FromArgb(0x25, 0x3B, 0x82, 0xF6) : Color.FromArgb(0x18, 0x64, 0x74, 0x8B));
+            }
+
+            if (DashDnsText != null && DashDnsPill != null)
+            {
+                bool customDns = _config.DnsMode != "auto";
+                DashDnsText.Text = customDns ? _config.DnsMode.ToUpperInvariant() : Localization.T("خودکار");
+                DashDnsText.Foreground = new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E));
+                DashDnsPill.Background = new SolidColorBrush(Color.FromArgb(0x25, 0x22, 0xC5, 0x5E));
+            }
+        }
+
+        private void DashBottomWidgetCycle_Click(object sender, MouseButtonEventArgs e)
+        {
+            _config.DashboardBottomWidgetMode = (_config.DashboardBottomWidgetMode + 1) % 3;
+            try { _config.Save(); } catch { }
+            ApplyDashboardBottomWidgetMode();
+        }
+
+        private async void DashQuickKillSwitch_Click(object sender, MouseButtonEventArgs e)
+        {
+            _config.KillSwitchEnabled = !_config.KillSwitchEnabled;
+            try { _config.Save(); } catch { }
+            UpdateDashboardSecurityControls();
+            if (_config.KillSwitchEnabled)
+            {
+                Notify(Localization.T("کیل‌سوئیچ فعال شد."));
+            }
+            else
+            {
+                await KillSwitch.DisableAsync();
+                Notify(Localization.T("کیل‌سوئیچ غیرفعال شد."));
+            }
+        }
+
+        private void DashQuickSplitTunnel_Click(object sender, MouseButtonEventArgs e)
+        {
+            ShowPanel("settings");
+        }
+
+        private void DashQuickDns_Click(object sender, MouseButtonEventArgs e)
+        {
+            ShowPanel("settings");
+        }
+
+        private async void DashToolFlushDns_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (DashToolFlushCard == null || DashToolFlushIcon == null || DashToolFlushText == null) return;
+            try
+            {
+                DashToolFlushIcon.Text = "⏳";
+                AppendLog("> ipconfig /flushdns");
+                await RunToolAsync("ipconfig", "/flushdns");
+
+                // Visual confirmation checkmark
+                DashToolFlushIcon.Text = "✓";
+                DashToolFlushText.Text = Localization.T("انجام شد!");
+                DashToolFlushText.Foreground = new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E));
+                DashToolFlushCard.BorderBrush = new SolidColorBrush(Color.FromArgb(0x90, 0x22, 0xC5, 0x5E));
+                DashToolFlushCard.Background = new SolidColorBrush(Color.FromArgb(0x25, 0x22, 0xC5, 0x5E));
+
+                await Task.Delay(1800);
+            }
+            catch (Exception ex)
+            {
+                AppendLog("Flush DNS error: " + ex.Message);
+            }
+            finally
+            {
+                if (DashToolFlushIcon != null) DashToolFlushIcon.Text = "🧹";
+                if (DashToolFlushText != null)
+                {
+                    DashToolFlushText.Text = Localization.T("فلاش DNS");
+                    DashToolFlushText.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+                }
+                if (DashToolFlushCard != null)
+                {
+                    DashToolFlushCard.SetResourceReference(Border.BackgroundProperty, "FieldBrush");
+                    DashToolFlushCard.SetResourceReference(Border.BorderBrushProperty, "GlassBorderBrush");
+                }
+            }
+        }
+
+        private async void DashToolKillProcs_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (DashToolKillCard == null || DashToolKillIcon == null || DashToolKillText == null) return;
+            if (_engine.IsRunning || _xrayIsConnected || XrayEngine.IsRunning || _currentPowerState is "connected" or "connecting" or "reconnecting")
+            {
+                AppendLog(Localization.T("در زمان اتصال فعال، امکان بستن پروسس‌ها وجود ندارد"));
+                Notify(Localization.T("در زمان اتصال فعال، امکان بستن پروسس‌ها وجود ندارد"));
+                return;
+            }
+            try
+            {
+                DashToolKillIcon.Text = "⏳";
+                AppendLog("Terminating all VPN and Core processes...");
+                await TerminateAllVpnProcessesAndResetAdaptersAsync();
+                AppendLog("✓ All VPN processes terminated and proxy disabled.");
+
+                // Visual confirmation checkmark
+                DashToolKillIcon.Text = "✓";
+                DashToolKillText.Text = Localization.T("انجام شد!");
+                DashToolKillText.Foreground = new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E));
+                DashToolKillCard.BorderBrush = new SolidColorBrush(Color.FromArgb(0x90, 0x22, 0xC5, 0x5E));
+                DashToolKillCard.Background = new SolidColorBrush(Color.FromArgb(0x25, 0x22, 0xC5, 0x5E));
+
+                await Task.Delay(1800);
+            }
+            catch (Exception ex)
+            {
+                AppendLog("Kill procs error: " + ex.Message);
+            }
+            finally
+            {
+                if (DashToolKillIcon != null) DashToolKillIcon.Text = "⚡";
+                if (DashToolKillText != null)
+                {
+                    DashToolKillText.Text = Localization.T("کیل پروسس");
+                    DashToolKillText.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+                }
+                if (DashToolKillCard != null)
+                {
+                    DashToolKillCard.SetResourceReference(Border.BackgroundProperty, "FieldBrush");
+                    DashToolKillCard.SetResourceReference(Border.BorderBrushProperty, "GlassBorderBrush");
+                }
+            }
+        }
+
+        private void DashToolSpeedTest_Click(object sender, MouseButtonEventArgs e)
+        {
+            ShowPanel("tools");
+            OpenSpeedTestView();
+        }
+    }
 }

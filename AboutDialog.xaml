@@ -6,7 +6,7 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize" ShowInTaskbar="False"
         FlowDirection="RightToLeft"
-        FontFamily="./Fonts/#Vazirmatn, Vazirmatn, Segoe UI, Tahoma" FontSize="12.5"
+        FontFamily="./Fonts/#Inter, Inter, ./Fonts/#Vazirmatn, Vazirmatn, Segoe UI, Tahoma" FontSize="12.5"
         Background="{DynamicResource BgBrush}">
 
     <Window.Resources>

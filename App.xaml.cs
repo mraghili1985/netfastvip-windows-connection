@@ -139,7 +139,7 @@ public partial class App : Application
     private static void ApplyPopupTint(Window w)
     {
         if (w is MainWindow) return;
-        var hex = _isDark ? "#0B1B33" : "#D9E1EB";
+        var hex = _isDark ? "#242E3C" : "#D9E1EB";
         var color = (Color)ColorConverter.ConvertFromString(hex);
         if (w.Resources["BgBrush"] is SolidColorBrush b && !b.IsFrozen) b.Color = color;
         else w.Resources["BgBrush"] = new SolidColorBrush(color);
@@ -187,56 +187,80 @@ public partial class App : Application
         };
         _isDark = dark;
 
-        // در هر دو حالت تیره و سیستم، از رنگ اکسنت ملایم و رسمی Fluent Sky/Blue استفاده می‌شود
-        // تا رنگ‌های بنفش و تند شخصی ویندوز تم برنامه را به هم نریزند
-        string accentHex = dark ? "#38BDF8" : "#0284C7";
+        // رنگ اکسنت Royal Blue هماهنگ با طراحی وب‌سایت مدرن Tailwind / MikroTik
+        string accentHex = dark ? "#3B82F6" : "#2563EB";
 
         if (dark)
         {
-            SetBrush("BgBrush", "#0F172A");
-            SetBrush("SidebarBrush", "#0B1120");
-            SetBrush("SidebarActiveBrush", "#1E293B");
-            SetBrush("CardBrush", "#1E293B");
-            SetBrush("CardHoverBrush", "#2A374A");
-            SetBrush("FieldBrush", "#0F172A");
-            SetBrush("LineBrush", "#334155");
-            SetBrush("TextBrush", "#F8FAFC");
-            SetBrush("SubTextBrush", "#94A3B8");
-            SetBrush("AccentBrush", accentHex);
-            SetBrush("Accent2Brush", "#22C55E");
-            SetBrush("DangerBrush", "#EF4444");
-            SetBrush("HoverBrush", "#1E293B");
-            SetBrush("RowCardBrush", "#1E293B");
-            SetBrush("RowLineBrush", "#152033");
-            SetBrush("GlassBrush", "#1E293B");
-            SetBrush("GlassBorderBrush", "#2E405E");
+            SetBrush("WindowBackdropTintBrush", "#E00B1120");
+            SetBrush("BgBrush", "#0B1120");              // Slate 950 deep canvas
+            SetBrush("SidebarBrush", "#070B14");         // Deep obsidian drawer
+            SetBrush("SidebarActiveBrush", "#1E293B");   // Slate 800 active
+            SetBrush("CardBrush", "#151F32");            // Slate 850 card surface
+            SetBrush("CardHoverBrush", "#1E293B");       // Elevated hover
+            SetBrush("FieldBrush", "#0F172A");           // Code / terminal / inner box
+            SetBrush("LineBrush", "#243248");            // Subtle borders
+            SetBrush("TextBrush", "#F8FAFC");            // Crisp White (Slate 50)
+            SetBrush("SubTextBrush", "#CBD5E1");         // Bright Crisp Slate (Slate 300) for maximum dark mode readability
+            SetBrush("AccentBrush", accentHex);          // #3B82F6 Royal Blue
+            SetBrush("Accent2Brush", "#10B981");         // Emerald Green
+            SetBrush("DangerBrush", "#EF4444");          // Red
+            SetBrush("HoverBrush", "#1A2538");           // Subtle hover
+            SetBrush("RowCardBrush", "#151F32");         // Row cards
+            SetBrush("RowLineBrush", "#243248");         // Row divider
+            SetBrush("GlassBrush", "#151F32");           // Glass surface
+            SetBrush("GlassBorderBrush", "#243248");     // Glass border
+
+            // 3D Elevated Card Gradient Surfaces (React / Tailwind UI Style)
+            SetLinearGradientBrush("ElevatedCardBrush", new[] {
+                ((Color)ColorConverter.ConvertFromString("#18253B"), 0.0),
+                ((Color)ColorConverter.ConvertFromString("#111827"), 1.0)
+            }, new Point(0, 0), new Point(0, 1));
+
+            SetLinearGradientBrush("ElevatedCardBorderBrush", new[] {
+                ((Color)ColorConverter.ConvertFromString("#466088"), 0.0),
+                ((Color)ColorConverter.ConvertFromString("#28394E"), 0.35),
+                ((Color)ColorConverter.ConvertFromString("#162232"), 1.0)
+            }, new Point(0, 0), new Point(0, 1));
         }
         else
         {
-            // پالت روشن روان (Fluent Light) با کنتراست ملایم و چشم‌نواز
-            SetBrush("BgBrush", "#F8FAFC");
-            SetBrush("SidebarBrush", "#F1F5F9");
-            SetBrush("SidebarActiveBrush", "#E2E8F0");
+            // پالت روشن روان (Fluent Light) با کنتراست بالا و تفکیک لایه‌ای المان‌ها
+            SetBrush("WindowBackdropTintBrush", "#D0F1F5F9");
+            SetBrush("BgBrush", "#F1F5F9");
+            SetBrush("SidebarBrush", "#E2E8F0");
+            SetBrush("SidebarActiveBrush", "#CBD5E1");
             SetBrush("CardBrush", "#FFFFFF");
-            SetBrush("CardHoverBrush", "#F1F5F9");
-            SetBrush("FieldBrush", "#FFFFFF");
+            SetBrush("CardHoverBrush", "#F8FAFC");
+            SetBrush("FieldBrush", "#F1F5F9");
             SetBrush("LineBrush", "#E2E8F0");
             SetBrush("TextBrush", "#0F172A");
-            SetBrush("SubTextBrush", "#64748B");
+            SetBrush("SubTextBrush", "#334155");         // Deep Slate 700 with high contrast against white card surface
             SetBrush("AccentBrush", accentHex);
-            SetBrush("Accent2Brush", "#16A34A");
+            SetBrush("Accent2Brush", "#10B981");
             SetBrush("DangerBrush", "#EF4444");
             SetBrush("HoverBrush", "#E2E8F0");
             SetBrush("RowCardBrush", "#FFFFFF");
-            SetBrush("RowLineBrush", "#E2E8F0");
-            SetBrush("GlassBrush", "#F1F5F9");
+            SetBrush("RowLineBrush", "#CBD5E1");
+            SetBrush("GlassBrush", "#FFFFFF");
             SetBrush("GlassBorderBrush", "#CBD5E1");
+
+            SetLinearGradientBrush("ElevatedCardBrush", new[] {
+                ((Color)ColorConverter.ConvertFromString("#FFFFFF"), 0.0),
+                ((Color)ColorConverter.ConvertFromString("#F8FAFC"), 1.0)
+            }, new Point(0, 0), new Point(0, 1));
+
+            SetLinearGradientBrush("ElevatedCardBorderBrush", new[] {
+                ((Color)ColorConverter.ConvertFromString("#FFFFFF"), 0.0),
+                ((Color)ColorConverter.ConvertFromString("#E2E8F0"), 0.35),
+                ((Color)ColorConverter.ConvertFromString("#CBD5E1"), 1.0)
+            }, new Point(0, 0), new Point(0, 1));
         }
 
         if (Current?.Resources["PrimaryGlowBrush"] is LinearGradientBrush glow && !glow.IsFrozen)
         {
             var c1 = (Color)ColorConverter.ConvertFromString(accentHex);
-            var c2 = dark ? Color.FromRgb(0x02, 0x84, 0xC7) : Color.FromRgb(0x1D, 0x4E, 0xD8);
+            var c2 = dark ? Color.FromRgb(0x1D, 0x4E, 0xD8) : Color.FromRgb(0x1E, 0x40, 0xAF);
             if (glow.GradientStops.Count >= 2)
             {
                 glow.GradientStops[0].Color = c1;
@@ -271,5 +295,23 @@ public partial class App : Application
             brush.Color = color;
         else
             Current.Resources[key] = new SolidColorBrush(color);
+    }
+
+    private static void SetLinearGradientBrush(string key, (Color color, double offset)[] stops, Point startPoint, Point endPoint)
+    {
+        var gradStops = new GradientStopCollection();
+        foreach (var stop in stops)
+            gradStops.Add(new GradientStop(stop.color, stop.offset));
+
+        if (Current?.Resources[key] is LinearGradientBrush lgb && !lgb.IsFrozen)
+        {
+            lgb.StartPoint = startPoint;
+            lgb.EndPoint = endPoint;
+            lgb.GradientStops = gradStops;
+        }
+        else if (Current != null)
+        {
+            Current.Resources[key] = new LinearGradientBrush(gradStops, startPoint, endPoint);
+        }
     }
 }

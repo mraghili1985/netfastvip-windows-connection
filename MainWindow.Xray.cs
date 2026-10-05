@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
@@ -154,13 +155,25 @@ namespace SmartVpn
         {
             try
             {
-                if (XrayGraphCanvas == null) return;
-                double w = XrayGraphCanvas.ActualWidth > 0 ? XrayGraphCanvas.ActualWidth : 380;
-                double h = XrayGraphCanvas.ActualHeight > 0 ? XrayGraphCanvas.ActualHeight : 54;
-                if (XrayDlLine != null) XrayDlLine.Points = BuildPoints(_xrayDlHistory, w, h);
-                if (XrayUlLine != null) XrayUlLine.Points = BuildPoints(_xrayUlHistory, w, h);
-                if (XrayDlArea != null) XrayDlArea.Points = BuildAreaPoints(_xrayDlHistory, w, h);
-                if (XrayUlArea != null) XrayUlArea.Points = BuildAreaPoints(_xrayUlHistory, w, h);
+                if (GraphCanvas != null)
+                {
+                    double w = GraphCanvas.ActualWidth > 0 ? GraphCanvas.ActualWidth : 380;
+                    double h = GraphCanvas.ActualHeight > 0 ? GraphCanvas.ActualHeight : 78;
+                    if (DlLine != null) DlLine.Points = BuildPoints(_xrayDlHistory, w, h);
+                    if (UlLine != null) UlLine.Points = BuildPoints(_xrayUlHistory, w, h);
+                    if (DlArea != null) DlArea.Points = BuildAreaPoints(_xrayDlHistory, w, h);
+                    if (UlArea != null) UlArea.Points = BuildAreaPoints(_xrayUlHistory, w, h);
+                }
+
+                if (XrayGraphCanvas != null && XrayGraphCanvas.IsVisible)
+                {
+                    double w = XrayGraphCanvas.ActualWidth > 0 ? XrayGraphCanvas.ActualWidth : 380;
+                    double h = XrayGraphCanvas.ActualHeight > 0 ? XrayGraphCanvas.ActualHeight : 54;
+                    if (XrayDlLine != null) XrayDlLine.Points = BuildPoints(_xrayDlHistory, w, h);
+                    if (XrayUlLine != null) XrayUlLine.Points = BuildPoints(_xrayUlHistory, w, h);
+                    if (XrayDlArea != null) XrayDlArea.Points = BuildAreaPoints(_xrayDlHistory, w, h);
+                    if (XrayUlArea != null) XrayUlArea.Points = BuildAreaPoints(_xrayUlHistory, w, h);
+                }
             }
             catch { }
         }
@@ -453,9 +466,11 @@ namespace SmartVpn
 
             if (!_engine.IsRunning)
             {
+                MainWindow.LastConnectionType = "xray";
                 if (ActiveConnText != null) ActiveConnText.Text = item.Alias;
                 if (ServerSubText != null) ServerSubText.Text = $"{item.Protocol.ToUpper()} / {item.Network.ToUpper()}{sec}";
                 UpdateActiveBadge(item.Alias, item.Protocol);
+                UpdateCoreSwitcherCards();
             }
         }
 
@@ -540,8 +555,8 @@ namespace SmartVpn
             var card = new Border
             {
                 Background = cardBg,
-                BorderBrush = new SolidColorBrush(light ? Color.FromArgb(0x28, 0x0F, 0x17, 0x2A) : Color.FromArgb(0x22, 0x94, 0xA3, 0xB8)),
-                BorderThickness = light ? new Thickness(0, 1, 1, 1) : new Thickness(0),
+                BorderBrush = new SolidColorBrush(light ? Color.FromArgb(0x28, 0x0F, 0x17, 0x2A) : Color.FromArgb(0x35, 0x46, 0x60, 0x88)),
+                BorderThickness = new Thickness(0, 1, 1, 1),
                 CornerRadius = new CornerRadius(0, 8, 8, 0),
                 Padding = new Thickness(7, 4, 6, 4)
             };
@@ -613,9 +628,10 @@ namespace SmartVpn
             var subtitle = new TextBlock
             {
                 Text = $"{profile.Address}:{profile.Port}",
-                FontSize = 9,
+                FontSize = 9.5,
+                FontWeight = FontWeights.SemiBold,
                 Margin = new Thickness(0, 1, 0, 0),
-                Foreground = new SolidColorBrush(light ? Color.FromRgb(0x47, 0x55, 0x69) : Color.FromRgb(0x94, 0xA3, 0xB8)),
+                Foreground = new SolidColorBrush(light ? Color.FromRgb(0x47, 0x55, 0x69) : Color.FromRgb(0xCB, 0xD5, 0xE1)),
                 TextTrimming = TextTrimming.CharacterEllipsis,
                 TextAlignment = TextAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -923,7 +939,7 @@ namespace SmartVpn
 
             var countBadge = new Border
             {
-                Background = new SolidColorBrush(light ? Color.FromArgb(0x20, 0x3B, 0x82, 0xF6) : Color.FromArgb(0x35, 0x38, 0xBD, 0xF8)),
+                Background = new SolidColorBrush(light ? Color.FromArgb(0x20, 0x3B, 0x82, 0xF6) : Color.FromArgb(0x35, 0x3B, 0x82, 0xF6)),
                 CornerRadius = new CornerRadius(4),
                 Padding = new Thickness(5, 1, 5, 1),
                 Margin = new Thickness(6, 0, 0, 0),
@@ -933,7 +949,7 @@ namespace SmartVpn
                     Text = $"{group.Profiles.Count}",
                     FontSize = 9.5,
                     FontWeight = FontWeights.SemiBold,
-                    Foreground = new SolidColorBrush(light ? Color.FromRgb(0x25, 0x63, 0xEB) : Color.FromRgb(0x38, 0xBD, 0xF8))
+                    Foreground = new SolidColorBrush(light ? Color.FromRgb(0x25, 0x63, 0xEB) : Color.FromRgb(0x3B, 0x82, 0xF6))
                 }
             };
             leftStack.Children.Add(countBadge);
@@ -1218,6 +1234,126 @@ namespace SmartVpn
             RenderXrayConnList();
         }
 
+        private void XrayManualAdd_Click(object sender, RoutedEventArgs e)
+        {
+            if (XrayManualNameInput != null) XrayManualNameInput.Text = "";
+            if (XrayManualAddressInput != null) XrayManualAddressInput.Text = "";
+            if (XrayManualPortInput != null) XrayManualPortInput.Text = "443";
+            if (XrayManualUuidInput != null) XrayManualUuidInput.Text = "";
+            if (XrayManualSniInput != null) XrayManualSniInput.Text = "";
+            if (XrayManualPathInput != null) XrayManualPathInput.Text = "/";
+            if (XrayManualProtoCombo != null) XrayManualProtoCombo.SelectedIndex = 0;
+            if (XrayManualTransportCombo != null) XrayManualTransportCombo.SelectedIndex = 0;
+
+            if (XrayManualAddOverlay != null)
+            {
+                XrayManualAddOverlay.Visibility = Visibility.Visible;
+                XrayManualNameInput?.Focus();
+            }
+        }
+
+        private void XrayManualCancel_Click(object sender, RoutedEventArgs e)
+        {
+            if (XrayManualAddOverlay != null) XrayManualAddOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private void XrayManualAddOverlay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.OriginalSource == XrayManualAddOverlay)
+            {
+                XrayManualAddOverlay.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void XrayManualAddModal_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            e.Handled = true;
+        }
+
+        private void XrayManualSubmit_Click(object sender, RoutedEventArgs e)
+        {
+            var name = XrayManualNameInput?.Text.Trim() ?? "";
+            var address = XrayManualAddressInput?.Text.Trim() ?? "";
+            var portStr = XrayManualPortInput?.Text.Trim() ?? "443";
+            var uuid = XrayManualUuidInput?.Text.Trim() ?? "";
+            var sni = XrayManualSniInput?.Text.Trim() ?? "";
+            var path = XrayManualPathInput?.Text.Trim() ?? "/";
+
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                ShowInAppMessage("لطفاً آدرس سرور را وارد کنید.", "خطای ورودی");
+                XrayManualAddressInput?.Focus();
+                return;
+            }
+
+            if (!int.TryParse(portStr, out var port) || port < 1 || port > 65535)
+            {
+                port = 443;
+            }
+
+            if (string.IsNullOrWhiteSpace(uuid))
+            {
+                ShowInAppMessage("لطفاً UUID یا رمز عبور کانفیگ را وارد کنید.", "خطای ورودی");
+                XrayManualUuidInput?.Focus();
+                return;
+            }
+
+            var protoItem = XrayManualProtoCombo?.SelectedItem as ComboBoxItem;
+            var proto = protoItem?.Content?.ToString() ?? "VLESS";
+
+            var transportItem = XrayManualTransportCombo?.SelectedItem as ComboBoxItem;
+            var transport = transportItem?.Content?.ToString() ?? "ws";
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                name = $"{proto} - {address}:{port}";
+            }
+
+            try
+            {
+                var profile = new ProxyProfile
+                {
+                    Protocol = proto.ToUpperInvariant(),
+                    Alias = name,
+                    Address = address,
+                    Port = port,
+                    UserId = uuid,
+                    Password = uuid,
+                    Network = transport,
+                    Sni = string.IsNullOrWhiteSpace(sni) ? address : sni,
+                    Host = string.IsNullOrWhiteSpace(sni) ? address : sni,
+                    Path = path,
+                    Tls = "tls",
+                    FullUrl = $"{proto.ToLowerInvariant()}://{uuid}@{address}:{port}"
+                };
+
+                var customGroup = XrayGroups.FirstOrDefault(g => g.Name == "کانکشن‌های من" || g.Name == "سفارشی");
+                if (customGroup == null)
+                {
+                    customGroup = new SubscriptionGroup
+                    {
+                        Name = "کانکشن‌های من",
+                        Url = ""
+                    };
+                    XrayGroups.Add(customGroup);
+                }
+
+                profile.GroupId = customGroup.Id;
+                profile.GroupName = customGroup.Name;
+                customGroup.Profiles.Add(profile);
+
+                SubscriptionGroupManager.SaveGroups(XrayGroups);
+                XrayLoadData();
+
+                if (XrayManualAddOverlay != null) XrayManualAddOverlay.Visibility = Visibility.Collapsed;
+                ShowInAppMessage($"کانکشن دستی «{name}» با موفقیت اضافه و ذخیره شد.", "افزودن موفق");
+            }
+            catch (Exception ex)
+            {
+                ShowInAppMessage($"خطا در ساخت کانفیگ:\n{ex.Message}", "خطا");
+            }
+        }
+
         private void XrayAddSub_Click(object sender, RoutedEventArgs e)
         {
             if (XraySubNameInput != null) XraySubNameInput.Text = "";
@@ -1353,8 +1489,11 @@ namespace SmartVpn
 
         private async void XrayUpdateSub_Click(object sender, RoutedEventArgs e)
         {
+            bool hasPortalSession = !string.IsNullOrWhiteSpace(_config.CustomerRefreshToken) ||
+                                    !string.IsNullOrWhiteSpace(_config.CustomerUsername);
+
             var subGroups = XrayGroups.Where(g => !string.IsNullOrWhiteSpace(g.Url)).ToList();
-            if (subGroups.Count == 0)
+            if (subGroups.Count == 0 && !hasPortalSession)
             {
                 XrayAddSub_Click(sender, e);
                 return;
@@ -1364,6 +1503,24 @@ namespace SmartVpn
             {
                 StartSubRefreshAnimation();
                 int totalServers = 0;
+
+                // ۱. در صورت ورود به پورتال، همگام‌سازی کامل با API اپ مشتری انجام شود
+                if (hasPortalSession)
+                {
+                    try
+                    {
+                        var appClient = new CustomerAppApiClient(_config.PortalApiUrl);
+                        await PortalSyncService.SyncFromCustomerAppAsync(appClient, _config);
+                        _config.Save();
+                    }
+                    catch (Exception syncEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Xray portal sync error: {syncEx.Message}");
+                    }
+                }
+
+                // ۲. بازخوانی گروه‌ها و به‌روزرسانی سایر لینک‌های ساب‌اسکریپشن
+                subGroups = SubscriptionGroupManager.LoadGroups().Where(g => !string.IsNullOrWhiteSpace(g.Url)).ToList();
                 foreach (var group in subGroups)
                 {
                     var (proxies, userInfo, _, _) = await SubscriptionManager.FetchSubscriptionAsync(group.Url);
@@ -1400,9 +1557,11 @@ namespace SmartVpn
                     }
                 }
 
-                SubscriptionGroupManager.SaveGroups(XrayGroups);
+                SubscriptionGroupManager.SaveGroups(subGroups);
                 XrayLoadData();
-                ShowInAppMessage($"بروزرسانی تمام ساب‌اسکریپشن‌ها انجام شد.\nمجموعاً {totalServers} کانکشن فعال دریافت گردید.", "بروزرسانی اشتراک");
+                RefreshList();
+                UpdateSidebarAccountCard();
+                ShowInAppMessage($"همگام‌سازی سرورهای Xray با موفقیت انجام شد.\nمجموعاً {XrayProxies.Count} کانکشن فعال در دسترس است.", "بروزرسانی اشتراک");
             }
             catch (Exception ex)
             {
@@ -1660,12 +1819,14 @@ namespace SmartVpn
 
             string protoFull = $"{item.Protocol.ToUpper()} {item.Network.ToUpper()}";
             ServerSubText.Text = protoFull;
+            MainWindow.LastConnectionType = "xray";
             ActiveConnText.Text = item.Alias;
             UpdateActiveBadge(item.Alias, item.Protocol);
             GeoIpText.Text = $"Connected — {item.Address}";
             if (MiniConnectionText != null) MiniConnectionText.Text = item.Alias;
 
             if (XrayTxtActiveName != null) XrayTxtActiveName.Text = item.Alias;
+            UpdateCoreSwitcherCards();
             string sec = !string.IsNullOrEmpty(item.Tls) ? $" + {item.Tls.ToUpper()}" : "";
             if (XrayTxtActiveProtocol != null) XrayTxtActiveProtocol.Text = $"{item.Protocol.ToUpper()} / {item.Network.ToUpper()}{sec}";
             
@@ -1674,8 +1835,8 @@ namespace SmartVpn
             GeoIpText.Text = Localization.T("در حال شناسایی موقعیت...");
             _ = FetchXrayGeoIpAsync();
 
-            if (XrayStatusText != null) { XrayStatusText.Text = Localization.T("متصل"); XrayStatusText.Visibility = Visibility.Visible; }
-            if (StatusText != null) { StatusText.Text = Localization.T("متصل"); StatusText.Visibility = Visibility.Visible; }
+            if (XrayStatusText != null) { XrayStatusText.Text = Localization.T("متصل"); XrayStatusText.Foreground = new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E)); XrayStatusText.Visibility = Visibility.Visible; }
+            if (StatusText != null) { StatusText.Text = Localization.T("متصل"); StatusText.Foreground = new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E)); StatusText.Visibility = Visibility.Visible; }
             if (XrayStatusDot != null) { XrayStatusDot.Visibility = Visibility.Visible; XrayStatusDot.Fill = new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E)); }
             if (StatusDot != null) { StatusDot.Visibility = Visibility.Visible; StatusDot.Fill = new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E)); }
             if (XrayBtnPower != null) XrayBtnPower.Background = new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E));
@@ -1758,13 +1919,14 @@ namespace SmartVpn
             }
             catch { }
 
-            ServerSubText.Text = "Select a Server";
-            ActiveConnText.Text = "Disconnected";
-            GeoIpText.Text = "No Location — 0.0.0.0";
-            if (MiniConnectionText != null) MiniConnectionText.Text = "—";
-
             if (XrayProxyList.SelectedItem is ProxyProfile sel)
             {
+                ActiveConnText.Text = sel.Alias;
+                ServerSubText.Text = $"{sel.Protocol.ToUpper()} / {sel.Network.ToUpper()}";
+                UpdateActiveBadge(sel.Alias, sel.Protocol);
+                GeoIpText.Text = Localization.T("آماده اتصال");
+                if (MiniConnectionText != null) MiniConnectionText.Text = sel.Alias;
+
                 if (XrayTxtActiveName != null) XrayTxtActiveName.Text = sel.Alias;
                 string sec = !string.IsNullOrEmpty(sel.Tls) ? $" + {sel.Tls.ToUpper()}" : "";
                 if (XrayTxtActiveProtocol != null) XrayTxtActiveProtocol.Text = $"{sel.Protocol.ToUpper()} / {sel.Network.ToUpper()}{sec}";
@@ -1775,6 +1937,10 @@ namespace SmartVpn
             }
             else
             {
+                ServerSubText.Text = "—";
+                ActiveConnText.Text = Localization.T("یک کانکشن انتخاب کنید");
+                GeoIpText.Text = Localization.T("آماده اتصال");
+                if (MiniConnectionText != null) MiniConnectionText.Text = "—";
                 if (XrayTxtActiveName != null) XrayTxtActiveName.Text = Localization.T("یک سرور انتخاب کنید");
                 if (XrayTxtActiveProtocol != null) XrayTxtActiveProtocol.Text = "";
                 if (XrayTxtActiveGeoIP != null) XrayTxtActiveGeoIP.Text = Localization.T("آماده اتصال");
@@ -1782,6 +1948,7 @@ namespace SmartVpn
                 if (XrayProtocolText != null) XrayProtocolText.Text = "—";
                 if (XrayYouText != null) XrayYouText.Text = "—";
             }
+            UpdateCoreSwitcherCards();
 
             if (PrivateIpText != null) PrivateIpText.Text = "—";
             if (ServerIpText != null) ServerIpText.Text = "—";
@@ -1789,7 +1956,7 @@ namespace SmartVpn
             if (YouText != null) YouText.Text = "—";
             if (XrayPrivateIpText != null) XrayPrivateIpText.Text = "—";
             if (XrayStatusText != null) { XrayStatusText.Text = Localization.T("آماده اتصال"); XrayStatusText.Visibility = Visibility.Collapsed; }
-            if (StatusText != null) { StatusText.Text = Localization.T("آماده اتصال"); }
+            if (StatusText != null) { StatusText.Text = Localization.T("آماده اتصال"); StatusText.Visibility = Visibility.Collapsed; }
             if (XrayStatusDot != null) XrayStatusDot.Visibility = Visibility.Collapsed;
             if (StatusDot != null) StatusDot.Visibility = Visibility.Collapsed;
             if (XrayBtnPower != null) XrayBtnPower.Background = new SolidColorBrush(Color.FromRgb(0x33, 0x41, 0x55));

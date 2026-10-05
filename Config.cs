@@ -40,6 +40,10 @@ public sealed class AppConfig
     }
     // آیا لیست کانکشن‌ها (دکمه «نمایش بیشتر») باز مانده — رفتار آخرین باری که کاربر انتخاب کرده حفظ می‌شود
     public bool ConnListExpanded { get; set; }
+    public bool SidebarExpanded { get; set; } = false; // باز یا بسته بودن سایدبار منو (پیش‌فرض بسته)
+    public bool HomeDetailsExpanded { get; set; } = true; // باز یا بسته بودن تایل جزئیات شبکه (پیش‌فرض باز)
+    public bool ShowRecentServersOnHome { get; set; } = true; // نمایش بخش سرورهای اخیر در داشبورد
+    public int DashboardBottomWidgetMode { get; set; } = 0; // 0 = Recent Servers, 1 = Quick Security Controls, 2 = Quick Diagnostics & Tools
 
     // --- New: custom DNS (برای قابلیت DNS دلخواه در تنظیمات) ---
     public string DnsMode { get; set; } = "auto";      // auto | cloudflare | google | custom
@@ -60,6 +64,10 @@ public sealed class AppConfig
 
     // آدرس کانال تلگرام — از config.json قابل تغییر است، بدون نیاز به بیلد مجدد
     public string TelegramUrl { get; set; } = DefaultProductionTelegramUrl;
+
+    // آدرس ریپازیتوری یا لینک گیت‌هاب برنامه — قابل تغییر از config.json
+    public const string DefaultProductionGithubUrl = "https://github.com/mraghili1985/netfastvip-windows-connection";
+    public string GithubUrl { get; set; } = DefaultProductionGithubUrl;
 
     // لینک پنل کاربری/اکانتینگ برای بررسی اشتراک (دکمه در پنجره درباره)
     public string PanelUrl { get; set; } = DefaultTestPanelUrl;
@@ -84,8 +92,22 @@ public sealed class AppConfig
     public string? CustomerRefreshToken { get; set; }
     public DateTime? CustomerTokenExpiresAt { get; set; }
     public string? CustomerDeviceId { get; set; }
-    public string? CustomerLoginMode { get; set; } // customer | radius
     public string? CustomerUsername { get; set; }
+
+    [JsonIgnore]
+    public string? CustomerPassword { get; set; }
+    [JsonPropertyName("CustomerPassword")]
+    public string? StoredCustomerPassword
+    {
+        get => string.IsNullOrWhiteSpace(CustomerPassword) ? null : CredentialProtector.Protect(CustomerPassword);
+        set => CustomerPassword = string.IsNullOrWhiteSpace(value) ? null : CredentialProtector.Unprotect(value);
+    }
+
+    public string? CustomerPackageName { get; set; }
+    public string? CustomerRemainingTime { get; set; }
+    public string? CustomerRemainingTraffic { get; set; }
+    public string? CustomerStatus { get; set; }
+    public string? CustomerLoginMode { get; set; }
 
     // متدهای سوییچ بین محیط تستی و پروداکشن
     public void SwitchToProductionPanel()

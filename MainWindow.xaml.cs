@@ -13,6 +13,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -127,13 +128,16 @@ namespace SmartVpn
         private void FitToScreen()
         {
             var wa = SystemParameters.WorkArea;
+            var targetBaseWidth = _config.SidebarExpanded ? 880.0 : 670.0;
             var scale = Math.Min(1.0, Math.Min(wa.Width / 880.0, (wa.Height - 6) / 580.0));
-            if (scale >= 0.999) return;
-            _uiScale = scale;
-            RootScale.ScaleX = scale;
-            RootScale.ScaleY = scale;
-            Width = Math.Round(880 * scale);
-            Height = Math.Round(580 * scale);
+            _uiScale = (scale < 0.999) ? scale : 1.0;
+            if (RootScale != null)
+            {
+                RootScale.ScaleX = _uiScale;
+                RootScale.ScaleY = _uiScale;
+            }
+            Width = Math.Round(targetBaseWidth * _uiScale);
+            Height = Math.Round(580 * _uiScale);
         }
 
         public MainWindow()
@@ -143,10 +147,22 @@ namespace SmartVpn
             BrandTitleText.Text = AppConfig.BrandName;
             FitToScreen();
             InitXrayPanel();
-
             Loaded += async (_, _) => await UpdateChecker.CheckAsync(this);
-                        Loaded += async (_, _) => await ConnectionsUpdateChecker.CheckAsync(this, _config);
-            
+            Loaded += (_, _) =>
+            {
+                UpdateSidebarAccountCard();
+                InitializeSubscriptionSummaryCardFromCache();
+            };
+            Loaded += async (_, _) =>
+            {
+                // اگر از پنل تستی استفاده می‌شود یا کاربر لاگین است، هاست استاتیک قدیمی را لود نکن
+                if (!string.IsNullOrWhiteSpace(_config.PortalApiUrl) &&
+                    (_config.PortalApiUrl.Contains("v2moon.shop") || !string.IsNullOrWhiteSpace(_config.CustomerRefreshToken)))
+                {
+                    return;
+                }
+                await ConnectionsUpdateChecker.CheckAsync(this, _config);
+            };
             Loaded += (_, _) =>
             {
                 Task.Run(async () =>
@@ -202,6 +218,19 @@ namespace SmartVpn
         {
             base.OnSourceInitialized(e);
             EnableElevatedDragDrop();
+            ApplyDarkTitleBar();
+        }
+
+        [DllImport("dwmapi.dll")]
+        private static extern int DwmExtendFrameIntoClientArea(IntPtr hWnd, ref MARGINS pMarInset);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MARGINS
+        {
+            public int cxLeftWidth;
+            public int cxRightWidth;
+            public int cyTopHeight;
+            public int cyBottomHeight;
         }
 
         [DllImport("dwmapi.dll")]
@@ -235,6 +264,32 @@ namespace SmartVpn
             public int SizeOfData;
         }
 
+        private static void EnableWindows10Acrylic(IntPtr hwnd)
+        {
+            try
+            {
+                var policy = new AccentPolicy
+                {
+                    AccentState = 4, // ACCENT_ENABLE_ACRYLICBLURBEHIND
+                    AccentFlags = 2,
+                    GradientColor = unchecked((int)0x991E232E),
+                    AnimationId = 0
+                };
+                int size = Marshal.SizeOf(policy);
+                var ptr = Marshal.AllocHGlobal(size);
+                Marshal.StructureToPtr(policy, ptr, false);
+                var data = new WindowCompositionAttributeData
+                {
+                    Attribute = 19, // WCA_ACCENT_POLICY
+                    Data = ptr,
+                    SizeOfData = size
+                };
+                SetWindowCompositionAttribute(hwnd, ref data);
+                Marshal.FreeHGlobal(ptr);
+            }
+            catch { }
+        }
+
         private void ApplyDarkTitleBar()
         {
             try
@@ -244,15 +299,19 @@ namespace SmartVpn
 
                 // عنوان ویندوز 11 باید با تم داخلی برنامه هماهنگ بماند.
                 int darkMode = App.IsDark ? 1 : 0;
-                int caption = App.IsDark ? 0x00020817 : 0x00E8ECF1;
+                int caption = App.IsDark ? 0x0020110B : 0x00F9F5F1;
                 int text = App.IsDark ? 0x00F8FAFC : 0x000F172A;
 
                 DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref darkMode, sizeof(int));
                 DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, ref caption, sizeof(int));
                 DwmSetWindowAttribute(hwnd, DWMWA_TEXT_COLOR, ref text, sizeof(int));
 
-                // با داشتن WindowChrome نیتیو (AllowsTransparency=False)، کرنل DWM ویندوز ۱۱
-                // لبه‌های پنجره را به صورت سخت‌افزاری و بدون هیچ هاله یا کادر اضافه، ۱۲ پیکسل گرد می‌کند.
+                // ویندوز 11 (بیلد 22621 به بعد): افکت سیستم اکریلیک/میکا روی کل کلاینت اریا
+                const int DWMWA_SYSTEMBACKDROP_TYPE = 38;
+                int backdrop = 3; // 3 = Acrylic blur
+                DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, ref backdrop, sizeof(int));
+
+                // با داشتن WindowChrome نیتیو، کرنل DWM ویندوز ۱۱ لبه‌ها را ۱۲ پیکسل گرد می‌کند.
                 int cornerPreference = DWMWCP_ROUND;
                 DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerPreference, sizeof(int));
             }
@@ -274,6 +333,91 @@ namespace SmartVpn
         private void TitleCloseButton_Click(object sender, RoutedEventArgs e)
         {
             Close();
+        }
+
+        private Rect GetCurrentWorkArea()
+        {
+            try
+            {
+                var helper = new System.Windows.Interop.WindowInteropHelper(this);
+                if (helper.Handle != IntPtr.Zero)
+                {
+                    var screen = System.Windows.Forms.Screen.FromHandle(helper.Handle);
+                    if (screen != null)
+                    {
+                        var source = PresentationSource.FromVisual(this);
+                        if (source?.CompositionTarget != null)
+                        {
+                            var m = source.CompositionTarget.TransformFromDevice;
+                            var pt = m.Transform(new Point(screen.WorkingArea.Left, screen.WorkingArea.Top));
+                            var sz = m.Transform(new Vector(screen.WorkingArea.Width, screen.WorkingArea.Height));
+                            return new Rect(pt.X, pt.Y, sz.X, sz.Y);
+                        }
+                        return new Rect(screen.WorkingArea.Left, screen.WorkingArea.Top, screen.WorkingArea.Width, screen.WorkingArea.Height);
+                    }
+                }
+            }
+            catch { }
+            return SystemParameters.WorkArea;
+        }
+
+        private bool _isUpdatingSidebar = false;
+
+        public void SetSidebarExpanded(bool expand)
+        {
+            if (_isUpdatingSidebar) return;
+            _isUpdatingSidebar = true;
+            try
+            {
+                var wa = GetCurrentWorkArea();
+                var curLeft = Left;
+                var curWidth = ActualWidth > 0 ? ActualWidth : Width;
+                var curRight = curLeft + curWidth;
+                var newWidth = Math.Round((expand ? 880.0 : 670.0) * _uiScale);
+
+                const double edgeTolerance = 45.0;
+                bool isAnchoredToRight = (curRight >= wa.Right - edgeTolerance);
+                bool isAnchoredToLeft = (curLeft <= wa.Left + edgeTolerance);
+
+                SidebarColumn.Width = expand ? new GridLength(210) : new GridLength(0);
+                _config.SidebarExpanded = expand;
+                Width = newWidth;
+
+                if (isAnchoredToRight)
+                {
+                    Left = Math.Max(wa.Left, wa.Right - newWidth);
+                }
+                else if (isAnchoredToLeft)
+                {
+                    Left = wa.Left;
+                }
+                else if (curLeft + newWidth > wa.Right)
+                {
+                    Left = Math.Max(wa.Left, wa.Right - newWidth);
+                }
+
+                if (SidebarDefaultOpenToggle != null && SidebarDefaultOpenToggle.IsChecked != expand)
+                {
+                    SidebarDefaultOpenToggle.IsChecked = expand;
+                }
+
+                _config.Save();
+            }
+            finally
+            {
+                _isUpdatingSidebar = false;
+            }
+        }
+
+        private void SidebarToggleBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var isExpanded = SidebarColumn.Width.Value > 0;
+            SetSidebarExpanded(!isExpanded);
+        }
+
+        private void TitleAccountBadge_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            Subscription_Click(sender, e);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -387,6 +531,7 @@ namespace SmartVpn
                 var selConn = _config.Connections.FirstOrDefault(c => c.Name == _selectedName);
                 if (selConn != null)
                 {
+                    MainWindow.LastConnectionType = "vpn";
                     ActiveConnText.Text = $"{CategoryLabel(selConn.Type)} {selConn.Name}";
                     ServerSubText.Text = selConn.ServerLine;
                     UpdateActiveBadge(selConn.Name, selConn.Type);
@@ -394,6 +539,7 @@ namespace SmartVpn
             }
             else if (_xraySelectedProfile != null)
             {
+                MainWindow.LastConnectionType = "xray";
                 ActiveConnText.Text = _xraySelectedProfile.Alias;
                 ServerSubText.Text = $"{_xraySelectedProfile.Protocol.ToUpper()} {_xraySelectedProfile.Network.ToUpper()}";
                 UpdateActiveBadge(_xraySelectedProfile.Alias, _xraySelectedProfile.Protocol);
@@ -410,11 +556,39 @@ namespace SmartVpn
             RefreshList();
             RenderRecentServersList();
             UpdateXraySubscriptionCard();
+            UpdateCoreSwitcherCards();
+            InitializeSubscriptionSummaryCardFromCache();
             TryAutoCheckSubscriptionSummaryOnce();
+
+            // سایدبار و پنل جزئیات بر اساس تنظیمات ذخیره‌شده کاربر
+            SidebarColumn.Width = _config.SidebarExpanded ? new GridLength(210) : new GridLength(0);
+            Width = Math.Round((_config.SidebarExpanded ? 880.0 : 670.0) * _uiScale);
+            if (MoreInfoPanel != null)
+            {
+                MoreInfoPanel.Visibility = _config.HomeDetailsExpanded ? Visibility.Visible : Visibility.Collapsed;
+                MoreInfoArrow.Text = _config.HomeDetailsExpanded ? " ▴" : " ▾";
+                MoreInfoText.Text = _config.HomeDetailsExpanded ? Localization.T("بستن جزئیات") : Localization.T("جزئیات بیشتر");
+            }
+            if (RecentServersCard != null)
+            {
+                RecentServersCard.Visibility = _config.ShowRecentServersOnHome ? Visibility.Visible : Visibility.Collapsed;
+                if (SecurityStatusCard != null)
+                    SecurityStatusCard.Visibility = _config.ShowRecentServersOnHome ? Visibility.Collapsed : Visibility.Visible;
+            }
+            if (ShowRecentServersToggle != null) ShowRecentServersToggle.IsChecked = _config.ShowRecentServersOnHome;
+            if (SidebarDefaultOpenToggle != null) SidebarDefaultOpenToggle.IsChecked = _config.SidebarExpanded;
+            if (DashWidgetRecentRb != null) DashWidgetRecentRb.IsChecked = _config.DashboardBottomWidgetMode == 0;
+            if (DashWidgetSecurityRb != null) DashWidgetSecurityRb.IsChecked = _config.DashboardBottomWidgetMode == 1;
+            if (DashWidgetToolsRb != null) DashWidgetToolsRb.IsChecked = _config.DashboardBottomWidgetMode == 2;
+
+            WindowState = WindowState.Normal;
+            MaxWidth = 920;
+            MaxHeight = 650;
 
             ShowPanel("home");
             SetStatusText(TxtReady);
             SetPowerState("off");
+            ApplyDashboardBottomWidgetMode();
 
             _ready = true;
         }
@@ -430,7 +604,22 @@ namespace SmartVpn
 
         private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
-            if (_config.MinimizeToTray && !_reallyExit)
+            if (_reallyExit)
+            {
+                _geoGen++;
+                _xrayGeoGen++;
+                try { _tray?.Dispose(); } catch { }
+                try { _trayIcon?.Dispose(); } catch { }
+                try { HsForceStopAsync().Wait(1500); } catch { }
+                try { TerminateAllVpnProcessesAndResetAdaptersAsync().Wait(2500); } catch { }
+                try { SplitTunnel.ClearAsync().Wait(1500); } catch { }
+                try { KillSwitch.DisableAsync().Wait(1500); } catch { }
+                try { _engine.StopAsync().Wait(2000); } catch { }
+                try { XrayEngine.Stop(); } catch { }
+                return;
+            }
+
+            if (_config.MinimizeToTray)
             {
                 e.Cancel = true;
                 Hide();
@@ -442,21 +631,47 @@ namespace SmartVpn
                 return;
             }
 
-            if ((_engine.IsRunning || _xrayIsConnected) && !_reallyExit && !AskDialog.Confirm(this, MsgExitConfirm))
+            e.Cancel = true;
+            if (AppExitOverlay != null)
             {
-                e.Cancel = true;
-                return;
+                AppExitOverlay.Visibility = Visibility.Visible;
             }
+            else
+            {
+                ExitModalCleanup_Click(this, new RoutedEventArgs());
+            }
+        }
 
-            _geoGen++;
-            _xrayGeoGen++;
-            try { _tray?.Dispose(); } catch { }
-            try { _trayIcon?.Dispose(); } catch { }
-            try { HsForceStopAsync().Wait(2000); } catch { }
-            try { SplitTunnel.ClearAsync().Wait(2000); } catch { }
-            try { KillSwitch.DisableAsync().Wait(2000); } catch { }
-            try { _engine.StopAsync().Wait(4000); } catch { }
-            try { XrayEngine.Stop(); } catch { }
+        private async void ExitModalCleanup_Click(object sender, RoutedEventArgs e)
+        {
+            if (AppExitOverlay != null) AppExitOverlay.Visibility = Visibility.Collapsed;
+            try
+            {
+                await TerminateAllVpnProcessesAndResetAdaptersAsync();
+            }
+            catch { }
+            _reallyExit = true;
+            Close();
+        }
+
+        private void ExitModalQuick_Click(object sender, RoutedEventArgs e)
+        {
+            if (AppExitOverlay != null) AppExitOverlay.Visibility = Visibility.Collapsed;
+            _reallyExit = true;
+            Close();
+        }
+
+        private void ExitModalCancel_Click(object sender, RoutedEventArgs e)
+        {
+            if (AppExitOverlay != null) AppExitOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private void AppExitOverlay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.OriginalSource == AppExitOverlay)
+            {
+                AppExitOverlay.Visibility = Visibility.Collapsed;
+            }
         }
 
         private void OpenHotspotWindow_Click(object sender, RoutedEventArgs e)
@@ -469,6 +684,7 @@ namespace SmartVpn
 
         private void SidebarNavDashboard_Click(object sender, RoutedEventArgs e)
         {
+            try { CloseSpeedTestView(); } catch { }
             ShowPanel("home");
             UpdateSidebarState("dashboard");
         }
@@ -517,11 +733,6 @@ namespace SmartVpn
         {
             ShowPanel("connlog");
             UpdateSidebarState("connlog");
-        }
-
-        private void TitleMaximizeButton_Click(object sender, RoutedEventArgs e)
-        {
-            WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
         }
 
         public void UpdateSidebarState(string current)
@@ -622,9 +833,8 @@ namespace SmartVpn
                     return;
                 }
 
-                var cardBg = (Brush)FindResource("CardBrush");
+                var rowBg = (Brush)FindResource("FieldBrush");
                 var hoverBg = (Brush)FindResource("CardHoverBrush");
-                var borderBrush = (Brush)FindResource("GlassBorderBrush");
                 var accentBrush = (Brush)FindResource("AccentBrush");
 
                 foreach (var item in itemsToRender)
@@ -634,12 +844,11 @@ namespace SmartVpn
 
                     var rowBorder = new Border
                     {
-                        Background = isCurrentActive ? hoverBg : cardBg,
-                        BorderBrush = isCurrentActive ? accentBrush : borderBrush,
-                        BorderThickness = new Thickness(1),
-                        CornerRadius = new CornerRadius(10),
-                        Padding = new Thickness(10, 5, 10, 5),
-                        Margin = new Thickness(0, 0, 0, 5),
+                        Background = isCurrentActive ? hoverBg : rowBg,
+                        BorderThickness = new Thickness(0),
+                        CornerRadius = new CornerRadius(8),
+                        Padding = new Thickness(8, 4, 8, 4),
+                        Margin = new Thickness(0, 0, 0, 3),
                         Cursor = System.Windows.Input.Cursors.Hand
                     };
 
@@ -662,16 +871,16 @@ namespace SmartVpn
                     var nameBlock = new TextBlock
                     {
                         Text = item.name,
-                        FontSize = 11.5,
+                        FontSize = 11,
                         FontWeight = FontWeights.SemiBold,
-                        Foreground = Brushes.White,
+                        Foreground = (Brush)FindResource("TextBrush"),
                         TextTrimming = TextTrimming.CharacterEllipsis,
                         MaxWidth = 180
                     };
                     var subBlock = new TextBlock
                     {
                         Text = $"{item.type} • {item.subtitle}",
-                        FontSize = 9.5,
+                        FontSize = 9,
                         Foreground = (Brush)FindResource("SubTextBrush"),
                         TextTrimming = TextTrimming.CharacterEllipsis,
                         MaxWidth = 180
@@ -683,16 +892,17 @@ namespace SmartVpn
 
                     var quickBadge = new Border
                     {
-                        Background = isCurrentActive ? accentBrush : (Brush)FindResource("FieldBrush"),
+                        Background = isCurrentActive ? accentBrush : (Brush)FindResource("CardHoverBrush"),
+                        BorderThickness = new Thickness(0),
                         CornerRadius = new CornerRadius(6),
-                        Padding = new Thickness(8, 2.5, 8, 2.5),
+                        Padding = new Thickness(7, 2, 7, 2),
                         VerticalAlignment = VerticalAlignment.Center,
                         Child = new TextBlock
                         {
                             Text = isCurrentActive ? Localization.T("فعال") : Localization.T("انتخاب"),
                             FontSize = 9.5,
                             FontWeight = FontWeights.SemiBold,
-                            Foreground = isCurrentActive ? Brushes.Black : (Brush)FindResource("SubTextBrush")
+                            Foreground = isCurrentActive ? (App.IsDark ? Brushes.Black : Brushes.White) : (Brush)FindResource("SubTextBrush")
                         }
                     };
                     Grid.SetColumn(quickBadge, 2);
@@ -701,7 +911,7 @@ namespace SmartVpn
                     rowBorder.Child = rowGrid;
 
                     rowBorder.MouseEnter += (_, __) => { if (!isCurrentActive) rowBorder.Background = hoverBg; };
-                    rowBorder.MouseLeave += (_, __) => { if (!isCurrentActive) rowBorder.Background = cardBg; };
+                    rowBorder.MouseLeave += (_, __) => { if (!isCurrentActive) rowBorder.Background = rowBg; };
 
                     rowBorder.MouseLeftButtonUp += (_, __) =>
                     {

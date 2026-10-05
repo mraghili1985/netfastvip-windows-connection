@@ -95,8 +95,17 @@ namespace SmartVpn
                 ? (!string.IsNullOrWhiteSpace(_xrayActiveProfile?.Alias) ? _xrayActiveProfile.Alias : (!string.IsNullOrWhiteSpace(XrayTxtActiveName?.Text) ? XrayTxtActiveName.Text : "Xray Service"))
                 : ActiveConnText.Text;
 
-            string viaTemplate = isXrayConnected ? SpeedViaXrayFmt : SpeedViaConnectedFmt;
-            SpeedViaText.Text = Localization.T(isConnected ? string.Format(viaTemplate, connName) : SpeedViaDirect);
+            if (isConnected)
+            {
+                string viaFormat = isXrayConnected
+                    ? (Localization.IsEnglish ? "Test via: {0} — Connected to Xray" : "تست از طریق: {0} — متصل به Xray")
+                    : (Localization.IsEnglish ? "Test via: {0} — Connected to VPN" : "تست از طریق: {0} — متصل به VPN");
+                SpeedViaText.Text = string.Format(viaFormat, connName);
+            }
+            else
+            {
+                SpeedViaText.Text = Localization.IsEnglish ? "Direct Connection (No VPN)" : SpeedViaDirect;
+            }
             SpeedViaDot.Fill = new SolidColorBrush(isConnected ? SpeedGreen : Color.FromRgb(0x64, 0x74, 0x8B));
 
             SpeedEngineCombo.SelectedIndex = 0;
@@ -106,14 +115,16 @@ namespace SmartVpn
             ResetSpeedCards();
             SetSpeedProgress(0);
 
-            if (SpeedClientIpText != null) SpeedClientIpText.Text = "در حال شناسایی...";
+            if (SpeedClientIpText != null) SpeedClientIpText.Text = Localization.T("در حال شناسایی...");
             if (SpeedClientLocText != null) SpeedClientLocText.Text = "—";
-            if (SpeedServerNameText != null) SpeedServerNameText.Text = "در حال انتخاب سرور...";
+            if (SpeedServerNameText != null) SpeedServerNameText.Text = Localization.T("در حال انتخاب سرور...");
             if (SpeedServerLocText != null) SpeedServerLocText.Text = "—";
 
             _cachedOoklaServer = null;
             _ = DetectSpeedEndpointsAsync();
 
+            ShowPanel("tools");
+            UpdateSidebarState("tools");
             ToolboxHomeView.Visibility = Visibility.Collapsed;
             ToolboxSpeedTestView.Visibility = Visibility.Visible;
         }
@@ -126,7 +137,7 @@ namespace SmartVpn
 
         private void SpeedClientCard_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            if (SpeedClientIpText != null) SpeedClientIpText.Text = "در حال شناسایی...";
+            if (SpeedClientIpText != null) SpeedClientIpText.Text = Localization.T("در حال شناسایی...");
             if (SpeedClientLocText != null) SpeedClientLocText.Text = "—";
             _ = DetectSpeedClientInfoAsync();
         }
@@ -218,8 +229,8 @@ namespace SmartVpn
 
                 Dispatcher.Invoke(() =>
                 {
-                    if (SpeedClientIpText != null) SpeedClientIpText.Text = "نامشخص";
-                    if (SpeedClientLocText != null) SpeedClientLocText.Text = "امکان دریافت موقعیت وجود ندارد";
+                    if (SpeedClientIpText != null) SpeedClientIpText.Text = Localization.T("نامشخص");
+                    if (SpeedClientLocText != null) SpeedClientLocText.Text = Localization.T("امکان دریافت موقعیت وجود ندارد");
                 });
             }
             catch { }
@@ -234,7 +245,7 @@ namespace SmartVpn
             {
                 Dispatcher.Invoke(() =>
                 {
-                    if (SpeedServerNameText != null) SpeedServerNameText.Text = "در حال یافتن نزدیک‌ترین سرور Ookla...";
+                    if (SpeedServerNameText != null) SpeedServerNameText.Text = Localization.T("در حال یافتن نزدیک‌ترین سرور Ookla...");
                     if (SpeedServerLocText != null) SpeedServerLocText.Text = "Speedtest.net Anycast";
                 });
 
@@ -364,7 +375,7 @@ namespace SmartVpn
             SpeedBtnDl.IsEnabled = !running;
             SpeedBtnUl.IsEnabled = !running;
             SpeedEngineCombo.IsEnabled = !running;
-            SpeedBtnStop.Content = running ? "⏹ توقف" : "بستن";
+            SpeedBtnStop.Content = running ? Localization.T("⏹ توقف") : Localization.T("بستن");
         }
 
         private async Task RunSpeedTestFlowAsync(bool all, bool dl)

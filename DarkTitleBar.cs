@@ -36,6 +36,12 @@ public static class DarkTitleBar
             if (DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref dark, sizeof(int)) != 0)
                 DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE_OLD, ref dark, sizeof(int));
 
+            if (window is MainWindow)
+            {
+                // پنجره اصلی دارای سیستم تایتل‌بار و شیشه اختصاصی اکریلیک است
+                return;
+            }
+
             // ویندوز 11: رنگ نوار عنوان و متنش دقیقا از پالت تم گرفته می‌شود
             // (روی ویندوز 10 این دو صدا بی‌اثر و بی‌خطرند)
             int caption = ToColorRef(window, "BgBrush");
@@ -43,7 +49,7 @@ public static class DarkTitleBar
             if (caption >= 0) DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, ref caption, sizeof(int));
             if (text >= 0) DwmSetWindowAttribute(hwnd, DWMWA_TEXT_COLOR, ref text, sizeof(int));
 
-            // ویندوز 11 (بیلد 22621 به بعد): افکت Mica روی پنجره
+            // ویندوز 11 (بیلد 22621 به بعد): افکت Mica روی پنجره‌های پاپ‌آپ
             const int DWMWA_SYSTEMBACKDROP_TYPE = 38;
             int backdrop = 2; // Mica
             DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, ref backdrop, sizeof(int));

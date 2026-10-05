@@ -244,12 +244,20 @@ namespace SmartVpn
         }
 
         // ================= Graph =================
+        private void GraphCanvas_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (_xrayIsConnected)
+                RedrawXrayGraph();
+            else
+                RedrawGraph();
+        }
+
         private void RedrawGraph()
         {
             try
             {
                 double w = GraphCanvas.ActualWidth > 0 ? GraphCanvas.ActualWidth : 380;
-                double h = GraphCanvas.ActualHeight > 0 ? GraphCanvas.ActualHeight : 54;
+                double h = GraphCanvas.ActualHeight > 0 ? GraphCanvas.ActualHeight : 78;
                 DlLine.Points = BuildPoints(_dlHistory, w, h);
                 UlLine.Points = BuildPoints(_ulHistory, w, h);
                 DlArea.Points = BuildAreaPoints(_dlHistory, w, h);

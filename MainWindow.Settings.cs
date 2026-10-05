@@ -13,6 +13,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -25,22 +26,83 @@ namespace SmartVpn
     public partial class MainWindow : Window
     {
         // ================= زبان برنامه =================
+        // ================= زبان برنامه =================
+        private string _pendingLanguage = "";
+
         private void LangRb_Click(object sender, RoutedEventArgs e)
         {
             var language = sender == LangEnRb ? "en" : "fa";
             if (string.Equals(_config.Language, language, StringComparison.OrdinalIgnoreCase)) return;
 
+            _pendingLanguage = language;
+            if (LangRestartOverlay != null)
+            {
+                LangRestartOverlay.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                ApplyLanguageChangeDirectly(_pendingLanguage);
+            }
+        }
+
+        private void LangModalRestart_Click(object sender, RoutedEventArgs e)
+        {
+            if (LangRestartOverlay != null) LangRestartOverlay.Visibility = Visibility.Collapsed;
+            if (!string.IsNullOrEmpty(_pendingLanguage))
+            {
+                _config.Language = _pendingLanguage;
+                _config.Save();
+                Localization.SetLanguage(_pendingLanguage);
+                RestartApp();
+            }
+        }
+
+        private void LangModalCancel_Click(object sender, RoutedEventArgs e)
+        {
+            if (LangRestartOverlay != null) LangRestartOverlay.Visibility = Visibility.Collapsed;
+            // بازگردانی حالت رادیوباتن به زبان فعال در صورت انصراف کاربر
+            if (LangEnRb != null) LangEnRb.IsChecked = string.Equals(_config.Language, "en", StringComparison.OrdinalIgnoreCase);
+            if (LangFaRb != null) LangFaRb.IsChecked = !string.Equals(_config.Language, "en", StringComparison.OrdinalIgnoreCase);
+            _pendingLanguage = "";
+        }
+
+        private void LangRestartOverlay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.OriginalSource == LangRestartOverlay)
+            {
+                LangModalCancel_Click(sender, new RoutedEventArgs());
+            }
+        }
+
+        private void ApplyLanguageChangeDirectly(string language)
+        {
             _config.Language = language;
             _config.Save();
             Localization.SetLanguage(language);
 
-            // اول FlowDirection پنجره اصلی را اعمال کن تا بیدی پرانتزها درست شود
             FlowDirection = Localization.IsEnglish ? FlowDirection.LeftToRight : FlowDirection.RightToLeft;
-
-            // اعمال مستقیم روی همه المان‌های named — چون پنل‌های Collapsed از LogicalTreeHelper مخفی‌اند
             ApplyLocalizationToNamedElements();
+            ApplyDashboardBottomWidgetMode();
             ReapplyCurrentStatusText();
             RefreshList();
+            RenderRecentServersList();
+            UpdateCoreSwitcherCards();
+            RenderXrayConnList();
+        }
+
+        private void RestartApp()
+        {
+            try
+            {
+                var exePath = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
+                if (!string.IsNullOrEmpty(exePath))
+                {
+                    Process.Start(new ProcessStartInfo(exePath) { UseShellExecute = true });
+                }
+            }
+            catch { }
+            _reallyExit = true;
+            Application.Current.Shutdown();
         }
 
         // ================= تم =================
@@ -74,8 +136,8 @@ namespace SmartVpn
             try
             {
                 string familyName = font == "vazir"
-                    ? "./Fonts/#Vazirmatn, Vazirmatn, Segoe UI, Tahoma"
-                    : "Segoe UI, Segoe UI Variable, Tahoma, ./Fonts/#Vazirmatn, Vazirmatn";
+                    ? "./Fonts/#Vazirmatn, Vazirmatn, ./Fonts/#Inter, Inter, Segoe UI"
+                    : "./Fonts/#Inter, Inter, Segoe UI Variable Text, Segoe UI, ./Fonts/#Vazirmatn, Vazirmatn";
 
                 var ff = new FontFamily(familyName);
                 this.FontFamily = ff;
@@ -119,6 +181,8 @@ namespace SmartVpn
                 try { RefreshList(); } catch { }
                 try { RenderXrayConnList(); } catch { }
                 try { RenderRecentServersList(); } catch { }
+                try { UpdateCoreSwitcherCards(); } catch { }
+                try { ApplyDashboardBottomWidgetMode(); } catch { }
             }
             catch 
             { 
@@ -270,6 +334,35 @@ namespace SmartVpn
             catch (Exception ex) { AppendConnLog("Failed to configure auto-startup: " + ex.Message); }
         }
 
+        private void ShowRecentServersToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (!_ready) return;
+            _config.ShowRecentServersOnHome = ShowRecentServersToggle.IsChecked == true;
+            _config.Save();
+            if (RecentServersCard != null)
+            {
+                RecentServersCard.Visibility = _config.ShowRecentServersOnHome ? Visibility.Visible : Visibility.Collapsed;
+                if (SecurityStatusCard != null)
+                    SecurityStatusCard.Visibility = _config.ShowRecentServersOnHome ? Visibility.Collapsed : Visibility.Visible;
+            }
+        }
+
+        private void DashWidgetChoice_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_ready) return;
+            if (sender == DashWidgetRecentRb) _config.DashboardBottomWidgetMode = 0;
+            else if (sender == DashWidgetSecurityRb) _config.DashboardBottomWidgetMode = 1;
+            else if (sender == DashWidgetToolsRb) _config.DashboardBottomWidgetMode = 2;
+            _config.Save();
+            ApplyDashboardBottomWidgetMode();
+        }
+
+        private void SidebarDefaultOpenToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (!_ready) return;
+            SetSidebarExpanded(SidebarDefaultOpenToggle.IsChecked == true);
+        }
+
         // ================= اعمال ترجمه روی المان‌های named =================
         // LogicalTreeHelper به پنل‌های Collapsed نفوذ نمی‌کند؛ اینجا مستقیم ست می‌شود
         private void ApplyLocalizationToNamedElements()
@@ -280,6 +373,8 @@ namespace SmartVpn
             TitleCloseButton.ToolTip = T("بستن");
             TitleMinimizeButton.ToolTip = T("کمینه‌سازی");
             HamburgerBtn.ToolTip = T("منوی اصلی");
+            if (SidebarToggleBtn != null) SidebarToggleBtn.ToolTip = T("نمایش/پنهان‌سازی سایدبار منو (☰)");
+            if (TitleAccountBadge != null) TitleAccountBadge.ToolTip = T("مشاهده وضعیت حساب و اشتراک");
 
             // --- Settings Tab ---
             LangLabel.Text        = T("زبان برنامه");
@@ -290,11 +385,15 @@ namespace SmartVpn
             ThemeLightRb.Content  = T("روشن");
             ThemeSystemRb.Content = T("سیستم");
             if (FontLabel != null) FontLabel.Text = T("فونت برنامه");
-            if (FontSegoeRb != null) FontSegoeRb.Content = T("Segoe UI (ویندوز ۱۱)");
+            if (FontSegoeRb != null) FontSegoeRb.Content = T("Inter / Segoe UI (مدرن)");
             if (FontVazirRb != null) FontVazirRb.Content = T("Vazirmatn (وزیرمتن)");
+            if (DashboardCustomLabel != null) DashboardCustomLabel.Text = T("سفارشی‌سازی داشبورد");
+            if (ShowRecentServersToggle != null) ShowRecentServersToggle.Content = T("نمایش سرورهای اخیر در داشبورد");
+            if (SidebarDefaultOpenToggle != null) SidebarDefaultOpenToggle.Content = T("سایدبار منو به صورت باز پیش‌فرض");
 
             // --- Settings Expander headers ---
             AppearanceExpander.Header = T("🎨 ظاهر برنامه");
+            if (DashboardExpander != null) DashboardExpander.Header = T("📊 داشبورد و سایدبار");
             BehaviorExpander.Header   = T("⚙ رفتار اتصال");
             IdleExpander.Header       = T("⏱ قطع خودکار در بی‌استفادگی");
             SplitExpander.Header      = T("تونل برنامه‌ها — Per-App (مخصوص Xray / پروکسی)");
@@ -330,7 +429,7 @@ namespace SmartVpn
             if (DrawerNavHomeText != null) DrawerNavHomeText.Text = T("🏠 داشبورد اصلی");
             if (DrawerNavXrayText != null) DrawerNavXrayText.Text = T("🚀 سرویس Xray");
             if (DrawerNavLogsText != null) DrawerNavLogsText.Text = T("📄 لاگ اتصال");
-            if (DrawerNavHotspotText != null) DrawerNavHotspotText.Text = T("🛜 مدیریت Hotspot");
+            if (DrawerNavHotspotText != null) DrawerNavHotspotText.Text = T("📶 VPN Wi-Fi Direct");
             if (DrawerNavToolsText != null) DrawerNavToolsText.Text = T("🧰 جعبه ابزار");
             if (DrawerNavSettingsText != null) DrawerNavSettingsText.Text = T("⚙ تنظیمات");
             if (DrawerMenuPanel != null)
@@ -341,7 +440,7 @@ namespace SmartVpn
             if (SidebarNavDashboardSubtext != null) SidebarNavDashboardSubtext.Text = T("مرکز کنترل");
             if (NavVpnCoreText != null) NavVpnCoreText.Text = T("هسته VPN");
             if (NavXrayCoreText != null) NavXrayCoreText.Text = T("هسته Xray");
-            if (NavHotspotText != null) NavHotspotText.Text = T("مدیریت Hotspot");
+            if (NavHotspotText != null) NavHotspotText.Text = T("VPN Wi-Fi Direct");
             if (NavSettingsText != null) NavSettingsText.Text = T("تنظیمات");
             if (NavToolsText != null) NavToolsText.Text = T("ابزارهای شبکه");
             if (NavLogsText != null) NavLogsText.Text = T("لاگ کانکشن‌ها");
@@ -360,13 +459,21 @@ namespace SmartVpn
             if (PrivateIpText != null) PrivateIpText.ToolTip = T("برای کپی کلیک کنید");
             if (ServerIpText != null) ServerIpText.ToolTip = T("برای کپی کلیک کنید");
 
-            // --- Home Panel: Recent Connections Card ---
+            // --- Home Panel: Recent Connections Card & Core Selector ---
             if (RecentCardTitle != null) RecentCardTitle.Text = T("⭐ سرورهای منتخب و اخیر");
             if (RecentCardSubtitle != null) RecentCardSubtitle.Text = T("اتصال سریع با یک کلیک به آخرین کانکشن‌ها");
+            if (HomeCoreSelectorTitle != null) HomeCoreSelectorTitle.Text = T("⚡ انتخاب هسته اتصال");
+            if (HomeCoreSelectorSubtitle != null) HomeCoreSelectorSubtitle.Text = T("دسترسی سریع به سرورهای تفکیک‌شده");
             if (HomeSwitchToVpnBtn != null) HomeSwitchToVpnBtn.Content = T("🛡️ سرورهای VPN Core");
             if (HomeSwitchToXrayBtn != null) HomeSwitchToXrayBtn.Content = T("⚡ سرورهای Xray Core");
             if (XraySwitchToVpnBtn != null) XraySwitchToVpnBtn.Content = T("VPN (سنتی)");
             if (XraySwitchToXrayBtn != null) XraySwitchToXrayBtn.Content = T("Xray (پروکسی)");
+            if (CurrentSpeedLbl != null) CurrentSpeedLbl.Text = T("دریافت ↓");
+            if (UlSpeedLbl != null) UlSpeedLbl.Text = T("ارسال ↑");
+            if (LatencyLbl != null) LatencyLbl.Text = T("پینگ");
+            if (SessionTrafficLbl != null) SessionTrafficLbl.Text = T("حجم سشن");
+            if (VpnBackHomeText != null) VpnBackHomeText.Text = T("داشبورد");
+            if (XrayBackHomeText != null) XrayBackHomeText.Text = T("داشبورد");
 
             // --- Home Panel: Stacked Dual Subscriptions ---
             if (SubSectionLabel != null) SubSectionLabel.Text = T("🛡️ اشتراک VPN Core");
@@ -383,15 +490,43 @@ namespace SmartVpn
             if (HomeXraySubDataLbl != null) HomeXraySubDataLbl.Text = T("حجم باقی‌مانده");
             if (HomeXraySubRefreshBtn != null) HomeXraySubRefreshBtn.ToolTip = T("بروزرسانی اشتراک Xray");
 
-            // Refresh recent servers list and Xray card with current language
+            // Refresh recent servers list, Xray card and Core switcher cards with current language
+            if (HomeCoreSelectorTitle != null) HomeCoreSelectorTitle.Text = T("⚡ انتخاب هسته اتصال");
+            if (HomeCoreSelectorSubtitle != null) HomeCoreSelectorSubtitle.Text = T("دسترسی سریع به سرورهای تفکیک‌شده");
+            if (HomeVpnTitleText != null) HomeVpnTitleText.Text = T("هسته VPN");
+            if (HomeXrayTitleText != null) HomeXrayTitleText.Text = T("هسته Xray");
             RenderRecentServersList();
             UpdateXraySubscriptionCard();
+            UpdateCoreSwitcherCards();
 
             // --- Home panel dynamic labels ---
             var moreOpen = MoreInfoPanel?.Visibility == Visibility.Visible;
-            if (MoreInfoText != null) MoreInfoText.Text = T(moreOpen ? "بستن جزئیات" : "نمایش جزئیات");
-            if (PowerHintText != null) PowerHintText.Text = T(_currentStatusKey == TxtConnected
-                ? "برای قطع اتصال کلیک کنید" : "Click to Connect");
+            if (MoreInfoText != null) MoreInfoText.Text = T(moreOpen ? "بستن جزئیات" : "جزئیات بیشتر");
+            if (PowerHintText != null)
+            {
+                PowerHintText.Text = T(_currentPowerState switch
+                {
+                    "connected" => "برای قطع اتصال کلیک کنید",
+                    "connecting" or "reconnecting" => "لطفاً شکیبا باشید...",
+                    "error" => "جهت تلاش مجدد کلیک کنید",
+                    _ => "جهت اتصال کلیک کنید"
+                });
+            }
+            if (PowerStateText != null)
+            {
+                PowerStateText.Text = T(_currentPowerState switch
+                {
+                    "connected" => "متصل و ایمن",
+                    "connecting" or "reconnecting" => "در حال اتصال...",
+                    "error" => "خطا در اتصال",
+                    _ => "خاموش"
+                });
+            }
+            if (GeoIpText != null && (GeoIpText.Text == "آماده اتصال" || GeoIpText.Text == "Ready to connect"))
+                GeoIpText.Text = T("آماده اتصال");
+            if (ActiveConnText != null && (ActiveConnText.Text.Contains("کانکشن") || ActiveConnText.Text.StartsWith("Select", StringComparison.OrdinalIgnoreCase)))
+                ActiveConnText.Text = T("یک کانکشن انتخاب کنید");
+            UpdateSidebarAccountCard();
             if (AddBtn != null) AddBtn.ToolTip = T("افزودن کانکشن جدید");
             if (SubSummaryCard != null) SubSummaryCard.ToolTip = T("مشاهده / استعلام وضعیت اشتراک");
             if (ConnSectionLabel != null) ConnSectionLabel.Text = T("کانکشن‌ها");
@@ -517,6 +652,48 @@ namespace SmartVpn
             if (MiniAlwaysOnTopMenuItem != null) MiniAlwaysOnTopMenuItem.Header = T("همیشه بالا");
             if (MiniRestoreBtn != null) MiniRestoreBtn.ToolTip = T("بازگشت به حالت عادی");
             if (MiniStatusText != null) MiniStatusText.Text = T(MiniStatusText.Text);
+
+            // --- Bottom widget mode radio buttons ---
+            if (DashWidgetRecentRb != null) DashWidgetRecentRb.Content = T("⭐ سرورهای اخیر");
+            if (DashWidgetSecurityRb != null) DashWidgetSecurityRb.Content = T("🛡️ کنترل‌های امنیت");
+            if (DashWidgetToolsRb != null) DashWidgetToolsRb.Content = T("🧰 ابزارهای شبکه");
+
+            // --- Exit Modal ---
+            if (ExitModalTitle != null) ExitModalTitle.Text = T("خروج از برنامه NETFASTVIP");
+            if (ExitModalDesc != null) ExitModalDesc.Text = T("آیا از خروج کامل از برنامه اطمینان دارید؟\nبا انتخاب پاکسازی، تمام پروسس‌های VPN و تنظیمات کارت‌های شبکه پاکسازی و به حالت اولیه بازگردانده می‌شوند.");
+            if (ExitModalCleanupText != null) ExitModalCleanupText.Text = T("خروج و پاکسازی کامل شبکه");
+            if (ExitModalQuickBtn != null) ExitModalQuickBtn.Content = T("⚡ خروج سریع");
+            if (ExitModalCancelBtn != null) ExitModalCancelBtn.Content = T("انصراف");
+
+            // --- Xray Manual Add Modal ---
+            if (XrayManualAddBtn != null) XrayManualAddBtn.Content = T("＋ افزودن دستی");
+            if (XrayManualAddTitle != null) XrayManualAddTitle.Text = T("افزودن دستی کانفیگ Xray");
+
+            // --- Navigation Back Home Buttons ---
+            if (VpnBackHomeText != null) VpnBackHomeText.Text = T("داشبورد");
+            if (XrayBackHomeText != null) XrayBackHomeText.Text = T("داشبورد");
+            if (VpnBackHomeBtn != null) VpnBackHomeBtn.ToolTip = T("بازگشت به داشبورد");
+            if (XrayBackHomeBtn != null) XrayBackHomeBtn.ToolTip = T("بازگشت به داشبورد");
+            if (HotspotBackHomeBtn != null) HotspotBackHomeBtn.ToolTip = T("بازگشت به داشبورد");
+            if (ToolboxBackHomeBtn != null) ToolboxBackHomeBtn.ToolTip = T("بازگشت به داشبورد");
+            if (SettingsBackHomeBtn != null) SettingsBackHomeBtn.ToolTip = T("بازگشت به داشبورد");
+            if (ConnLogBackHomeBtn != null) ConnLogBackHomeBtn.ToolTip = T("بازگشت به داشبورد");
+            if (SpeedTestHomeBtn != null) SpeedTestHomeBtn.ToolTip = T("بازگشت به داشبورد");
+
+            // --- Dashboard Bottom Widget Modes & Tools ---
+            if (DashKsTitleText != null) DashKsTitleText.Text = T("کیل‌سوئیچ");
+            if (DashStTitleText != null) DashStTitleText.Text = T("اسپلیت تانل");
+            if (DashDnsTitleText != null) DashDnsTitleText.Text = T("محافظت DNS");
+            if (DashToolFlushText != null) DashToolFlushText.Text = T("فلاش DNS");
+            if (DashToolKillText != null) DashToolKillText.Text = T("کیل پروسس");
+            if (DashToolSpeedText != null) DashToolSpeedText.Text = T("تست سرعت");
+            ApplyDashboardBottomWidgetMode();
+
+            // --- Language Restart In-App Modal ---
+            if (LangModalTitle != null) LangModalTitle.Text = T("تغییر زبان برنامه");
+            if (LangModalDesc != null) LangModalDesc.Text = T("برای اعمال کامل زبان جدید و تنظیمات چیدمان، پیشنهاد می‌شود برنامه راه‌اندازی مجدد شود.\nاکنون راه‌اندازی مجدد شود؟");
+            if (LangModalRestartBtn != null) LangModalRestartBtn.Content = T("✓ راه‌اندازی مجدد");
+            if (LangModalCancelBtn != null) LangModalCancelBtn.Content = T("انصراف");
 
             // --- FilterDropdown label ---
             FilterDropdownLabel.Text = _connFilter.Length == 0

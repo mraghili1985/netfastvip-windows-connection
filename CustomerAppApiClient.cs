@@ -576,10 +576,17 @@ public sealed class CustomerAppApiClient
         var expired = string.Equals(s.Status, "expired", StringComparison.OrdinalIgnoreCase)
                       || string.Equals(s.Status, "suspended", StringComparison.OrdinalIgnoreCase);
 
-        int remainingDays = 0;
+        int remainingDays;
         if (s.ExpireAt.HasValue)
         {
-            remainingDays = (int)Math.Max(0, Math.Ceiling((s.ExpireAt.Value.ToLocalTime() - DateTime.Now).TotalDays));
+            var diff = (s.ExpireAt.Value.ToLocalTime() - DateTime.Now).TotalDays;
+            remainingDays = (int)Math.Max(0, Math.Ceiling(diff));
+            if (diff <= 0) expired = true;
+        }
+        else
+        {
+            // اگر هنوز تاریخ انقضا ثبت نشده (شروع پس از اتصال یا بدون انقضا)، نباید 0 باشد تا با منقضی اشتباه نشود
+            remainingDays = -1;
         }
 
         long totalMb = (s.TotalTrafficBytes ?? 0) / (1024 * 1024);
