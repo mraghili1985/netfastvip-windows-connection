@@ -70,7 +70,7 @@ public sealed class AppConfig
     public string GithubUrl { get; set; } = DefaultProductionGithubUrl;
 
     // لینک پنل کاربری/اکانتینگ برای بررسی اشتراک (دکمه در پنجره درباره)
-    public string PanelUrl { get; set; } = DefaultTestPanelUrl;
+    public string PanelUrl { get; set; } = DefaultProductionPanelUrl;
 
     // لینک پشتیبانی تلگرام (دکمه Support در پنجره درباره)
     public string SupportUrl { get; set; } = DefaultProductionSupportUrl;
@@ -84,8 +84,8 @@ public sealed class AppConfig
     // محتوای گواهی CA به‌صورت Base64 — داخل کانفیگ نگه داشته می‌شود (self-healing مثل BaseOvpn)
     public string Ca { get; set; } = "";
 
-    // آدرس پایه پورتال و API اپ — اکنون روی سرور تستی تنظیم شده و با SwitchToProductionPanel به پروداکشن برمی‌گردد
-    public string PortalApiUrl { get; set; } = DefaultTestCustomerApiUrl;
+    // آدرس پایه پورتال و API اپ
+    public string PortalApiUrl { get; set; } = DefaultProductionPortalApiUrl;
 
     // نشست و احراز هویت اپ مشتری (25-Customer-App-API)
     public string? CustomerAccessToken { get; set; }
