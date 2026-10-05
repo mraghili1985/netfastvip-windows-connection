@@ -214,7 +214,19 @@ public partial class SubscriptionDialog : Window
                 StatusText.Visibility  = Visibility.Collapsed;
                 ResultPanel.Visibility = Visibility.Visible;
 
+                // ثبت مشخصات کاربر در کانفیگ برنامه
+                _appConfig.CustomerUsername = user;
+                _appConfig.CustomerPassword = pass;
+                _appConfig.CustomerPackageName = dashboard.Package?.Name ?? "";
+                _appConfig.CustomerStatus = dashboard.Account?.Status ?? "active";
+
+                // دریافت و همگام‌سازی خودکار سرورها از پورتال
+                await PortalSyncService.SyncFromPortalAsync(client, _appConfig, user, pass);
+                _appConfig.Save();
+
+                OnSyncCompleted?.Invoke();
                 if (SaveCheck.IsChecked == true) OnSaveCredentials?.Invoke(user, pass);
+                handled = true;
             }
         }
         catch (PortalApiException ex)

@@ -466,6 +466,14 @@ namespace SmartVpn
                             _config.CustomerAccessToken = appClient.AccessToken;
                             _config.CustomerRefreshToken = appClient.RefreshToken;
                             _config.CustomerTokenExpiresAt = appClient.TokenExpiresAt;
+
+                            try
+                            {
+                                await PortalSyncService.SyncFromCustomerAppAsync(appClient, _config);
+                                _config.Save();
+                                Dispatcher.Invoke(() => { RefreshList(); XrayLoadData(); });
+                            }
+                            catch { }
                         }
                     }
                 }
@@ -490,6 +498,14 @@ namespace SmartVpn
                             _config.CustomerAccessToken = appClient.AccessToken;
                             _config.CustomerRefreshToken = appClient.RefreshToken;
                             _config.CustomerTokenExpiresAt = appClient.TokenExpiresAt;
+
+                            try
+                            {
+                                await PortalSyncService.SyncFromCustomerAppAsync(appClient, _config);
+                                _config.Save();
+                                Dispatcher.Invoke(() => { RefreshList(); XrayLoadData(); });
+                            }
+                            catch { }
                         }
                     }
                     catch { }
@@ -501,6 +517,14 @@ namespace SmartVpn
                     var client = new PortalApiClient(url);
                     await client.LoginAsync(username, password);
                     dashboard = await client.GetDashboardAsync();
+
+                    try
+                    {
+                        await PortalSyncService.SyncFromPortalAsync(client, _config, username, password);
+                        _config.Save();
+                        Dispatcher.Invoke(() => { RefreshList(); XrayLoadData(); });
+                    }
+                    catch { }
                 }
 
                 if (dashboard == null)

@@ -155,10 +155,14 @@ namespace SmartVpn
             };
             Loaded += async (_, _) =>
             {
-                // اگر از پنل تستی استفاده می‌شود یا کاربر لاگین است، هاست استاتیک قدیمی را لود نکن
-                if (!string.IsNullOrWhiteSpace(_config.PortalApiUrl) &&
-                    (_config.PortalApiUrl.Contains("v2moon.shop") || !string.IsNullOrWhiteSpace(_config.CustomerRefreshToken)))
+                // اگر از روش پنل و API استفاده می‌شود (آدرس پورتال تنظیم است)، هاست استاتیک قدیمی را لود نکن
+                if (!string.IsNullOrWhiteSpace(_config.PortalApiUrl))
                 {
+                    if (!string.IsNullOrWhiteSpace(_config.CustomerRefreshToken) ||
+                        !string.IsNullOrWhiteSpace(_config.CustomerUsername))
+                    {
+                        _ = RefreshSubscriptionSummaryAsync();
+                    }
                     return;
                 }
                 await ConnectionsUpdateChecker.CheckAsync(this, _config);
