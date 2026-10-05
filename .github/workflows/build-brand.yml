@@ -1,0 +1,66 @@
+name: Build Custom Brand VPN Client
+
+on:
+  workflow_dispatch:
+    inputs:
+      brand_name:
+        description: 'Brand Name (e.g. StarVPN, MoonNet) - Alphanumeric only'
+        required: true
+        default: 'StarVPN'
+      portal_url:
+        description: 'Portal API URL (e.g. https://panel.starvpn.com)'
+        required: false
+        default: 'https://panel.netfast.vip/'
+      telegram_url:
+        description: 'Telegram Channel URL (e.g. https://t.me/starvpn)'
+        required: false
+        default: 'https://t.me/netfastvip'
+      support_url:
+        description: 'Telegram Support URL (e.g. https://t.me/starvpn_support)'
+        required: false
+        default: 'https://t.me/nfv_sup'
+      icon_url:
+        description: 'Direct URL to custom .ico file (optional)'
+        required: false
+        default: ''
+      version:
+        description: 'Application Version'
+        required: false
+        default: '3.0.2'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ inputs.brand_name }} (v${{ inputs.version }})
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build and Package Branded VPN Client
+        shell: powershell
+        run: |
+          .\build-brand.ps1 `
+            -BrandName "${{ inputs.brand_name }}" `
+            -PortalUrl "${{ inputs.portal_url }}" `
+            -TelegramUrl "${{ inputs.telegram_url }}" `
+            -SupportUrl "${{ inputs.support_url }}" `
+            -IconPath "${{ inputs.icon_url }}" `
+            -Version "${{ inputs.version }}" `
+            -OutputDir "dist"
+
+      - name: Upload Branded Release ZIP Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.brand_name }}-Windows-v${{ inputs.version }}
+          path: dist/*.zip
+          if-no-files-found: error
+          retention-days: 30

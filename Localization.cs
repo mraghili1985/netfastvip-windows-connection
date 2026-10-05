@@ -529,6 +529,7 @@ public static class Localization
         ["● انتخاب‌شده"] = "● Selected",
         ["انتخاب‌شده"] = "Selected",
         ["خروج از برنامه NETFASTVIP"] = "Exit NETFASTVIP",
+        ["خروج از برنامه {0}"] = "Exit {0}",
         ["خروج و پاکسازی کامل شبکه"] = "Exit & Full Network Cleanup",
         ["⚡ خروج سریع"] = "⚡ Quick Exit",
         ["انصراف"] = "Cancel",

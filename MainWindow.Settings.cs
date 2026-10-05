@@ -659,7 +659,7 @@ namespace SmartVpn
             if (DashWidgetToolsRb != null) DashWidgetToolsRb.Content = T("🧰 ابزارهای شبکه");
 
             // --- Exit Modal ---
-            if (ExitModalTitle != null) ExitModalTitle.Text = T("خروج از برنامه NETFASTVIP");
+            if (ExitModalTitle != null) ExitModalTitle.Text = string.Format(T("خروج از برنامه {0}"), AppConfig.BrandName);
             if (ExitModalDesc != null) ExitModalDesc.Text = T("آیا از خروج کامل از برنامه اطمینان دارید؟\nبا انتخاب پاکسازی، تمام پروسس‌های VPN و تنظیمات کارت‌های شبکه پاکسازی و به حالت اولیه بازگردانده می‌شوند.");
             if (ExitModalCleanupText != null) ExitModalCleanupText.Text = T("خروج و پاکسازی کامل شبکه");
             if (ExitModalQuickBtn != null) ExitModalQuickBtn.Content = T("⚡ خروج سریع");

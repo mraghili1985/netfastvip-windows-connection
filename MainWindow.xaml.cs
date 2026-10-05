@@ -35,7 +35,7 @@ namespace SmartVpn
         private const string MsgAuthFailed = "نام کاربری یا رمز عبور اشتباه است — یا ممکن است اشتراک شما به پایان رسیده باشد.";
         private const string BtnCheckSubscription = "بررسی اشتراک";
         private const string BtnOkText = "باشه";
-        private const string MsgCaInstall = "برای اتصال از طریق SSTP یا IKEv2 لازم است گواهی امنیتی NETFASTVIP یک‌بار روی ویندوز نصب شود. نصب شود؟";
+        private static string MsgCaInstall => $"برای اتصال از طریق SSTP یا IKEv2 لازم است گواهی امنیتی {AppConfig.BrandName} یک‌بار روی ویندوز نصب شود. نصب شود؟";
         private const string BtnInstallCa = "نصب گواهی";
         private const string BtnNotNow = "حالا نه";
         private const string MsgCaRequired = "بدون نصب گواهی، اتصال SSTP / IKEv2 ممکن نیست.";
@@ -121,7 +121,7 @@ namespace SmartVpn
         private System.Drawing.Icon? _trayIcon;
 
         private const string RunKeyPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
-        private const string RunValueName = "NETFASTVIP";
+        private static string RunValueName => AppConfig.BrandName;
 
         private double _uiScale = 1.0;
 
@@ -144,7 +144,10 @@ namespace SmartVpn
         {
             InitializeComponent();
             Title = AppConfig.BrandName;
-            BrandTitleText.Text = AppConfig.BrandName;
+            if (BrandTitleText != null) BrandTitleText.Text = AppConfig.BrandName;
+            if (TitleBrandText != null) TitleBrandText.Text = AppConfig.BrandName;
+            if (SidebarBrandText != null) SidebarBrandText.Text = AppConfig.BrandName;
+            if (ExitModalTitle != null) ExitModalTitle.Text = string.Format(Localization.T("خروج از برنامه {0}"), AppConfig.BrandName);
             FitToScreen();
             InitXrayPanel();
             Loaded += async (_, _) => await UpdateChecker.CheckAsync(this);
@@ -431,13 +434,15 @@ namespace SmartVpn
             {
                 try
                 {
-                    string psCmd = @"
+                    string brand = AppConfig.BrandName;
+                    string psCmd = $@"
                         $i = 1
-                        Get-NetAdapter | Where-Object { $_.Name -like 'Local Area Connection*' -and ($_.InterfaceDescription -match 'TAP-Windows|Wintun|OpenVPN|WireGuard|Amnezia') } | ForEach-Object {
-                            $newName = if ($i -eq 1) { 'NETFASTVIP VPN' } else { 'NETFASTVIP VPN ' + $i }
+                        $brand = '{brand} VPN'
+                        Get-NetAdapter | Where-Object {{ $_.Name -like 'Local Area Connection*' -and ($_.InterfaceDescription -match 'TAP-Windows|Wintun|OpenVPN|WireGuard|Amnezia') }} | ForEach-Object {{
+                            $newName = if ($i -eq 1) {{ $brand }} else {{ $brand + ' ' + $i }}
                             Rename-NetAdapter -Name $_.Name -NewName $newName -ErrorAction SilentlyContinue
                             $i++
-                        }
+                        }}
                     ";
                     var psFilePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "nfv_rename_nic.ps1");
                     await System.IO.File.WriteAllTextAsync(psFilePath, psCmd, new System.Text.UTF8Encoding(false));

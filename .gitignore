@@ -1,4 +1,4 @@
-﻿# Build output & temporary files
+# Build output & temporary files
 bin/
 obj/
 .vs/
@@ -12,3 +12,5 @@ obj/
 # Releases & packages
 NETFASTVIP-Portable-v2.0.0/
 *.zip
+dist/
+build-work/

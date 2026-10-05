@@ -329,7 +329,7 @@
                         </Button>
                         <Path Data="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z"
                               Fill="{DynamicResource AccentBrush}" Width="15" Height="15" Stretch="Uniform" VerticalAlignment="Center"/>
-                        <TextBlock Text="NETFASTVIP" FontSize="11.5" FontWeight="Bold"
+                        <TextBlock x:Name="TitleBrandText" Text="NETFASTVIP" FontSize="11.5" FontWeight="Bold"
                                    Foreground="{DynamicResource SubTextBrush}" Margin="8,0,0,0" VerticalAlignment="Center"/>
                     </StackPanel>
 
@@ -419,7 +419,7 @@
                                     <Image Source="pack://application:,,,/app.ico" Width="20" Height="20"
                                            RenderOptions.BitmapScalingMode="HighQuality" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="NETFASTVIP" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextBrush}"
+                                <TextBlock x:Name="SidebarBrandText" Text="NETFASTVIP" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextBrush}"
                                            Margin="10,0,0,0" VerticalAlignment="Center"/>
                             </StackPanel>
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Diagnostics;
 using System.Net;
@@ -21,7 +21,7 @@ public class RasProvider : IConnectionProvider
     {
         _cfg = cfg;
         _creds = creds;
-        _entryName = $"NETFASTVIP-{cfg.Type}";
+        _entryName = $"{AppConfig.BrandName}-{cfg.Type}";
     }
 
     public string Type => _cfg.Type;
