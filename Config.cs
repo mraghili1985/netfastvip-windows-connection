@@ -53,7 +53,7 @@ public sealed class AppConfig
     // ===== تنظیمات پنل اصلی پروداکشن (NETFASTVIP) - محفوظ برای بازگردانی =====
     public const string DefaultProductionPortalApiUrl = "https://panel.netfast.vip/";
     public const string DefaultProductionPanelUrl = "https://panel.netfast.vip/portal/login";
-    public const string DefaultProductionConnectionsUrl = "https://dl.netfast.vip/connections.json";
+    public const string DefaultProductionConnectionsUrl = "";
     public const string DefaultProductionUpdateUrl = "https://dl.netfast.vip/version.json";
     public const string DefaultProductionTelegramUrl = "https://t.me/netfastvip";
     public const string DefaultProductionSupportUrl = "https://t.me/nfv_sup";
@@ -78,7 +78,7 @@ public sealed class AppConfig
     // آدرس فایل version.json روی هاست برای بررسی نسخه جدید — خالی یعنی بررسی خاموش (UpdateChecker.cs)
     public string UpdateUrl { get; set; } = DefaultProductionUpdateUrl;
 
-    // آدرس فایل connections.json روی هاست برای دریافت خودکار سرورها/base.ovpn/گواهی CA — خالی یعنی بررسی خاموش (ConnectionsUpdateChecker.cs)
+    // آدرس فایل connections.json روی هاست برای دریافت خودکار سرورها — خالی یعنی بررسی خاموش و دریافت صرفاً از پنل
     public string ConnectionsUpdateUrl { get; set; } = DefaultProductionConnectionsUrl;
 
     // محتوای گواهی CA به‌صورت Base64 — داخل کانفیگ نگه داشته می‌شود (self-healing مثل BaseOvpn)

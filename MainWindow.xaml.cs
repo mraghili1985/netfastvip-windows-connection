@@ -168,7 +168,10 @@ namespace SmartVpn
                     }
                     return;
                 }
-                await ConnectionsUpdateChecker.CheckAsync(this, _config);
+                if (!string.IsNullOrWhiteSpace(_config.ConnectionsUpdateUrl))
+                {
+                    await ConnectionsUpdateChecker.CheckAsync(this, _config);
+                }
             };
             Loaded += (_, _) =>
             {
