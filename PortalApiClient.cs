@@ -35,7 +35,7 @@ public sealed class PortalAccount
     [JsonPropertyName("createdAt")] public DateTime? CreatedAt { get; set; }
     [JsonPropertyName("firstLoginAt")] public DateTime? FirstLoginAt { get; set; }
     [JsonPropertyName("expireAt")] public DateTime? ExpireAt { get; set; }
-    [JsonPropertyName("remainingDays")] public int RemainingDays { get; set; }
+    [JsonPropertyName("remainingDays")] public int? RemainingDays { get; set; }
     [JsonPropertyName("status")] public string Status { get; set; } = "";
 }
 
@@ -43,19 +43,19 @@ public sealed class PortalPackage
 {
     [JsonPropertyName("id")] public string Id { get; set; } = "";
     [JsonPropertyName("name")] public string Name { get; set; } = "";
-    [JsonPropertyName("trafficMb")] public long TrafficMb { get; set; }
-    [JsonPropertyName("durationDays")] public int DurationDays { get; set; }
+    [JsonPropertyName("trafficMb")] public long? TrafficMb { get; set; }
+    [JsonPropertyName("durationDays")] public int? DurationDays { get; set; }
 }
 
 public sealed class PortalTraffic
 {
-    [JsonPropertyName("totalBytes")] public long TotalBytes { get; set; }
-    [JsonPropertyName("usedBytes")] public long UsedBytes { get; set; }
-    [JsonPropertyName("remainingBytes")] public long RemainingBytes { get; set; }
-    [JsonPropertyName("totalMb")] public long TotalMb { get; set; }
-    [JsonPropertyName("usedMb")] public long UsedMb { get; set; }
-    [JsonPropertyName("remainingMb")] public long RemainingMb { get; set; }
-    [JsonPropertyName("usagePercent")] public int UsagePercent { get; set; }
+    [JsonPropertyName("totalBytes")] public long? TotalBytes { get; set; }
+    [JsonPropertyName("usedBytes")] public long? UsedBytes { get; set; }
+    [JsonPropertyName("remainingBytes")] public long? RemainingBytes { get; set; }
+    [JsonPropertyName("totalMb")] public long? TotalMb { get; set; }
+    [JsonPropertyName("usedMb")] public long? UsedMb { get; set; }
+    [JsonPropertyName("remainingMb")] public long? RemainingMb { get; set; }
+    [JsonPropertyName("usagePercent")] public int? UsagePercent { get; set; }
 }
 
 public sealed class PortalDashboard

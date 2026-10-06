@@ -539,17 +539,17 @@ namespace SmartVpn
                 var expired = string.Equals(dashboard.Account.Status, "expired", StringComparison.OrdinalIgnoreCase)
                               || string.Equals(dashboard.Account.Status, "suspended", StringComparison.OrdinalIgnoreCase)
                               || (dashboard.Account.ExpireAt.HasValue && dashboard.Account.ExpireAt.Value.ToLocalTime() <= DateTime.Now)
-                              || (!notStarted && !isUnlimitedTime && dashboard.Account.RemainingDays == 0);
+                              || (!notStarted && !isUnlimitedTime && (dashboard.Account.RemainingDays ?? -1) == 0);
 
                 double? remaining = null;
                 if (expired) remaining = 0;
                 else if (dashboard.Account.ExpireAt.HasValue)
                     remaining = Math.Max(0, (dashboard.Account.ExpireAt.Value.ToLocalTime() - DateTime.Now).TotalSeconds);
-                else if (!notStarted && !isUnlimitedTime && dashboard.Account.RemainingDays > 0)
-                    remaining = dashboard.Account.RemainingDays * 86400.0;
+                else if (!notStarted && !isUnlimitedTime && (dashboard.Account.RemainingDays ?? 0) > 0)
+                    remaining = (dashboard.Account.RemainingDays!.Value) * 86400.0;
 
-                var quotaGb = dashboard.Traffic.TotalMb / 1024.0;
-                double? leftGb = quotaGb > 0 ? dashboard.Traffic.RemainingMb / 1024.0 : (double?)null;
+                var quotaGb = (dashboard.Traffic.TotalMb ?? 0) / 1024.0;
+                double? leftGb = quotaGb > 0 ? (dashboard.Traffic.RemainingMb ?? 0) / 1024.0 : (double?)null;
                 var checkedAt = DateTime.Now;
 
                 SubTimeLeftText.Text = notStarted
@@ -568,7 +568,7 @@ namespace SmartVpn
                     SubSectionLabel.Text = _config.CustomerPackageName;
 
                 UpdateSubActiveBadge(remaining, leftGb, quotaGb, notStarted, isUnlimitedTime);
-                UpdateSubTrafficProgressBar(dashboard.Traffic.UsedMb, dashboard.Traffic.TotalMb);
+                UpdateSubTrafficProgressBar((double)(dashboard.Traffic.UsedMb ?? 0), (double)(dashboard.Traffic.TotalMb ?? 0));
                 ShowSubCardFilled();
                 UpdateSidebarAccountCard();
             }

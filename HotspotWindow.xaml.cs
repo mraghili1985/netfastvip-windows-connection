@@ -201,40 +201,74 @@ namespace SmartVpn
                 return;
             }
 
-            // تایمر کاهش یافته به ۵ ثانیه
+            // تثبیت شبکه وای‌فای دایرکت با شناسایی زودهنگام
+            string targetName = "";
             for (int i = 5; i > 0; i--)
             {
                 StatusText.Text = Localization.T("مرحله ۲: تثبیت شبکه وای‌فای دایرکت... ") + $"({i} " + Localization.T("ثانیه") + ")";
                 StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B"));
                 await Task.Delay(1000);
+
+                await RefreshAdaptersAsync(searchForTarget: true);
+                var cur = TargetCombo.SelectedItem?.ToString() ?? "";
+                if (!string.IsNullOrEmpty(cur) && !cur.Contains(Localization.T("ساخته نشد")) && !cur.Contains(Localization.T("ایجاد")) && !cur.Contains(Localization.T("در انتظار")))
+                {
+                    targetName = cur;
+                    break;
+                }
             }
 
-            await RefreshAdaptersAsync(searchForTarget: true);
-
-            string targetName = TargetCombo.SelectedItem?.ToString() ?? "";
-            if (string.IsNullOrEmpty(targetName) || targetName.Contains(Localization.T("ساخته نشد")) || targetName.Contains(Localization.T("ایجاد")))
+            if (string.IsNullOrEmpty(targetName))
             {
-                StatusText.Text = Localization.T("کارت شبکه Wi-Fi Direct یافت نشد.");
-                StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
-                await _hotspot.StopAsync();
-                BtnStart.IsEnabled = true;
-                return;
+                await RefreshAdaptersAsync(searchForTarget: true);
+                targetName = TargetCombo.SelectedItem?.ToString() ?? "";
             }
 
-            StatusText.Text = Localization.T("مرحله ۳: برقراری پل ارتباطی با ") + $"({sourceName} ➔ {targetName})...";
-            var shareResult = await _hotspot.ApplySharingOnlyAsync(sourceName, targetName);
+            bool targetValid = !string.IsNullOrEmpty(targetName) && !targetName.Contains(Localization.T("ساخته نشد")) && !targetName.Contains(Localization.T("ایجاد"));
 
-                        if (!shareResult.ok)
+            if (!targetValid)
             {
-                StatusText.Text = Localization.T("هات‌اسپات روشن شد! (نیاز به اشتراک‌گذاری دستی در صورت قطعی اینترنت)");
-                StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B"));
-                _mainWin.AppendLog("[Hotspot] Auto-sharing failed. Manual setup guide is available.");
-                
-                BtnTutorial.Visibility = Visibility.Visible;
+                // تلاش مجدد ۳ ثانیه‌ای در پس‌زمینه
+                for (int retry = 0; retry < 3 && !targetValid; retry++)
+                {
+                    await Task.Delay(1000);
+                    await RefreshAdaptersAsync(searchForTarget: true);
+                    var retryCur = TargetCombo.SelectedItem?.ToString() ?? "";
+                    if (!string.IsNullOrEmpty(retryCur) && !retryCur.Contains(Localization.T("ساخته نشد")) && !retryCur.Contains(Localization.T("ایجاد")))
+                    {
+                        targetName = retryCur;
+                        targetValid = true;
+                        break;
+                    }
+                }
+            }
+
+            if (_hotspot.IsHotspotBoundToSelectedProfile)
+            {
+                StatusText.Text = Localization.T("✅ هات‌اسپات با موفقیت فعال شد (مسیریابی مستقیم).");
+                StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+            }
+            else if (targetValid)
+            {
+                StatusText.Text = Localization.T("مرحله ۳: برقراری پل ارتباطی با ") + $"({sourceName} ➔ {targetName})...";
+                var shareResult = await _hotspot.ApplySharingOnlyAsync(sourceName, targetName);
+
+                if (!shareResult.ok)
+                {
+                    StatusText.Text = Localization.T("هات‌اسپات روشن شد! (نیاز به اشتراک‌گذاری دستی در صورت قطعی اینترنت)");
+                    StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B"));
+                    _mainWin.AppendLog("[Hotspot] Auto-sharing failed. Manual setup guide is available.");
+                    BtnTutorial.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    StatusText.Text = Localization.T("✅ هات‌اسپات با موفقیت فعال شد.");
+                    StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+                }
             }
             else
             {
-                StatusText.Text = Localization.T("✅ هات‌اسپات با موفقیت فعال شد.");
+                StatusText.Text = Localization.T("✅ هات‌اسپات فعال است (دستگاه‌های خود را متصل کنید).");
                 StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
             }
 

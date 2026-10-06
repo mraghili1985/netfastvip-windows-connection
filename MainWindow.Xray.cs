@@ -29,6 +29,8 @@ namespace SmartVpn
         public ObservableCollection<SubscriptionGroup> XrayGroups { get; set; } = new ObservableCollection<SubscriptionGroup>();
         private ProxyProfile? _xraySelectedProfile;
         private Popup? _openXrayRowMenuPopup;
+        private string _xraySortMode = "";
+        private Popup? _openXraySortPopup;
         private bool _xrayIsConnected = false;
         public bool XrayIsConnected => _xrayIsConnected && XrayEngine.IsRunning;
         public ProxyProfile? XrayActiveProfile => _xrayActiveProfile;
@@ -1045,6 +1047,133 @@ namespace SmartVpn
             return headerBorder;
         }
 
+        private void XraySortDropdownBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (_openXraySortPopup != null)
+            {
+                _openXraySortPopup.IsOpen = false;
+                _openXraySortPopup = null;
+                return;
+            }
+            if (_openXrayRowMenuPopup != null)
+            {
+                _openXrayRowMenuPopup.IsOpen = false;
+                _openXrayRowMenuPopup = null;
+            }
+
+            var light = IsLightTheme();
+            var popup = new Popup
+            {
+                StaysOpen = false,
+                AllowsTransparency = true,
+                PopupAnimation = PopupAnimation.Fade,
+                PlacementTarget = XraySortDropdownBtn,
+                Placement = PlacementMode.Bottom,
+            };
+            var stack = new StackPanel { Orientation = Orientation.Vertical, Width = 155 };
+            var border = new Border
+            {
+                Background = new SolidColorBrush(light ? Color.FromRgb(0xFF, 0xFF, 0xFF) : Color.FromRgb(0x1B, 0x24, 0x38)),
+                BorderBrush = new SolidColorBrush(light ? Color.FromArgb(0x35, 0x0F, 0x17, 0x2A) : Color.FromArgb(0x45, 0x94, 0xA3, 0xB8)),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(4),
+                Effect = new DropShadowEffect { Color = Colors.Black, BlurRadius = 18, ShadowDepth = 3, Opacity = 0.30 },
+                Child = stack,
+            };
+            popup.Child = border;
+            popup.Closed += (_, __) => { if (_openXraySortPopup == popup) _openXraySortPopup = null; };
+
+            var textNormal = new SolidColorBrush(light ? Color.FromRgb(0x0F, 0x17, 0x2A) : Color.FromRgb(0xE2, 0xE8, 0xF0));
+            var accentBrush = new SolidColorBrush(Color.FromRgb(0x3B, 0x82, 0xF6));
+
+            Button MakeSortItem(string mode, string label, string icon)
+            {
+                var isSelected = string.Equals(mode, _xraySortMode, StringComparison.OrdinalIgnoreCase);
+                var rowStack = new StackPanel { Orientation = Orientation.Horizontal };
+                rowStack.Children.Add(new TextBlock { Text = icon, FontSize = 12, Width = 22, VerticalAlignment = VerticalAlignment.Center });
+                rowStack.Children.Add(new TextBlock { Text = label, FontSize = 11.5, FontWeight = isSelected ? FontWeights.Bold : FontWeights.Normal, Foreground = isSelected ? accentBrush : textNormal, VerticalAlignment = VerticalAlignment.Center });
+
+                var item = new Button
+                {
+                    Content = rowStack,
+                    HorizontalContentAlignment = HorizontalAlignment.Left,
+                    Padding = new Thickness(10, 7, 10, 7),
+                    Background = Brushes.Transparent,
+                    BorderThickness = new Thickness(0),
+                    Cursor = System.Windows.Input.Cursors.Hand,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                };
+                item.Click += (_, __) =>
+                {
+                    popup.IsOpen = false;
+                    _xraySortMode = mode;
+                    UpdateXraySortButtonLabel();
+                    RenderXrayConnList();
+                };
+                return item;
+            }
+
+            stack.Children.Add(MakeSortItem("", Localization.T("Default"), "↺"));
+            stack.Children.Add(MakeSortItem("ping", "by ping", "⚡"));
+            stack.Children.Add(MakeSortItem("last_use", "by last use", "🕒"));
+            stack.Children.Add(MakeSortItem("type", "by type", "🔤"));
+
+            popup.IsOpen = true;
+            _openXraySortPopup = popup;
+        }
+
+        private void UpdateXraySortButtonLabel()
+        {
+            if (XraySortDropdownLabel == null) return;
+            XraySortDropdownLabel.Text = _xraySortMode switch
+            {
+                "ping" => "by ping",
+                "last_use" => "by last use",
+                "type" => "by type",
+                _ => Localization.T("Sort")
+            };
+        }
+
+        private IEnumerable<ProxyProfile> GetSortedXrayProfiles(IEnumerable<ProxyProfile> profiles)
+        {
+            if (_xraySortMode == "ping")
+            {
+                return profiles.OrderBy(p => GetXrayPing(p)).ThenBy(p => p.Alias);
+            }
+            if (_xraySortMode == "last_use")
+            {
+                return profiles.OrderBy(p => GetXrayLastUseIndex(p)).ThenBy(p => p.Alias);
+            }
+            if (_xraySortMode == "type")
+            {
+                return profiles.OrderBy(p => p.Protocol).ThenBy(p => p.Alias);
+            }
+            return profiles;
+        }
+
+        private static int GetXrayPing(ProxyProfile p)
+        {
+            if (string.IsNullOrWhiteSpace(p.Delay) || p.Delay == "-" ||
+                p.Delay.Contains("Timeout", StringComparison.OrdinalIgnoreCase) ||
+                p.Delay.Contains("Error", StringComparison.OrdinalIgnoreCase) ||
+                p.Delay.Contains("خطا", StringComparison.OrdinalIgnoreCase))
+                return int.MaxValue;
+
+            var digits = new string(p.Delay.TakeWhile(c => char.IsDigit(c)).ToArray());
+            if (int.TryParse(digits, out int val) && val > 0)
+                return val;
+            return int.MaxValue;
+        }
+
+        private int GetXrayLastUseIndex(ProxyProfile p)
+        {
+            var list = _config.RecentConnections;
+            if (list == null || list.Count == 0) return int.MaxValue;
+            var idx = list.FindIndex(x => string.Equals(x, p.Alias, StringComparison.OrdinalIgnoreCase));
+            return idx >= 0 ? idx : int.MaxValue;
+        }
+
         private void RenderXrayConnList()
         {
             if (XrayConnList == null) return;
@@ -1061,7 +1190,8 @@ namespace SmartVpn
                     Margin = new Thickness(0, 0, 0, 4)
                 };
 
-                foreach (var profile in group.Profiles)
+                var sortedProfiles = GetSortedXrayProfiles(group.Profiles);
+                foreach (var profile in sortedProfiles)
                 {
                     cardsStack.Children.Add(MakeXrayRowBtn(profile, group));
                 }
@@ -2080,6 +2210,7 @@ namespace SmartVpn
                 }
             });
             await System.Threading.Tasks.Task.WhenAll(tasks);
+            RenderXrayConnList();
         }
 
         private void MenuItem_Connect_Click(object sender, RoutedEventArgs e)

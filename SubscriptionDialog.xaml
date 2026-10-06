@@ -205,11 +205,11 @@
         </StackPanel>
 
         <!-- لینک خرید/تمدید -->
-        <TextBlock HorizontalAlignment="Center" Margin="0,10,0,0" FontSize="11"
-                   Foreground="{DynamicResource SubTextBrush}" FlowDirection="RightToLeft">
-            <Run Text="نیاز به تمدید دارید؟"/>
+        <TextBlock x:Name="RenewPromptBlock" HorizontalAlignment="Center" Margin="0,10,0,0" FontSize="11"
+                   Foreground="{DynamicResource SubTextBrush}">
+            <Run x:Name="RenewPromptText" Text="نیاز به تمدید دارید؟ "/>
             <Hyperlink Click="Panel_Click" Foreground="#3B82F6" TextDecorations="{x:Null}">
-                <Run Text="خرید / تمدید اشتراک"/>
+                <Run x:Name="RenewActionText" Text="خرید / تمدید اشتراک"/>
             </Hyperlink>
         </TextBlock>
     </StackPanel>

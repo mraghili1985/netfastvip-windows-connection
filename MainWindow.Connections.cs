@@ -72,6 +72,10 @@ namespace SmartVpn
         // پاپ‌آپ منوی آبشاری فیلتر نوع کانکشن — باز/بسته با کلیک روی دکمه بالای لیست (همون الگوی منوی سه‌نقطه ردیف‌ها)
         private Popup? _openFilterPopup;
 
+        // حالت مرتب‌سازی سرورهای VPN: "" (پیش‌فرض), "ping", "last_use", "type"
+        private string _connSortMode = "";
+        private Popup? _openSortPopup;
+
         // ترتیب نمایش پروتکل‌ها در منوی آبشاری — طبق اصل «هر مدل کانکشنی داریم باید توی لیست باشه»، این فقط ترتیب نمایش است؛
         // فیلتر واقعی پایین‌تر (AvailableConnTypes) فقط پروتکل‌هایی را نشان می‌دهد که حداقل یک کانکشن از آن نوع واقعاً وجود دارد
         // (مثلاً IKEv2 تا کانکشنی از این نوع نساخته‌ایم در منو دیده نمی‌شود؛ به محض ساختنش خودکار اضافه می‌شود)
@@ -101,6 +105,11 @@ namespace SmartVpn
             {
                 _openRowMenuPopup.IsOpen = false;
                 _openRowMenuPopup = null;
+            }
+            if (_openSortPopup != null)
+            {
+                _openSortPopup.IsOpen = false;
+                _openSortPopup = null;
             }
 
             var light = IsLightTheme();
@@ -163,6 +172,117 @@ namespace SmartVpn
             _openFilterPopup = popup;
         }
 
+        private void VpnSortDropdownBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (_openSortPopup != null)
+            {
+                _openSortPopup.IsOpen = false;
+                _openSortPopup = null;
+                return;
+            }
+            if (_openFilterPopup != null)
+            {
+                _openFilterPopup.IsOpen = false;
+                _openFilterPopup = null;
+            }
+            if (_openRowMenuPopup != null)
+            {
+                _openRowMenuPopup.IsOpen = false;
+                _openRowMenuPopup = null;
+            }
+
+            var light = IsLightTheme();
+            var popup = new Popup
+            {
+                StaysOpen = false,
+                AllowsTransparency = true,
+                PopupAnimation = PopupAnimation.Fade,
+                PlacementTarget = VpnSortDropdownBtn,
+                Placement = PlacementMode.Bottom,
+            };
+            var stack = new StackPanel { Orientation = Orientation.Vertical, Width = 155 };
+            var border = new Border
+            {
+                Background = new SolidColorBrush(light ? Color.FromRgb(0xFF, 0xFF, 0xFF) : Color.FromRgb(0x1B, 0x24, 0x38)),
+                BorderBrush = new SolidColorBrush(light ? Color.FromArgb(0x35, 0x0F, 0x17, 0x2A) : Color.FromArgb(0x45, 0x94, 0xA3, 0xB8)),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(4),
+                Effect = new DropShadowEffect { Color = Colors.Black, BlurRadius = 18, ShadowDepth = 3, Opacity = 0.30 },
+                Child = stack,
+            };
+            popup.Child = border;
+            popup.Closed += (_, __) => { if (_openSortPopup == popup) _openSortPopup = null; };
+
+            var textNormal = new SolidColorBrush(light ? Color.FromRgb(0x0F, 0x17, 0x2A) : Color.FromRgb(0xE2, 0xE8, 0xF0));
+            var accentBrush = new SolidColorBrush(Color.FromRgb(0x3B, 0x82, 0xF6));
+
+            Button MakeSortItem(string mode, string label, string icon)
+            {
+                var isSelected = string.Equals(mode, _connSortMode, StringComparison.OrdinalIgnoreCase);
+                var rowStack = new StackPanel { Orientation = Orientation.Horizontal };
+                rowStack.Children.Add(new TextBlock { Text = icon, FontSize = 12, Width = 22, VerticalAlignment = VerticalAlignment.Center });
+                rowStack.Children.Add(new TextBlock { Text = label, FontSize = 11.5, FontWeight = isSelected ? FontWeights.Bold : FontWeights.Normal, Foreground = isSelected ? accentBrush : textNormal, VerticalAlignment = VerticalAlignment.Center });
+
+                var item = new Button
+                {
+                    Content = rowStack,
+                    HorizontalContentAlignment = HorizontalAlignment.Left,
+                    Padding = new Thickness(10, 7, 10, 7),
+                    Background = Brushes.Transparent,
+                    BorderThickness = new Thickness(0),
+                    Cursor = System.Windows.Input.Cursors.Hand,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                };
+                item.Click += (_, __) =>
+                {
+                    popup.IsOpen = false;
+                    _connSortMode = mode;
+                    UpdateSortButtonLabel();
+                    RefreshList();
+                };
+                return item;
+            }
+
+            stack.Children.Add(MakeSortItem("", Localization.T("Default"), "↺"));
+            stack.Children.Add(MakeSortItem("ping", "by ping", "⚡"));
+            stack.Children.Add(MakeSortItem("last_use", "by last use", "🕒"));
+            stack.Children.Add(MakeSortItem("type", "by type", "🔤"));
+
+            popup.IsOpen = true;
+            _openSortPopup = popup;
+        }
+
+        private void UpdateSortButtonLabel()
+        {
+            if (VpnSortDropdownLabel == null) return;
+            VpnSortDropdownLabel.Text = _connSortMode switch
+            {
+                "ping" => "by ping",
+                "last_use" => "by last use",
+                "type" => "by type",
+                _ => Localization.T("Sort")
+            };
+        }
+
+        private static int GetVpnPing(ConnectionProfile c)
+        {
+            if (_vpnPingCache.TryGetValue(c.Name, out var p) && p.isUp && p.ping > 0)
+                return p.ping;
+            var kuma = UptimeKumaClient.GetStatusForProfile(c.Name);
+            if (kuma != null && kuma.IsUp && kuma.Ping > 0)
+                return kuma.Ping;
+            return int.MaxValue;
+        }
+
+        private int GetLastUseIndex(string name)
+        {
+            var list = _config.RecentConnections;
+            if (list == null || list.Count == 0) return int.MaxValue;
+            var idx = list.FindIndex(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase));
+            return idx >= 0 ? idx : int.MaxValue;
+        }
+
         // برچسب دکمه‌ی فیلتر آبشاری را با فیلتر فعلی هماهنگ می‌کند
         private void UpdateFilterChips()
         {
@@ -197,6 +317,19 @@ namespace SmartVpn
             var filtered = _config.Connections
                 .Where(c => _connFilter.Length == 0 || string.Equals(c.Type, _connFilter, StringComparison.OrdinalIgnoreCase))
                 .ToList();
+
+            if (_connSortMode == "ping")
+            {
+                filtered = filtered.OrderBy(c => GetVpnPing(c)).ThenBy(c => c.Name).ToList();
+            }
+            else if (_connSortMode == "last_use")
+            {
+                filtered = filtered.OrderBy(c => GetLastUseIndex(c.Name)).ThenBy(c => c.Name).ToList();
+            }
+            else if (_connSortMode == "type")
+            {
+                filtered = filtered.OrderBy(c => c.Type).ThenBy(c => c.Name).ToList();
+            }
 
             var toRender = filtered;
             if (!_connListExpanded && filtered.Count > ConnListVisibleCap)

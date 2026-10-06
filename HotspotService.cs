@@ -28,6 +28,7 @@ namespace SmartVpn
         
         // این فلگ طلایی مسیردهی نیتیو است
         private bool _hotspotBoundToSelectedProfile;
+        public bool IsHotspotBoundToSelectedProfile => _hotspotBoundToSelectedProfile;
         private string? _lastClientDiagnostic;
 
         public static bool IsHotspotTargetAdapter(string adapterName)
@@ -406,34 +407,52 @@ namespace SmartVpn
 
         public static string? FindBestTargetAdapter(IEnumerable<string>? adapterNames = null)
         {
-            // ۱. اولویت اول: از NetworkInterface کارت‌هایی که دارای توصیف Wi-Fi Direct هستند
             try
             {
-                foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
+                var nics = NetworkInterface.GetAllNetworkInterfaces().ToList();
+
+                // ۱. اولویت اول: کارت Wi-Fi Direct که وضعیت آن دقیقاً Up است (کارت فعال SoftAP مانند Local Area Connection* 10)
+                var activeUp = nics.FirstOrDefault(nic =>
+                    nic.OperationalStatus == OperationalStatus.Up &&
+                    IsWifiDirectDescription(nic.Description));
+                if (activeUp != null) return activeUp.Name;
+
+                // ۲. اولویت دوم: بررسی میان نام‌های ارسالی با وضعیت Up
+                if (adapterNames != null)
                 {
-                    if (nic.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
-                    var d = nic.Description ?? "";
-                    if (d.Contains("Wi-Fi Direct", StringComparison.OrdinalIgnoreCase) ||
-                        d.Contains("WiFi Direct", StringComparison.OrdinalIgnoreCase) ||
-                        d.Contains("Hosted Network", StringComparison.OrdinalIgnoreCase))
+                    foreach (var adp in adapterNames)
                     {
-                        return nic.Name;
+                        var matching = nics.FirstOrDefault(n => n.Name.Equals(adp, StringComparison.OrdinalIgnoreCase));
+                        if (matching != null && matching.OperationalStatus == OperationalStatus.Up && IsWifiDirectDescription(matching.Description))
+                            return adp;
+                    }
+                }
+
+                // ۳. اولویت سوم: هر کارت با توصیف Wi-Fi Direct
+                var anyWifiDirect = nics.FirstOrDefault(nic => IsWifiDirectDescription(nic.Description));
+                if (anyWifiDirect != null) return anyWifiDirect.Name;
+
+                // ۴. اولویت چهارم: بررسی از روی نام‌ها
+                if (adapterNames != null)
+                {
+                    foreach (var adp in adapterNames)
+                    {
+                        if (IsWifiDirectTargetAdapter(adp) || IsLocalAreaHotspotTargetAdapter(adp))
+                            return adp;
                     }
                 }
             }
             catch { }
 
-            // ۲. اولویت دوم: بررسی از روی نام‌ها
-            if (adapterNames != null)
-            {
-                foreach (var adp in adapterNames)
-                {
-                    if (IsHotspotTargetAdapter(adp))
-                        return adp;
-                }
-            }
-
             return null;
+        }
+
+        private static bool IsWifiDirectDescription(string? desc)
+        {
+            if (string.IsNullOrWhiteSpace(desc)) return false;
+            return desc.Contains("Wi-Fi Direct", StringComparison.OrdinalIgnoreCase)
+                || desc.Contains("WiFi Direct", StringComparison.OrdinalIgnoreCase)
+                || desc.Contains("Hosted Network", StringComparison.OrdinalIgnoreCase);
         }
 
         private void L(string msg) => Log?.Invoke(msg);

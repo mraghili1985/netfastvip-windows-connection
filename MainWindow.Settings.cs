@@ -695,10 +695,12 @@ namespace SmartVpn
             if (LangModalRestartBtn != null) LangModalRestartBtn.Content = T("✓ راه‌اندازی مجدد");
             if (LangModalCancelBtn != null) LangModalCancelBtn.Content = T("انصراف");
 
-            // --- FilterDropdown label ---
+            // --- FilterDropdown & Sort labels ---
             FilterDropdownLabel.Text = _connFilter.Length == 0
                 ? T("همه")
                 : FilterDropdownLabel.Text;
+            UpdateSortButtonLabel();
+            UpdateXraySortButtonLabel();
         }
 
         // ================= درباره =================

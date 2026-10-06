@@ -799,35 +799,35 @@
                                     <!-- Top Row: 4 Live Telemetry Metrics + More Details Toggle Button -->
                                     <Grid Grid.Row="0" Margin="0,0,0,8">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/> <!-- Current Speed -->
-                                            <ColumnDefinition Width="Auto"/> <!-- Upload -->
-                                            <ColumnDefinition Width="Auto"/> <!-- Latency / Ping -->
-                                            <ColumnDefinition Width="*"/>    <!-- Session Traffic -->
+                                            <ColumnDefinition Width="104"/> <!-- Current Speed (Fixed rock-solid column) -->
+                                            <ColumnDefinition Width="104"/> <!-- Upload Speed (Fixed rock-solid column) -->
+                                            <ColumnDefinition Width="80"/>  <!-- Latency / Ping (Fixed rock-solid column) -->
+                                            <ColumnDefinition Width="*"/>   <!-- Session Traffic (takes remaining space) -->
                                             <ColumnDefinition Width="Auto"/> <!-- More Button -->
                                         </Grid.ColumnDefinitions>
 
                                         <!-- 1. Download Speed -->
-                                        <StackPanel Grid.Column="0" Margin="0,0,28,0">
+                                        <StackPanel Grid.Column="0">
                                             <TextBlock x:Name="CurrentSpeedLbl" Text="دریافت ↓" FontWeight="SemiBold" FontSize="10.5" Foreground="{DynamicResource SubTextBrush}"/>
-                                            <TextBlock x:Name="DlSpeedText" Text="0 B/s" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" Margin="0,2,0,0"/>
+                                            <TextBlock x:Name="DlSpeedText" Text="0 B/s" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" Margin="0,2,0,0" Typography.NumeralAlignment="Tabular"/>
                                         </StackPanel>
 
                                         <!-- 2. Upload Speed -->
-                                        <StackPanel Grid.Column="1" Margin="0,0,28,0">
+                                        <StackPanel Grid.Column="1">
                                             <TextBlock x:Name="UlSpeedLbl" Text="ارسال ↑" FontWeight="SemiBold" FontSize="10.5" Foreground="{DynamicResource SubTextBrush}"/>
-                                            <TextBlock x:Name="UlSpeedText" Text="0 B/s" FontSize="15" FontWeight="Bold" Foreground="#22C55E" Margin="0,2,0,0"/>
+                                            <TextBlock x:Name="UlSpeedText" Text="0 B/s" FontSize="15" FontWeight="Bold" Foreground="#22C55E" Margin="0,2,0,0" Typography.NumeralAlignment="Tabular"/>
                                         </StackPanel>
 
                                         <!-- 3. Latency / Ping -->
-                                        <StackPanel Grid.Column="2" Margin="0,0,28,0">
+                                        <StackPanel Grid.Column="2">
                                             <TextBlock x:Name="LatencyLbl" Text="پینگ" FontWeight="SemiBold" FontSize="10.5" Foreground="{DynamicResource SubTextBrush}"/>
-                                            <TextBlock x:Name="PingText" Text="—" FontSize="15" FontWeight="Bold" Foreground="#22C55E" Margin="0,2,0,0"/>
+                                            <TextBlock x:Name="PingText" Text="—" FontSize="15" FontWeight="Bold" Foreground="#22C55E" Margin="0,2,0,0" Typography.NumeralAlignment="Tabular"/>
                                         </StackPanel>
 
                                         <!-- 4. Session Traffic -->
                                         <StackPanel Grid.Column="3">
                                             <TextBlock x:Name="SessionTrafficLbl" Text="حجم سشن" FontWeight="SemiBold" FontSize="10.5" Foreground="{DynamicResource SubTextBrush}"/>
-                                            <TextBlock x:Name="SessionTrafficText" Text="0 B" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" Margin="0,2,0,0"/>
+                                            <TextBlock x:Name="SessionTrafficText" Text="0 B" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" Margin="0,2,0,0" Typography.NumeralAlignment="Tabular"/>
                                         </StackPanel>
 
                                         <!-- 5. "More" Details Toggle Button -->
@@ -1256,6 +1256,13 @@
                                                 <TextBlock Text=" ⌄" FontWeight="SemiBold" FontSize="10" Margin="3,0,0,0" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Button>
+                                        <Button x:Name="VpnSortDropdownBtn" Style="{StaticResource ActionBtn}" Click="VpnSortDropdownBtn_Click" Height="32" Padding="8,4" Margin="0,0,4,0" ToolTip="مرتب‌سازی سرورها (Sort Servers)">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="⇅" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center"/>
+                                                <TextBlock x:Name="VpnSortDropdownLabel" Text=" Sort" FontSize="10.5" FontWeight="SemiBold" Margin="3,0,0,0" VerticalAlignment="Center"/>
+                                                <TextBlock Text=" ⌄" FontWeight="SemiBold" FontSize="10" Margin="2,0,0,0" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
                                         <Button Content="📁 Import" Style="{StaticResource ActionBtn}" Height="32" Padding="8,4" FontSize="10.5" FontWeight="SemiBold" Click="Import_Click" Margin="0,0,4,0"/>
                                         <Button Content="💾 Export" Style="{StaticResource ActionBtn}" Height="32" Padding="8,4" FontSize="10.5" FontWeight="SemiBold" Click="Export_Click"/>
                                     </StackPanel>
@@ -1624,6 +1631,13 @@
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="⚡" FontWeight="SemiBold" FontSize="11"/>
                                             <TextBlock x:Name="XrayPingAllLabel" Text=" Ping All" Margin="4,0,0,0"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button x:Name="XraySortDropdownBtn" Style="{StaticResource ActionBtn}" Height="32" Padding="8,4" Click="XraySortDropdownBtn_Click" Margin="0,0,4,0" ToolTip="مرتب‌سازی سرورها (Sort Servers)">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="⇅" FontWeight="SemiBold" FontSize="11"/>
+                                            <TextBlock x:Name="XraySortDropdownLabel" Text=" Sort" FontSize="10.5" FontWeight="SemiBold" Margin="4,0,0,0"/>
+                                            <TextBlock Text=" ⌄" FontWeight="SemiBold" FontSize="10" Margin="2,0,0,0"/>
                                         </StackPanel>
                                     </Button>
                                     <Button x:Name="XrayClearServersBtn" Content="🗑" Style="{StaticResource ActionBtn}" Width="32" Height="32" Padding="0" Click="XrayClearServers_Click" ToolTip="Clear Servers"/>

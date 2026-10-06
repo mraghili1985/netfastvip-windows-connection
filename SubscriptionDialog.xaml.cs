@@ -1,7 +1,9 @@
 using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.Net.Http;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -60,6 +62,11 @@ public partial class SubscriptionDialog : Window
             Title = AppConfig.BrandName + " — " + Localization.T(TitleSuffix);
             CheckBtn.Content = Localization.T(BtnCheck);
 
+            var isFa = Localization.CurrentLanguage == "fa";
+            RenewPromptBlock.FlowDirection = isFa ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+            RenewPromptText.Text = Localization.T("نیاز به تمدید دارید؟") + " ";
+            RenewActionText.Text = Localization.T("خرید / تمدید اشتراک");
+
             if (UserBox.Text.Trim().Length > 0 && PassBox.Password.Length > 0)
                 Check_Click(this, new RoutedEventArgs());
         };
@@ -88,6 +95,14 @@ public partial class SubscriptionDialog : Window
         CheckBtn.Content   = Localization.T(BtnChecking);
         ShowStatus(Localization.T(MsgChecking), false);
         ResultPanel.Visibility = Visibility.Collapsed;
+
+        // اگر نام کاربری با کاربر قبلی فرق می‌کند، توکن‌های کش‌شده قبلی را پاک کن تا تداخل نکنند
+        if (!string.Equals(user, _appConfig.CustomerUsername, StringComparison.OrdinalIgnoreCase))
+        {
+            _appConfig.CustomerAccessToken = null;
+            _appConfig.CustomerRefreshToken = null;
+            _appConfig.CustomerTokenExpiresAt = null;
+        }
 
         try
         {
@@ -234,7 +249,12 @@ public partial class SubscriptionDialog : Window
             if (ex.StatusCode is 400 or 401 or 403 or 404) ShowStatus(Localization.T(MsgBadCreds), true);
             else ShowStatus(string.Format(Localization.T(MsgServerErrorFmt), ex.Message), true);
         }
-        catch { ShowStatus(Localization.T(MsgNetworkError), true); }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[SubscriptionDialog] Error: {ex}");
+            var isNet = ex is HttpRequestException or TaskCanceledException;
+            ShowStatus(isNet ? Localization.T(MsgNetworkError) : $"{Localization.T(MsgNetworkError)} ({ex.Message})", true);
+        }
         finally
         {
             CheckBtn.IsEnabled = true;
@@ -250,7 +270,7 @@ public partial class SubscriptionDialog : Window
         var expired = string.Equals(d.Account.Status, "expired", StringComparison.OrdinalIgnoreCase)
                       || string.Equals(d.Account.Status, "suspended", StringComparison.OrdinalIgnoreCase)
                       || (d.Account.ExpireAt.HasValue && d.Account.ExpireAt.Value.ToLocalTime() <= DateTime.Now)
-                      || (!notStarted && !unlimitedDuration && d.Account.RemainingDays == 0);
+                      || (!notStarted && !unlimitedDuration && (d.Account.RemainingDays ?? -1) == 0);
 
         // وضعیت اشتراک و تاریخ انقضا
         if (expired)
@@ -287,7 +307,7 @@ public partial class SubscriptionDialog : Window
         }
 
         // سرویس / پکیج
-        GroupValue.Text = d.Package.Name.Length > 0 ? d.Package.Name : "—";
+        GroupValue.Text = !string.IsNullOrWhiteSpace(d.Package?.Name) ? d.Package.Name : "—";
 
         // وضعیت اتصال
         OnlineValue.Text = canConnect ? Localization.T(OnlineText) : Localization.T(OfflineText);
@@ -295,15 +315,15 @@ public partial class SubscriptionDialog : Window
             canConnect ? Color.FromRgb(0x22, 0xC5, 0x5E) : Color.FromRgb(0x9C, 0xA3, 0xAF));
 
         // اطلاعات اکانت
-        UsernameValue.Text = d.Account.Username.Length > 0 ? d.Account.Username : "—";
-        FirstLoginValue.Text = d.Account.FirstLoginAt.HasValue
+        UsernameValue.Text = !string.IsNullOrWhiteSpace(d.Account?.Username) ? d.Account.Username : "—";
+        FirstLoginValue.Text = d.Account?.FirstLoginAt.HasValue == true
             ? FormatExpire(d.Account.FirstLoginAt)
             : "ثبت نشده (استارت نخورده)";
 
         // ترافیک
-        var usedGb   = d.Traffic.UsedMb      / 1024.0;
-        var totalGb  = d.Traffic.TotalMb     / 1024.0;
-        var remainGb = d.Traffic.RemainingMb / 1024.0;
+        var usedGb   = (d.Traffic?.UsedMb ?? 0)      / 1024.0;
+        var totalGb  = (d.Traffic?.TotalMb ?? 0)     / 1024.0;
+        var remainGb = (d.Traffic?.RemainingMb ?? 0) / 1024.0;
 
         if (totalGb > 0)
         {
@@ -335,7 +355,7 @@ public partial class SubscriptionDialog : Window
             RemainTrafficText.Text  = "نامحدود";
         }
 
-        _appConfig.CustomerPackageName = !string.IsNullOrWhiteSpace(d.Package.Name) ? d.Package.Name : "—";
+        _appConfig.CustomerPackageName = !string.IsNullOrWhiteSpace(d.Package?.Name) ? d.Package!.Name : "—";
         _appConfig.CustomerRemainingTime = RemainValue.Text;
         _appConfig.CustomerRemainingTraffic = totalGb > 0 ? $"{remainGb:0.#} " + Localization.T("گیگ") : Localization.T("نامحدود");
         _appConfig.CustomerStatus = StatusValue.Text;

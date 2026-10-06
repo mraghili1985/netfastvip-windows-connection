@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پنل ابری ساخت کلاینت اختصاصی | White-Label Cloud Builder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0B0F19;
+            --bg-surface: #111827;
+            --bg-card: rgba(17, 24, 39, 0.85);
+            --bg-card-hover: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-highlight: rgba(59, 130, 246, 0.4);
+            --text-main: #F3F4F6;
+            --text-muted: #94A3B8;
+            --text-faint: #64748B;
+            --accent-blue: #3B82F6;
+            --accent-blue-hover: #2563EB;
+            --accent-green: #10B981;
+            --accent-amber: #F59E0B;
+            --accent-red: #EF4444;
+            --accent-glow: rgba(59, 130, 246, 0.25);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 18px;
+            --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(16, 185, 129, 0.08) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+            direction: ltr;
+            text-align: left;
+        }
+
+        /* Container */
+        .container {
+            width: 100%;
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 30px 20px 80px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 35px;
+            position: relative;
+        }
+
+        .badge-cloud {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(59, 130, 246, 0.12);
+            color: #60A5FA;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 9999px;
+            padding: 5px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 14px;
+        }
+
+        .badge-cloud .dot {
+            width: 7px;
+            height: 7px;
+            background: #60A5FA;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #60A5FA;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #FFFFFF 30%, #94A3B8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 14.5px;
+            max-width: 620px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Card styles */
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 26px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-card);
+            transition: border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding-bottom: 14px;
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16.5px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .card-title .icon {
+            font-size: 18px;
+        }
+
+        /* Form Controls */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        label .req {
+            color: var(--accent-red);
+        }
+
+        .input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            font-size: 13.5px;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        input[type="text"]:focus, input[type="password"]:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+            background: rgba(15, 23, 42, 0.9);
+        }
+
+        .input-btn {
+            position: absolute;
+            left: 8px;
+            background: none;
+            border: none;
+            color: var(--text-faint);
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .input-btn:hover {
+            color: var(--text-main);
+        }
+
+        .help-text {
+            font-size: 11px;
+            color: var(--text-faint);
+            margin-top: 2px;
+            line-height: 1.4;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+            color: #FFFFFF;
+            border: none;
+            padding: 14px 24px;
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 18px rgba(37, 99, 235, 0.35);
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(37, 99, 235, 0.5);
+            background: linear-gradient(135deg, #60A5FA 0%, #2563EB 100%);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-sec {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-sec:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Monitor / Progress */
+        .monitor-card {
+            display: none;
+            border: 1px solid var(--border-highlight);
+            background: linear-gradient(180deg, rgba(30, 58, 138, 0.15) 0%, rgba(17, 24, 39, 0.9) 100%);
+        }
+
+        .progress-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .progress-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .progress-timer {
+            font-size: 12.5px;
+            color: var(--text-muted);
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-bottom: 18px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 15%;
+            background: linear-gradient(90deg, #3B82F6, #10B981);
+            border-radius: 999px;
+            transition: width 0.6s ease;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+
+        .steps-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12.5px;
+            color: var(--text-faint);
+            transition: color 0.2s ease;
+        }
+
+        .step-item.active {
+            color: #60A5FA;
+            font-weight: 600;
+        }
+
+        .step-item.done {
+            color: var(--accent-green);
+        }
+
+        .step-icon {
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 11px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .step-item.done .step-icon {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-green);
+        }
+
+        /* Delivery Box */
+        .delivery-card {
+            display: none;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            background: linear-gradient(180deg, rgba(6, 78, 59, 0.2) 0%, rgba(17, 24, 39, 0.95) 100%);
+            box-shadow: 0 10px 35px -5px rgba(16, 185, 129, 0.25);
+        }
+
+        .delivery-title {
+            color: var(--accent-green);
+            font-size: 18px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .release-box {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 18px;
+        }
+
+        .release-url-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .release-url-input {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #60A5FA;
+            font-weight: 600;
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+        }
+
+        .telegram-preview {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px dashed rgba(255, 255, 255, 0.15);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            font-size: 12px;
+            line-height: 1.7;
+            color: #CBD5E1;
+            white-space: pre-wrap;
+            margin-bottom: 14px;
+            direction: rtl;
+            text-align: right;
+        }
+
+        .actions-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-copy {
+            background: var(--accent-green);
+            color: #FFFFFF;
+            border: none;
+            padding: 10px 18px;
+            border-radius: var(--radius-sm);
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+            transition: all 0.2s ease;
+        }
+
+        .btn-copy:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .btn-download-test {
+            background: rgba(255, 255, 255, 0.1);
+            color: #FFFFFF;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 18px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 13px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-download-test:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* History Table */
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+            margin-top: 10px;
+        }
+
+        .history-table th {
+            text-align: right;
+            padding: 10px;
+            color: var(--text-faint);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            font-weight: 600;
+        }
+
+        .history-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--text-main);
+        }
+
+        .history-table tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1E293B;
+            color: #FFFFFF;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 12px 22px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 9999;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success { border-color: rgba(16, 185, 129, 0.4); }
+        .toast.error { border-color: rgba(239, 68, 68, 0.4); }
+
+        /* Accordion / Info Box */
+        .info-box {
+            background: rgba(59, 130, 246, 0.05);
+            border: 1px dashed rgba(59, 130, 246, 0.25);
+            border-radius: var(--radius-md);
+            padding: 14px 18px;
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-top: 20px;
+        }
+
+        .info-box strong {
+            color: #93C5FD;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- Header -->
+        <header>
+            <div class="badge-cloud">
+                <span class="dot"></span>
+                <span>GitHub Cloud Builder & Release</span>
+            </div>
+            <h1>پنل اختصاصی ساخت کلاینت وایت‌لیبل ویندوز</h1>
+            <p>
+                تنظیم هویت برند اختصاصی، کامپایل در ویندوز ابری گیت‌هاب و تولید اتوماتیک لینک مستقیم دانلود و متن پیام برای تحویل به مشتری.
+            </p>
+        </header>
+
+        <!-- GitHub Connection Settings Card -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span class="icon">⚙️</span>
+                    <span>تنظیمات ارتباط با مخزن گیت‌هاب</span>
+                </div>
+                <button type="button" class="btn-sec" onclick="testGithubConnection()">
+                    <span>🔍 تست اتصال</span>
+                </button>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>آدرس ریپازیتوری (Repository) <span class="req">*</span></label>
+                    <input type="text" id="repoOwnerName" class="mono" value="mraghili1985/netfastvip-windows-connection" placeholder="owner/repo">
+                    <span class="help-text">نام کاربری و نام مخزن در گیت‌هاب</span>
+                </div>
+
+                <div class="form-group">
+                    <label>برنچ هدف (Target Branch) <span class="req">*</span></label>
+                    <input type="text" id="targetBranch" class="mono" value="feature/white-label-builder" placeholder="branch name">
+                    <span class="help-text">کدها و اسکریپت بیلد روی این برنچ قرار دارد</span>
+                </div>
+
+                <div class="form-group full">
+                    <label>
+                        توکن دسترسی شخصی (GitHub Personal Access Token) <span class="req">*</span>
+                        <a href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=WhiteLabelBuilder" target="_blank" style="color: #60A5FA; text-decoration: none; font-size: 11.5px; margin-right: auto;">
+                            🔑 ساخت توکن جدید در گیت‌هاب
+                        </a>
+                    </label>
+                    <div class="input-wrap">
+                        <input type="password" id="githubToken" class="mono" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+                        <button type="button" class="input-btn" onclick="toggleTokenVisibility()">👁️</button>
+                    </div>
+                    <span class="help-text">توکن شما فقط در حافظه مرورگر خودتان (localStorage) نگهداری می‌شود و پرمیشن‌های مورد نیاز آن <code>repo</code> و <code>workflow</code> است.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- White-Label Client Order Form -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span class="icon">🏷️</span>
+                    <span>مشخصات سفارش برند اختصاصی</span>
+                </div>
+                <button type="button" class="btn-sec" onclick="fillExampleBrand()">
+                    <span>✨ پر کردن نمونه</span>
+                </button>
+            </div>
+
+            <form id="buildForm" onsubmit="handleStartBuild(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>نام اختصاصی برند (Brand Name) <span class="req">*</span></label>
+                        <input type="text" id="brandName" class="mono" required placeholder="StarVPN" pattern="^[a-zA-Z0-9_\-]+$" title="فقط حروف انگلیسی، عدد، خط تیره و زیرخط مجاز است">
+                        <span class="help-text">نام فایل اجرایی برنامه به این نام تغییر می‌کند (مانند StarVPN.exe)</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>نسخه نرم‌افزار (Version) <span class="req">*</span></label>
+                        <input type="text" id="appVersion" class="mono" required value="3.0.2" placeholder="3.0.2">
+                        <span class="help-text">شماره نسخه کلاینت جهت نمایش و برچسب Release</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>آدرس سرور پنل API (Portal API URL)</label>
+                        <input type="text" id="portalUrl" class="mono" value="https://panel.netfast.vip/" placeholder="https://panel.starvpn.com/">
+                        <span class="help-text">اندپوینت دریافت اطلاعات اشتراک، سرورها و احراز هویت</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>آدرس وب‌پرتال کاربری (Web Panel URL)</label>
+                        <input type="text" id="panelUrl" class="mono" value="https://panel.netfast.vip/portal/login" placeholder="https://panel.starvpn.com/portal/login">
+                        <span class="help-text">لینک ورود کاربران جهت خرید تمدید یا مشاهده اکانت</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>لینک کانال تلگرام (Telegram Channel)</label>
+                        <input type="text" id="telegramUrl" class="mono" value="https://t.me/netfastvip" placeholder="https://t.me/starvpn">
+                    </div>
+
+                    <div class="form-group">
+                        <label>لینک پشتیبانی تلگرام (Support URL)</label>
+                        <input type="text" id="supportUrl" class="mono" value="https://t.me/nfv_sup" placeholder="https://t.me/starvpn_support">
+                    </div>
+
+                    <div class="form-group full">
+                        <label>لینک مستقیم دانلود آیکون اختصاصی (.ico URL) - اختیاری</label>
+                        <input type="text" id="iconUrl" class="mono" placeholder="https://example.com/assets/logo.ico">
+                        <span class="help-text">در صورت خالی بودن، آیکون پیش‌فرض کلاینت ست می‌شود. لینک باید مستقیماً به فایل .ico باشد.</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>لینک فایل base.ovpn اختصاصی (اختیاری)</label>
+                        <input type="text" id="baseOvpnUrl" class="mono" placeholder="https://example.com/base.ovpn">
+                    </div>
+
+                    <div class="form-group">
+                        <label>لینک فایل ca.crt اختصاصی (اختیاری)</label>
+                        <input type="text" id="caCertUrl" class="mono" placeholder="https://example.com/ca.crt">
+                    </div>
+                </div>
+
+                <div style="margin-top: 24px;">
+                    <button type="submit" id="btnStartBuild" class="btn-primary">
+                        <span>🚀 شروع ساخت بیلد ابری و ایجاد Release در گیت‌هاب</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Live Monitor Card -->
+        <div class="card monitor-card" id="monitorCard">
+            <div class="progress-header">
+                <div class="progress-status">
+                    <div class="spinner" id="monitorSpinner"></div>
+                    <span id="monitorStatusText">در حال ارسال درخواست به گیت‌هاب...</span>
+                </div>
+                <div class="progress-timer" id="monitorTimer">00:00</div>
+            </div>
+
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progressBarFill"></div>
+            </div>
+
+            <div class="steps-list">
+                <div class="step-item active" id="step1">
+                    <span class="step-icon">1</span>
+                    <span>ثبت درخواست در گیت‌هاب اکشنز (Workflow Dispatch)</span>
+                </div>
+                <div class="step-item" id="step2">
+                    <span class="step-icon">2</span>
+                    <span>راه‌اندازی سرور ویندوزی گیت‌هاب و دریافت سورس کد</span>
+                </div>
+                <div class="step-item" id="step3">
+                    <span class="step-icon">3</span>
+                    <span>شخصی‌سازی کانفیگ، مانیفست و کامپایل برنامه (.NET 10 win-x64)</span>
+                </div>
+                <div class="step-item" id="step4">
+                    <span class="step-icon">4</span>
+                    <span>پکیجینگ هسته‌های تونل (sing-box, openvpn, wireguard) و ایجاد لانچر VBS</span>
+                </div>
+                <div class="step-item" id="step5">
+                    <span class="step-icon">5</span>
+                    <span>ایجاد Release عمومی و بارگذاری فایل فشرده پرتابل</span>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+                <a href="#" id="viewWorkflowLink" target="_blank" class="btn-sec" style="display: none;">
+                    <span>↗ مشاهده لاگ زنده در گیت‌هاب</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Ready to Deliver to Client Card -->
+        <div class="card delivery-card" id="deliveryCard">
+            <div class="delivery-title">
+                <span>🎉</span>
+                <span>نسخه وایت‌لیبل اختصاصی با موفقیت ساخته شد!</span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 13.5px; margin-bottom: 16px;">
+                پکیج پرتابل کامل روی سرورهای ابری گیت‌هاب قرار گرفت و لینک دانلود مستقیم عمومی برای مشتری آماده است:
+            </p>
+
+            <div class="release-box">
+                <label style="margin-bottom: 6px;">لینک مستقیم دانلود فایل ZIP (بدون نیاز به لاگین گیت‌هاب):</label>
+                <div class="release-url-row">
+                    <input type="text" id="directZipUrl" class="release-url-input mono" readonly>
+                </div>
+
+                <label style="margin-bottom: 6px; margin-top: 10px;">پیش‌نمایش پیام تلگرام برای ارسال به مشتری:</label>
+                <div class="telegram-preview" id="telegramMessagePreview"></div>
+
+                <div class="actions-row">
+                    <button type="button" class="btn-copy" onclick="copyTelegramMessage()">
+                        <span>📋 کپی پیام تلگرام برای مشتری</span>
+                    </button>
+                    <button type="button" class="btn-sec" onclick="copyDirectZipLink()">
+                        <span>🔗 کپی فقط لینک دانلود</span>
+                    </button>
+                    <a href="#" id="btnDownloadTest" target="_blank" class="btn-download-test">
+                        <span>📥 تست دانلود فایل</span>
+                    </a>
+                    <a href="#" id="btnViewRelease" target="_blank" class="btn-sec">
+                        <span>🌐 مشاهده صفحه Release</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order History Card -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span class="icon">📜</span>
+                    <span>تاریخچه نسخه‌های ساخته‌شده قبلی</span>
+                </div>
+                <button type="button" class="btn-sec" onclick="clearBuildHistory()">
+                    <span>🗑️ پاکسازی تاریخچه</span>
+                </button>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>نام برند</th>
+                            <th>نسخه</th>
+                            <th>تاریخ ساخت</th>
+                            <th>لینک دانلود مستقیم</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--text-faint); padding: 20px;">
+                                تاکنون بیلدی از این مرورگر ثبت نشده است.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- GitHub Pages Guide Box -->
+        <div class="info-box">
+            <strong>💡 نحوه فعال‌سازی رایگان این صفحه روی GitHub Pages:</strong><br>
+            ۱. وارد صفحه ریپازیتوری خود در گیت‌هاب شوید و روی تب <strong>Settings</strong> کلیک کنید.<br>
+            ۲. از منوی سمت چپ بخش <strong>Pages</strong> را انتخاب کنید.<br>
+            ۳. در بخش <em>Build and deployment</em>، گزینه <em>Source</em> را روی <strong>Deploy from a branch</strong> بگذارید.<br>
+            ۴. برنچ را روی <code>feature/white-label-builder</code> (یا <code>main</code>) و پوشه را روی <strong>/docs</strong> تنظیم و Save کنید.<br>
+            آدرس دائمی شما فعال می‌شود: <code class="mono">https://mraghili1985.github.io/netfastvip-windows-connection/</code>
+        </div>
+
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <span id="toastIcon">✓</span>
+        <span id="toastMsg">عملیات انجام شد.</span>
+    </div>
+
+    <script>
+        // State variables
+        let currentBuildRunId = null;
+        let pollTimer = null;
+        let elapsedTimer = null;
+        let elapsedSeconds = 0;
+
+        // Initialize from localStorage
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedToken = localStorage.getItem('wl_github_token');
+            if (savedToken) document.getElementById('githubToken').value = savedToken;
+
+            const savedRepo = localStorage.getItem('wl_repo_name');
+            if (savedRepo) document.getElementById('repoOwnerName').value = savedRepo;
+
+            const savedBranch = localStorage.getItem('wl_target_branch');
+            if (savedBranch) document.getElementById('targetBranch').value = savedBranch;
+
+            renderHistoryTable();
+        });
+
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.innerText = msg;
+            toast.className = `toast show ${type}`;
+            toastIcon.innerText = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+
+            setTimeout(() => {
+                toast.className = 'toast';
+            }, 3500);
+        }
+
+        function toggleTokenVisibility() {
+            const input = document.getElementById('githubToken');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        function fillExampleBrand() {
+            document.getElementById('brandName').value = 'StarVPN';
+            document.getElementById('appVersion').value = '3.0.2';
+            document.getElementById('portalUrl').value = 'https://panel.netfast.vip/';
+            document.getElementById('panelUrl').value = 'https://panel.netfast.vip/portal/login';
+            document.getElementById('telegramUrl').value = 'https://t.me/starvpn';
+            document.getElementById('supportUrl').value = 'https://t.me/starvpn_support';
+            showToast('اطلاعات نمونه بارگذاری شد.');
+        }
+
+        async function testGithubConnection() {
+            const repo = document.getElementById('repoOwnerName').value.trim();
+            const token = document.getElementById('githubToken').value.trim();
+
+            if (!token) {
+                showToast('لطفاً ابتدا توکن دسترسی گیت‌هاب را وارد کنید.', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`https://api.github.com/repos/${repo}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github+json'
+                    }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    saveConnectionSettings();
+                    showToast(`اتصال به مخزن ${data.full_name} موفقیت‌آمیز بود!`);
+                } else if (res.status === 401) {
+                    showToast('توکن وارد شده نامعتبر یا منقضی است.', 'error');
+                } else if (res.status === 404) {
+                    showToast('مخزن یافت نشد یا دسترسی توکن به این مخزن مجاز نیست.', 'error');
+                } else {
+                    showToast(`خطای گیت‌هاب: کد ${res.status}`, 'error');
+                }
+            } catch (err) {
+                showToast('خطا در برقراری ارتباط اینترنتی با api.github.com', 'error');
+            }
+        }
+
+        function saveConnectionSettings() {
+            const token = document.getElementById('githubToken').value.trim();
+            const repo = document.getElementById('repoOwnerName').value.trim();
+            const branch = document.getElementById('targetBranch').value.trim();
+
+            if (token) localStorage.setItem('wl_github_token', token);
+            if (repo) localStorage.setItem('wl_repo_name', repo);
+            if (branch) localStorage.setItem('wl_target_branch', branch);
+        }
+
+        async function handleStartBuild(e) {
+            e.preventDefault();
+            saveConnectionSettings();
+
+            const token = document.getElementById('githubToken').value.trim();
+            const repo = document.getElementById('repoOwnerName').value.trim();
+            const branch = document.getElementById('targetBranch').value.trim();
+
+            const brandName = document.getElementById('brandName').value.trim();
+            const appVersion = document.getElementById('appVersion').value.trim();
+            const portalUrl = document.getElementById('portalUrl').value.trim();
+            const panelUrl = document.getElementById('panelUrl').value.trim();
+            const telegramUrl = document.getElementById('telegramUrl').value.trim();
+            const supportUrl = document.getElementById('supportUrl').value.trim();
+            const iconUrl = document.getElementById('iconUrl').value.trim();
+            const baseOvpnUrl = document.getElementById('baseOvpnUrl').value.trim();
+            const caCertUrl = document.getElementById('caCertUrl').value.trim();
+
+            if (!token) {
+                showToast('لطفاً توکن دسترسی گیت‌هاب را وارد کنید.', 'error');
+                document.getElementById('githubToken').focus();
+                return;
+            }
+
+            if (!brandName) {
+                showToast('لطفاً نام برند را وارد کنید.', 'error');
+                return;
+            }
+
+            // Disable button & show monitor
+            const btn = document.getElementById('btnStartBuild');
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳ در حال ارسال به گیت‌هاب...</span>';
+
+            document.getElementById('monitorCard').style.display = 'block';
+            document.getElementById('deliveryCard').style.display = 'none';
+            document.getElementById('monitorCard').scrollIntoView({ behavior: 'smooth' });
+
+            resetMonitorSteps();
+            startElapsedTimer();
+
+            try {
+                // 1. Dispatch workflow
+                updateMonitorStatus('در حال ثبت درخواست بیلد در گیت‌هاب اکشنز...', 15, 1);
+
+                const payload = {
+                    ref: branch,
+                    inputs: {
+                        brand_name: brandName,
+                        version: appVersion,
+                        portal_url: portalUrl,
+                        panel_url: panelUrl,
+                        telegram_url: telegramUrl,
+                        support_url: supportUrl,
+                        icon_url: iconUrl,
+                        base_ovpn_url: baseOvpnUrl,
+                        ca_cert_url: caCertUrl
+                    }
+                };
+
+                const dispatchRes = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/build-brand.yml/dispatches`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!dispatchRes.ok) {
+                    const errJson = await dispatchRes.json().catch(() => ({}));
+                    throw new Error(errJson.message || `کد خطای ${dispatchRes.status}`);
+                }
+
+                showToast('درخواست بیلد با موفقیت ارسال شد!');
+                updateMonitorStatus('درخواست ثبت شد. در حال جستجوی شناسه اجرای ورک‌فلو...', 25, 2);
+
+                // Wait 4 seconds for GitHub to create the run
+                await new Promise(r => setTimeout(r, 4000));
+
+                // Find the latest run
+                const runId = await findLatestRunId(repo, token, branch);
+                if (runId) {
+                    currentBuildRunId = runId;
+                    const runUrl = `https://github.com/${repo}/actions/runs/${runId}`;
+                    const linkEl = document.getElementById('viewWorkflowLink');
+                    linkEl.href = runUrl;
+                    linkEl.style.display = 'inline-flex';
+
+                    startRunPolling(repo, token, runId, brandName, appVersion);
+                } else {
+                    updateMonitorStatus('ورک‌فلو آغاز شده است؛ در حال بررسی سرورهای ابری...', 35, 2);
+                    // Fallback polling
+                    startGenericPolling(repo, token, branch, brandName, appVersion);
+                }
+
+            } catch (err) {
+                console.error(err);
+                btn.disabled = false;
+                btn.innerHTML = '<span>🚀 شروع ساخت بیلد ابری و ایجاد Release در گیت‌هاب</span>';
+                updateMonitorStatus(`خطا در شروع بیلد: ${err.message}`, 0, 1);
+                showToast(`خطا: ${err.message}`, 'error');
+                stopElapsedTimer();
+            }
+        }
+
+        async function findLatestRunId(repo, token, branch) {
+            try {
+                const res = await fetch(`https://api.github.com/repos/${repo}/actions/runs?branch=${branch}&event=workflow_dispatch&per_page=3`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github+json'
+                    }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.workflow_runs && data.workflow_runs.length > 0) {
+                        return data.workflow_runs[0].id;
+                    }
+                }
+            } catch { }
+            return null;
+        }
+
+        function startRunPolling(repo, token, runId, brandName, appVersion) {
+            if (pollTimer) clearInterval(pollTimer);
+
+            pollTimer = setInterval(async () => {
+                try {
+                    const res = await fetch(`https://api.github.com/repos/${repo}/actions/runs/${runId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Accept': 'application/vnd.github+json'
+                        }
+                    });
+
+                    if (res.ok) {
+                        const run = await res.json();
+                        const status = run.status; // queued, in_progress, completed
+                        const conclusion = run.conclusion; // success, failure, cancelled
+
+                        if (status === 'queued') {
+                            updateMonitorStatus('در صف انتظار سرورهای ویندوز مایکروسافت/گیت‌هاب...', 35, 2);
+                        } else if (status === 'in_progress') {
+                            if (elapsedSeconds < 70) {
+                                updateMonitorStatus('در حال کامپایل و پچ کردن سورس اختصاصی برند (.NET 10)...', 55, 3);
+                            } else {
+                                updateMonitorStatus('در حال پکیجینگ پرتابل، هسته‌ها و آماده‌سازی فایل ZIP...', 80, 4);
+                            }
+                        } else if (status === 'completed') {
+                            clearInterval(pollTimer);
+                            stopElapsedTimer();
+
+                            if (conclusion === 'success') {
+                                updateMonitorStatus('✅ بیلد با موفقیت کامل انجام شد و Release ایجاد گردید!', 100, 5);
+                                onBuildSucceeded(repo, brandName, appVersion);
+                            } else {
+                                updateMonitorStatus(`❌ بیلد با وضعیت ${conclusion} متوقف شد. لاگ گیت‌هاب را بررسی فرمایید.`, 100, 5);
+                                showToast(`بیلد ناموفق بود (${conclusion})`, 'error');
+                                document.getElementById('btnStartBuild').disabled = false;
+                                document.getElementById('btnStartBuild').innerHTML = '<span>🚀 تلاش مجدد برای بیلد</span>';
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('Polling error:', e);
+                }
+            }, 5000);
+        }
+
+        function startGenericPolling(repo, token, branch, brandName, appVersion) {
+            if (pollTimer) clearInterval(pollTimer);
+
+            let pollAttempts = 0;
+            pollTimer = setInterval(async () => {
+                pollAttempts++;
+                const runId = await findLatestRunId(repo, token, branch);
+                if (runId) {
+                    clearInterval(pollTimer);
+                    startRunPolling(repo, token, runId, brandName, appVersion);
+                } else if (pollAttempts > 15) {
+                    clearInterval(pollTimer);
+                    stopElapsedTimer();
+                    updateMonitorStatus('شناسه ران دریافت نشد اما بیلد ممکن است در حال انجام باشد.', 70, 3);
+                    document.getElementById('btnStartBuild').disabled = false;
+                }
+            }, 4000);
+        }
+
+        function onBuildSucceeded(repo, brandName, appVersion) {
+            const btn = document.getElementById('btnStartBuild');
+            btn.disabled = false;
+            btn.innerHTML = '<span>🚀 شروع ساخت بیلد برند دیگر</span>';
+
+            const releaseTag = `v${appVersion}-${brandName}`;
+            const zipFileName = `${brandName}-Windows-v${appVersion}.zip`;
+            const directZipUrl = `https://github.com/${repo}/releases/download/${releaseTag}/${zipFileName}`;
+            const releasePageUrl = `https://github.com/${repo}/releases/tag/${releaseTag}`;
+
+            // Populate Delivery Box
+            document.getElementById('directZipUrl').value = directZipUrl;
+            document.getElementById('btnDownloadTest').href = directZipUrl;
+            document.getElementById('btnViewRelease').href = releasePageUrl;
+
+            // Telegram message format
+            const telegramMsg = 
+`سلام و احترام 🌹
+نسخه وایت‌لیبل اختصاصی شما با موفقیت آماده شد:
+
+📱 نام نرم‌افزار: ${brandName}
+🔢 نسخه: ${appVersion}
+🌐 پلتفرم: Windows 64-bit (Portable)
+
+📥 لینک دانلود مستقیم:
+${directZipUrl}
+
+💡 راهنمای استفاده:
+فایل فشرده (ZIP) را استخراج کرده و روی فایل ${brandName}.vbs دبل‌کلیک کنید.`;
+
+            document.getElementById('telegramMessagePreview').innerText = telegramMsg;
+
+            // Show Delivery Card
+            document.getElementById('deliveryCard').style.display = 'block';
+            document.getElementById('deliveryCard').scrollIntoView({ behavior: 'smooth' });
+
+            // Save to history
+            saveToHistory(brandName, appVersion, directZipUrl);
+            renderHistoryTable();
+
+            showToast('🎉 پکیج و Release با موفقیت منتشر شد!');
+        }
+
+        function copyTelegramMessage() {
+            const text = document.getElementById('telegramMessagePreview').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('متن پیام تلگرام با موفقیت کپی شد! ✓');
+            }).catch(() => {
+                showToast('خطا در کپی کردن متن.', 'error');
+            });
+        }
+
+        function copyDirectZipLink() {
+            const url = document.getElementById('directZipUrl').value;
+            navigator.clipboard.writeText(url).then(() => {
+                showToast('لینک مستقیم دانلود کپی شد! ✓');
+            }).catch(() => {
+                showToast('خطا در کپی لینک.', 'error');
+            });
+        }
+
+        function resetMonitorSteps() {
+            document.getElementById('progressBarFill').style.width = '10%';
+            for (let i = 1; i <= 5; i++) {
+                const el = document.getElementById(`step${i}`);
+                el.className = 'step-item';
+            }
+            document.getElementById('step1').className = 'step-item active';
+        }
+
+        function updateMonitorStatus(text, progressPercent, activeStep) {
+            document.getElementById('monitorStatusText').innerText = text;
+            document.getElementById('progressBarFill').style.width = `${progressPercent}%`;
+
+            for (let i = 1; i <= 5; i++) {
+                const el = document.getElementById(`step${i}`);
+                if (i < activeStep) {
+                    el.className = 'step-item done';
+                } else if (i === activeStep) {
+                    el.className = 'step-item active';
+                } else {
+                    el.className = 'step-item';
+                }
+            }
+        }
+
+        function startElapsedTimer() {
+            elapsedSeconds = 0;
+            if (elapsedTimer) clearInterval(elapsedTimer);
+            elapsedTimer = setInterval(() => {
+                elapsedSeconds++;
+                const mins = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
+                const secs = String(elapsedSeconds % 60).padStart(2, '0');
+                document.getElementById('monitorTimer').innerText = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function stopElapsedTimer() {
+            if (elapsedTimer) clearInterval(elapsedTimer);
+        }
+
+        // History Management
+        function saveToHistory(brand, version, url) {
+            let history = JSON.parse(localStorage.getItem('wl_build_history') || '[]');
+            history.unshift({
+                brand,
+                version,
+                url,
+                date: new Date().toLocaleString('fa-IR')
+            });
+            if (history.length > 10) history = history.slice(0, 10);
+            localStorage.setItem('wl_build_history', JSON.stringify(history));
+        }
+
+        function renderHistoryTable() {
+            const history = JSON.parse(localStorage.getItem('wl_build_history') || '[]');
+            const tbody = document.getElementById('historyTableBody');
+
+            if (history.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-faint); padding: 20px;">تاکنون بیلدی از این مرورگر ثبت نشده است.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = history.map((item, idx) => `
+                <tr>
+                    <td style="font-weight: 700; color: #60A5FA;">${item.brand}</td>
+                    <td class="mono">${item.version}</td>
+                    <td style="color: var(--text-muted); font-size: 11.5px;">${item.date}</td>
+                    <td>
+                        <a href="${item.url}" target="_blank" class="mono" style="color: #10B981; text-decoration: none; font-size: 11.5px;">
+                            ${item.url.substring(0, 42)}...
+                        </a>
+                    </td>
+                    <td>
+                        <button type="button" class="btn-sec" onclick="copyHistoryItem('${item.url}')" style="padding: 4px 8px; font-size: 11px;">
+                            کپی لینک
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function copyHistoryItem(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                showToast('لینک مستقیم دانلود کپی شد! ✓');
+            });
+        }
+
+        function clearBuildHistory() {
+            if (confirm('آیا از پاکسازی تاریخچه بیلدها مطمئن هستید؟')) {
+                localStorage.removeItem('wl_build_history');
+                renderHistoryTable();
+                showToast('تاریخچه پاکسازی شد.');
+            }
+        }
+    </script>
+</body>
+</html>

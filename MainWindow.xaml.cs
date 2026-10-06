@@ -907,14 +907,15 @@ namespace SmartVpn
                         Background = isCurrentActive ? accentBrush : (Brush)FindResource("CardHoverBrush"),
                         BorderThickness = new Thickness(0),
                         CornerRadius = new CornerRadius(6),
-                        Padding = new Thickness(7, 2, 7, 2),
+                        Padding = new Thickness(8, 3, 8, 3),
                         VerticalAlignment = VerticalAlignment.Center,
+                        Cursor = Cursors.Hand,
                         Child = new TextBlock
                         {
-                            Text = isCurrentActive ? Localization.T("فعال") : Localization.T("انتخاب"),
+                            Text = isCurrentActive ? Localization.T("فعال") : ("⚡ " + Localization.T("اتصال")),
                             FontSize = 9.5,
                             FontWeight = FontWeights.SemiBold,
-                            Foreground = isCurrentActive ? (App.IsDark ? Brushes.Black : Brushes.White) : (Brush)FindResource("SubTextBrush")
+                            Foreground = isCurrentActive ? (App.IsDark ? Brushes.Black : Brushes.White) : (Brush)FindResource("AccentBrush")
                         }
                     };
                     Grid.SetColumn(quickBadge, 2);
@@ -925,8 +926,10 @@ namespace SmartVpn
                     rowBorder.MouseEnter += (_, __) => { if (!isCurrentActive) rowBorder.Background = hoverBg; };
                     rowBorder.MouseLeave += (_, __) => { if (!isCurrentActive) rowBorder.Background = rowBg; };
 
-                    rowBorder.MouseLeftButtonUp += (_, __) =>
+                    rowBorder.MouseLeftButtonUp += async (_, __) =>
                     {
+                        if (isCurrentActive) return;
+
                         if (item.isXray && item.rawObj is ProxyProfile p)
                         {
                             MainWindow.LastConnectionType = "xray";
@@ -936,17 +939,36 @@ namespace SmartVpn
                             RenderXrayConnList();
                             _config.AddRecentConnection(p.Alias);
                             RenderRecentServersList();
+
+                            if (_engine.IsRunning)
+                            {
+                                await StopManuallyAsync();
+                                for (int i = 0; i < 20 && _engine.IsRunning; i++)
+                                    await Task.Delay(150);
+                            }
+                            else if (_xrayIsConnected)
+                            {
+                                XrayEngine.Stop();
+                                SetXrayUiDisconnected();
+                                await Task.Delay(300);
+                            }
+
+                            XrayConnectBtn_Click(this, new RoutedEventArgs());
                         }
                         else if (!item.isXray && item.rawObj is ConnectionProfile cp)
                         {
                             MainWindow.LastConnectionType = "vpn";
-                            _selectedName = cp.Name;
-                            ActiveConnText.Text = $"{CategoryLabel(cp.Type)} {cp.Name}";
-                            ServerSubText.Text = cp.ServerLine;
-                            UpdateActiveBadge(cp.Name, cp.Type);
-                            RefreshList();
                             _config.AddRecentConnection(cp.Name);
                             RenderRecentServersList();
+
+                            if (_xrayIsConnected)
+                            {
+                                XrayEngine.Stop();
+                                SetXrayUiDisconnected();
+                                await Task.Delay(300);
+                            }
+
+                            await SwitchToConnectionAsync(cp);
                         }
                     };
 
@@ -1341,37 +1363,53 @@ namespace SmartVpn
                 return;
             }
 
+            string? targetName = null;
             for (int i = 5; i > 0; i--)
             {
                 HsStatusText.Text = Localization.T("مرحله ۲: تثبیت شبکه وای‌فای دایرکت... ") + $"({i} ثانیه)";
                 HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B"));
                 await Task.Delay(1000);
+
+                targetName = await HsRefreshAdaptersAsync(searchForTarget: true);
+                if (!string.IsNullOrEmpty(targetName))
+                    break;
             }
 
-            string? targetName = await HsRefreshAdaptersAsync(searchForTarget: true);
             if (string.IsNullOrEmpty(targetName))
             {
-                HsStatusText.Text = Localization.T("کارت شبکه Wi-Fi Direct یافت نشد.");
-                HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
-                await _hotspot.StopAsync();
-                BtnHsStart.IsEnabled = true;
-                BtnHsRestart.IsEnabled = false;
-                return;
+                for (int retry = 0; retry < 3 && string.IsNullOrEmpty(targetName); retry++)
+                {
+                    await Task.Delay(1000);
+                    targetName = await HsRefreshAdaptersAsync(searchForTarget: true);
+                }
             }
 
-            HsStatusText.Text = Localization.T("مرحله ۳: برقراری پل ارتباطی با ") + targetName + "...";
-            var shareResult = await _hotspot.ApplySharingOnlyAsync(_hsBestSrc, targetName);
-
-            if (!shareResult.ok)
+            if (_hotspot.IsHotspotBoundToSelectedProfile)
             {
-                HsStatusText.Text = Localization.T("خطا در شیرینگ خودکار. لطفاً دستی انجام دهید.");
-                HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
-                HsManualHint.Visibility = Visibility.Visible; BtnOpenNcpa.Visibility = Visibility.Visible;
-                
+                HsStatusText.Text = Localization.T("✅ هات‌اسپات با موفقیت فعال شد (مسیریابی مستقیم).");
+                HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+            }
+            else if (!string.IsNullOrEmpty(targetName))
+            {
+                HsStatusText.Text = Localization.T("مرحله ۳: برقراری پل ارتباطی با ") + targetName + "...";
+                var shareResult = await _hotspot.ApplySharingOnlyAsync(_hsBestSrc, targetName);
+
+                if (!shareResult.ok)
+                {
+                    HsStatusText.Text = Localization.T("هات‌اسپات روشن شد! (نیاز به اشتراک‌گذاری دستی در صورت قطعی اینترنت)");
+                    HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B"));
+                    HsManualHint.Visibility = Visibility.Visible;
+                    BtnOpenNcpa.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    HsStatusText.Text = Localization.T("✅ هات‌اسپات فعال شد و ترافیک در جریان است.");
+                    HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+                }
             }
             else
             {
-                HsStatusText.Text = Localization.T("✅ هات‌اسپات فعال شد و ترافیک در جریان است.");
+                HsStatusText.Text = Localization.T("✅ هات‌اسپات فعال است (دستگاه‌های خود را متصل کنید).");
                 HsStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
             }
 

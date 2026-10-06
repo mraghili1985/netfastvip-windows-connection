@@ -360,7 +360,7 @@ public static class PortalSyncService
 
         return new ConnectionProfile
         {
-            Name          = "NFV-" + portal.Label,
+            Name          = FormatProfileName(portal.Label),
             Type          = "openvpn",
             Server        = server,
             Port          = port,
@@ -403,7 +403,7 @@ public static class PortalSyncService
 
         return new ConnectionProfile
         {
-            Name          = "NFV-" + portal.Label,
+            Name          = FormatProfileName(portal.Label),
             Type          = "l2tp",
             Server        = server,
             Port          = null,
@@ -442,7 +442,7 @@ public static class PortalSyncService
         }
         return new ConnectionProfile
         {
-            Name          = "NFV-" + portal.Label,
+            Name          = FormatProfileName(portal.Label),
             Type          = "sstp",
             Server        = host,
             Port          = port,
@@ -456,7 +456,17 @@ public static class PortalSyncService
         };
     }
 
-        // ===== Helper: حذف remote/proto/auth از .ovpn =====
+    private static string FormatProfileName(string label)
+    {
+        var clean = (label ?? "Server").Trim();
+        if (clean.StartsWith("NFV-", StringComparison.OrdinalIgnoreCase))
+            clean = clean.Substring(4).Trim();
+        var brand = AppConfig.BrandName;
+        var prefix = !string.IsNullOrWhiteSpace(brand) ? $"{brand}-" : "";
+        return prefix + clean;
+    }
+
+    // ===== Helper: حذف remote/proto/auth از .ovpn =====
     //
     // VpnEngine.CreateProvider این خطوط رو از ConnectionProfile.Server/Port/Proto
     // دوباره به اول فایل اضافه می‌کنه — پس duplicate نشه.
