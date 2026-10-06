@@ -72,10 +72,19 @@ param(
     [string]$IconPath = "",
 
     [Parameter(Mandatory = $false)]
+    [string]$IconBase64 = "",
+
+    [Parameter(Mandatory = $false)]
     [string]$BaseOvpnPath = "",
 
     [Parameter(Mandatory = $false)]
+    [string]$BaseOvpnBase64 = "",
+
+    [Parameter(Mandatory = $false)]
     [string]$CaCertPath = "",
+
+    [Parameter(Mandatory = $false)]
+    [string]$CaCertBase64 = "",
 
     [Parameter(Mandatory = $false)]
     [string]$Version = "3.0.2",
@@ -179,7 +188,12 @@ $cfgJsonString = $cfg | ConvertTo-Json -Depth 10
 Set-Content -Path $configJsonPath -Value $cfgJsonString -Encoding UTF8
 
 # 6. Apply custom assets if supplied (Icon, base.ovpn, ca.crt)
-if ($IconPath.Trim().Length -gt 0) {
+if ($IconBase64.Trim().Length -gt 0) {
+    Write-Host "[-] Applying custom icon from direct upload (Base64)..." -ForegroundColor Yellow
+    $destIcon = Join-Path $workDir "app.ico"
+    $bytes = [Convert]::FromBase64String($IconBase64.Trim())
+    [System.IO.File]::WriteAllBytes($destIcon, $bytes)
+} elseif ($IconPath.Trim().Length -gt 0) {
     Write-Host "[-] Downloading/applying custom icon..." -ForegroundColor Yellow
     $destIcon = Join-Path $workDir "app.ico"
     if ($IconPath -match '^https?://') {
@@ -189,7 +203,12 @@ if ($IconPath.Trim().Length -gt 0) {
     }
 }
 
-if ($BaseOvpnPath.Trim().Length -gt 0) {
+if ($BaseOvpnBase64.Trim().Length -gt 0) {
+    Write-Host "[-] Applying custom base.ovpn from direct upload (Base64)..." -ForegroundColor Yellow
+    $destOvpn = Join-Path $workDir "base.ovpn"
+    $bytes = [Convert]::FromBase64String($BaseOvpnBase64.Trim())
+    [System.IO.File]::WriteAllBytes($destOvpn, $bytes)
+} elseif ($BaseOvpnPath.Trim().Length -gt 0) {
     Write-Host "[-] Downloading/applying custom base.ovpn..." -ForegroundColor Yellow
     $destOvpn = Join-Path $workDir "base.ovpn"
     if ($BaseOvpnPath -match '^https?://') {
@@ -199,7 +218,12 @@ if ($BaseOvpnPath.Trim().Length -gt 0) {
     }
 }
 
-if ($CaCertPath.Trim().Length -gt 0) {
+if ($CaCertBase64.Trim().Length -gt 0) {
+    Write-Host "[-] Applying custom ca.crt from direct upload (Base64)..." -ForegroundColor Yellow
+    $destCa = Join-Path $workDir "ca.crt"
+    $bytes = [Convert]::FromBase64String($CaCertBase64.Trim())
+    [System.IO.File]::WriteAllBytes($destCa, $bytes)
+} elseif ($CaCertPath.Trim().Length -gt 0) {
     Write-Host "[-] Downloading/applying custom ca.crt..." -ForegroundColor Yellow
     $destCa = Join-Path $workDir "ca.crt"
     if ($CaCertPath -match '^https?://') {

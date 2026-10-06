@@ -549,20 +549,119 @@
         .toast.success { border-color: rgba(16, 185, 129, 0.4); }
         .toast.error { border-color: rgba(239, 68, 68, 0.4); }
 
-        /* Accordion / Info Box */
-        .info-box {
-            background: rgba(59, 130, 246, 0.05);
-            border: 1px dashed rgba(59, 130, 246, 0.25);
-            border-radius: var(--radius-md);
-            padding: 14px 18px;
-            font-size: 12px;
-            color: var(--text-muted);
-            line-height: 1.6;
-            margin-top: 20px;
+        /* File Upload Dropzones */
+        .upload-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
 
-        .info-box strong {
-            color: #93C5FD;
+        .upload-dropzone {
+            background: rgba(15, 23, 42, 0.65);
+            border: 1.5px dashed rgba(255, 255, 255, 0.16);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .upload-dropzone:hover {
+            border-color: var(--accent-blue);
+            background: rgba(30, 58, 138, 0.2);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
+        }
+
+        .upload-icon {
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .upload-text {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            text-align: right;
+        }
+
+        .upload-text strong {
+            font-size: 12.5px;
+            color: var(--text-main);
+        }
+
+        .upload-text span {
+            font-size: 11px;
+            color: var(--text-faint);
+        }
+
+        .upload-btn {
+            pointer-events: none;
+            padding: 6px 12px;
+            font-size: 11.5px;
+            flex-shrink: 0;
+        }
+
+        .upload-active-card {
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .icon-thumb {
+            width: 34px;
+            height: 34px;
+            object-fit: contain;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 2px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .upload-file-details {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            text-align: right;
+        }
+
+        .upload-file-name {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #34D399;
+            direction: ltr;
+            text-align: right;
+        }
+
+        .upload-file-size {
+            font-size: 11px;
+            color: var(--text-muted);
+            direction: ltr;
+            text-align: right;
+        }
+
+        .btn-remove {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #F87171;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 11.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-remove:hover {
+            background: rgba(239, 68, 68, 0.3);
+            color: #FFFFFF;
         }
     </style>
 </head>
@@ -671,20 +770,100 @@
                         <input type="text" id="supportUrl" class="mono" value="https://t.me/nfv_sup" placeholder="https://t.me/starvpn_support">
                     </div>
 
+                    <!-- Upload 1: App Icon (.ico) -->
                     <div class="form-group full">
-                        <label>لینک مستقیم دانلود آیکون اختصاصی (.ico URL) - اختیاری</label>
-                        <input type="text" id="iconUrl" class="mono" placeholder="https://example.com/assets/logo.ico">
-                        <span class="help-text">در صورت خالی بودن، آیکون پیش‌فرض کلاینت ست می‌شود. لینک باید مستقیماً به فایل .ico باشد.</span>
+                        <label>آیکون اختصاصی برنامه (App Icon)</label>
+                        <div class="upload-container">
+                            <input type="file" id="iconFileInput" accept=".ico,image/x-icon" style="display:none;" onchange="handleIconUpload(event)">
+                            <div class="upload-dropzone" id="iconDropzone" onclick="document.getElementById('iconFileInput').click()">
+                                <span class="upload-icon">🎨</span>
+                                <div class="upload-text">
+                                    <strong>انتخاب یا آپلود فایل آیکون (.ico)</strong>
+                                    <span>کلیک کنید تا از فایل‌های گوشی یا کامپیوتر انتخاب شود (اختیاری)</span>
+                                </div>
+                                <button type="button" class="btn-sec upload-btn">📁 انتخاب فایل</button>
+                            </div>
+                            <div class="upload-active-card" id="iconActiveCard" style="display:none;">
+                                <img id="iconPreviewImg" class="icon-thumb" src="" alt="Icon Preview">
+                                <div class="upload-file-details">
+                                    <span class="upload-file-name" id="iconFileName">app.ico</span>
+                                    <span class="upload-file-size" id="iconFileSize">0 KB</span>
+                                </div>
+                                <button type="button" class="btn-remove" onclick="removeIconFile()">✕ حذف</button>
+                            </div>
+                            <div style="margin-top: 4px;">
+                                <a href="javascript:void(0)" onclick="toggleUrlInput('iconUrlWrap')" style="font-size: 11px; color: #60A5FA; text-decoration: none;">
+                                    🔗 یا وارد کردن لینک مستقیم (.ico URL)
+                                </a>
+                                <div id="iconUrlWrap" style="display: none; margin-top: 6px;">
+                                    <input type="text" id="iconUrl" class="mono" placeholder="https://example.com/assets/logo.ico">
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
+                    <!-- Upload 2: base.ovpn -->
                     <div class="form-group">
-                        <label>لینک فایل base.ovpn اختصاصی (اختیاری)</label>
-                        <input type="text" id="baseOvpnUrl" class="mono" placeholder="https://example.com/base.ovpn">
+                        <label>کانفیگ پایه اوپن‌وی‌پی‌ان (base.ovpn)</label>
+                        <div class="upload-container">
+                            <input type="file" id="ovpnFileInput" accept=".ovpn,.txt" style="display:none;" onchange="handleOvpnUpload(event)">
+                            <div class="upload-dropzone" id="ovpnDropzone" onclick="document.getElementById('ovpnFileInput').click()">
+                                <span class="upload-icon">🔒</span>
+                                <div class="upload-text">
+                                    <strong>آپلود فایل base.ovpn</strong>
+                                    <span>از حافظه گوشی یا سیستم (اختیاری)</span>
+                                </div>
+                                <button type="button" class="btn-sec upload-btn">📁 انتخاب</button>
+                            </div>
+                            <div class="upload-active-card" id="ovpnActiveCard" style="display:none;">
+                                <span style="font-size: 22px;">📄</span>
+                                <div class="upload-file-details">
+                                    <span class="upload-file-name" id="ovpnFileName">base.ovpn</span>
+                                    <span class="upload-file-size" id="ovpnFileSize">0 KB</span>
+                                </div>
+                                <button type="button" class="btn-remove" onclick="removeOvpnFile()">✕ حذف</button>
+                            </div>
+                            <div style="margin-top: 4px;">
+                                <a href="javascript:void(0)" onclick="toggleUrlInput('ovpnUrlWrap')" style="font-size: 11px; color: #60A5FA; text-decoration: none;">
+                                    🔗 یا وارد کردن لینک اینترنتی URL
+                                </a>
+                                <div id="ovpnUrlWrap" style="display: none; margin-top: 6px;">
+                                    <input type="text" id="baseOvpnUrl" class="mono" placeholder="https://example.com/base.ovpn">
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
+                    <!-- Upload 3: ca.crt -->
                     <div class="form-group">
-                        <label>لینک فایل ca.crt اختصاصی (اختیاری)</label>
-                        <input type="text" id="caCertUrl" class="mono" placeholder="https://example.com/ca.crt">
+                        <label>گواهی امنیتی سرور (ca.crt)</label>
+                        <div class="upload-container">
+                            <input type="file" id="caFileInput" accept=".crt,.pem,.cer,.txt" style="display:none;" onchange="handleCaUpload(event)">
+                            <div class="upload-dropzone" id="caDropzone" onclick="document.getElementById('caFileInput').click()">
+                                <span class="upload-icon">📜</span>
+                                <div class="upload-text">
+                                    <strong>آپلود فایل ca.crt</strong>
+                                    <span>از حافظه گوشی یا سیستم (اختیاری)</span>
+                                </div>
+                                <button type="button" class="btn-sec upload-btn">📁 انتخاب</button>
+                            </div>
+                            <div class="upload-active-card" id="caActiveCard" style="display:none;">
+                                <span style="font-size: 22px;">📜</span>
+                                <div class="upload-file-details">
+                                    <span class="upload-file-name" id="caFileName">ca.crt</span>
+                                    <span class="upload-file-size" id="caFileSize">0 KB</span>
+                                </div>
+                                <button type="button" class="btn-remove" onclick="removeCaFile()">✕ حذف</button>
+                            </div>
+                            <div style="margin-top: 4px;">
+                                <a href="javascript:void(0)" onclick="toggleUrlInput('caUrlWrap')" style="font-size: 11px; color: #60A5FA; text-decoration: none;">
+                                    🔗 یا وارد کردن لینک اینترنتی URL
+                                </a>
+                                <div id="caUrlWrap" style="display: none; margin-top: 6px;">
+                                    <input type="text" id="caCertUrl" class="mono" placeholder="https://example.com/ca.crt">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -911,6 +1090,84 @@
             if (branch) localStorage.setItem('wl_target_branch', branch);
         }
 
+        // Direct file uploads Base64 state
+        let iconBase64Data = "";
+        let baseOvpnBase64Data = "";
+        let caCertBase64Data = "";
+
+        function handleIconUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const full = evt.target.result;
+                iconBase64Data = full.split(',')[1];
+                document.getElementById('iconFileName').innerText = file.name;
+                document.getElementById('iconFileSize').innerText = `${(file.size / 1024).toFixed(1)} KB`;
+                document.getElementById('iconPreviewImg').src = full;
+                document.getElementById('iconDropzone').style.display = 'none';
+                document.getElementById('iconActiveCard').style.display = 'flex';
+                showToast(`آیکون ${file.name} بارگذاری شد.`);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeIconFile() {
+            iconBase64Data = "";
+            document.getElementById('iconFileInput').value = "";
+            document.getElementById('iconDropzone').style.display = 'flex';
+            document.getElementById('iconActiveCard').style.display = 'none';
+        }
+
+        function handleOvpnUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                baseOvpnBase64Data = evt.target.result.split(',')[1];
+                document.getElementById('ovpnFileName').innerText = file.name;
+                document.getElementById('ovpnFileSize').innerText = `${(file.size / 1024).toFixed(1)} KB`;
+                document.getElementById('ovpnDropzone').style.display = 'none';
+                document.getElementById('ovpnActiveCard').style.display = 'flex';
+                showToast(`فایل ${file.name} بارگذاری شد.`);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeOvpnFile() {
+            baseOvpnBase64Data = "";
+            document.getElementById('ovpnFileInput').value = "";
+            document.getElementById('ovpnDropzone').style.display = 'flex';
+            document.getElementById('ovpnActiveCard').style.display = 'none';
+        }
+
+        function handleCaUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                caCertBase64Data = evt.target.result.split(',')[1];
+                document.getElementById('caFileName').innerText = file.name;
+                document.getElementById('caFileSize').innerText = `${(file.size / 1024).toFixed(1)} KB`;
+                document.getElementById('caDropzone').style.display = 'none';
+                document.getElementById('caActiveCard').style.display = 'flex';
+                showToast(`فایل ${file.name} بارگذاری شد.`);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeCaFile() {
+            caCertBase64Data = "";
+            document.getElementById('caFileInput').value = "";
+            document.getElementById('caDropzone').style.display = 'flex';
+            document.getElementById('caActiveCard').style.display = 'none';
+        }
+
+        function toggleUrlInput(id) {
+            const el = document.getElementById(id);
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        }
+
         async function handleStartBuild(e) {
             e.preventDefault();
             saveConnectionSettings();
@@ -966,8 +1223,11 @@
                         telegram_url: telegramUrl,
                         support_url: supportUrl,
                         icon_url: iconUrl,
+                        icon_base64: iconBase64Data,
                         base_ovpn_url: baseOvpnUrl,
-                        ca_cert_url: caCertUrl
+                        base_ovpn_base64: baseOvpnBase64Data,
+                        ca_cert_url: caCertUrl,
+                        ca_cert_base64: caCertBase64Data
                     }
                 };
 

@@ -27,12 +27,24 @@ on:
         description: 'Direct URL to custom .ico file (optional)'
         required: false
         default: ''
+      icon_base64:
+        description: 'Direct Base64 encoded custom .ico file (optional)'
+        required: false
+        default: ''
       base_ovpn_url:
         description: 'Direct URL to custom base.ovpn (optional)'
         required: false
         default: ''
+      base_ovpn_base64:
+        description: 'Direct Base64 encoded custom base.ovpn (optional)'
+        required: false
+        default: ''
       ca_cert_url:
         description: 'Direct URL to custom ca.crt (optional)'
+        required: false
+        default: ''
+      ca_cert_base64:
+        description: 'Direct Base64 encoded custom ca.crt (optional)'
         required: false
         default: ''
       version:
@@ -72,8 +84,11 @@ jobs:
             -TelegramUrl "${{ inputs.telegram_url }}" `
             -SupportUrl "${{ inputs.support_url }}" `
             -IconPath "${{ inputs.icon_url }}" `
+            -IconBase64 "${{ inputs.icon_base64 }}" `
             -BaseOvpnPath "${{ inputs.base_ovpn_url }}" `
+            -BaseOvpnBase64 "${{ inputs.base_ovpn_base64 }}" `
             -CaCertPath "${{ inputs.ca_cert_url }}" `
+            -CaCertBase64 "${{ inputs.ca_cert_base64 }}" `
             -Version "${{ inputs.version }}" `
             -OutputDir "dist"
 
