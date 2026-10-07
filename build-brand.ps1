@@ -277,26 +277,93 @@ $vbsPath = Join-Path $stageDir "$BrandName.vbs"
 $vbsContent = "Dim fso, shell, scriptDir, exePath`r`nSet fso = CreateObject(""Scripting.FileSystemObject"")`r`nSet shell = CreateObject(""WScript.Shell"")`r`nscriptDir = fso.GetParentFolderName(WScript.ScriptFullName)`r`nexePath = scriptDir & ""\App\$BrandName.exe""`r`nIf fso.FileExists(exePath) Then`r`n    shell.Run """""" & exePath & """""", 1, False`r`nElse`r`n    MsgBox ""$BrandName.exe not found:"" & vbCrLf & exePath, vbExclamation, ""$BrandName""`r`nEnd If`r`n"
 Set-Content -Path $vbsPath -Value $vbsContent -Encoding ASCII
 
-# Create customized README.txt
+# Create customized README.txt (Persian user guide)
 $readmePath = Join-Path $stageDir "README.txt"
 $readmeLines = @(
-    "$BrandName - Portable VPN Client",
-    "========================================",
     "",
-    "How to run:",
-    "   Double-click '$BrandName.vbs' to launch the client silently without a console window.",
-    "   Or navigate to the 'App' directory and run '$BrandName.exe' directly.",
+    "======================================================",
+    "  راهنمای $BrandName — نسخه پورتابل",
+    "======================================================",
     "",
-    "Security Note (Antivirus / Windows Defender):",
-    "   As this is a portable release, Windows SmartScreen may show a prompt on first run.",
-    "   Click 'More info' and then 'Run anyway', or add the folder to your antivirus exclusions.",
+    "۱) نصب لازم نیست",
+    "   کل پوشه را یکجا نگه دارید و فایل $BrandName.vbs را اجرا کنید.",
+    "   مهم: اگر فایل ZIP دانلود کرده‌اید، اول کل آن را Extract کنید و بعد اجرا کنید؛",
+    "   اجرای مستقیم از داخل ZIP باعث می‌شود تنظیمات ذخیره نشود.",
     "",
-    "Support and Links:"
+    "۲) دسترسی ادمین",
+    "   برنامه برای کارهای شبکه (اتصال VPN، نصب گواهی، تعویض DNS) به دسترسی ادمین نیاز دارد؛",
+    "   پنجره UAC ویندوز را تأیید کنید.",
+    "",
+    "۳) پروتکل‌ها",
+    "   - L2TP / PPTP / SSTP: نصب اضافی لازم ندارند (از خود ویندوز استفاده می‌شود).",
+    "",
+    "   - IKEv2: از خود ویندوز استفاده می‌شود — نصب لازم نیست.",
+    "     نکته: اتصال خودکار IKEv2 روی بعضی درایورها محدودیت دارد؛ در صورت مشکل SSTP را امتحان کنید.",
+    "",
+    "   - OpenVPN: فقط برای اتصال‌های نوع OpenVPN باید برنامه OpenVPN روی سیستم نصب باشد:",
+    "     https://openvpn.net/community-downloads/",
+    "     (نسخه Windows 64-bit MSI را نصب کنید — تنظیم خاصی لازم ندارد)",
+    "     اگر OpenVPN نصب نباشد، بقیه پروتکل‌ها عادی کار می‌کنند و فقط اتصال‌های OpenVPN برقرار نمی‌شوند.",
+    "     حالت پورتابل (بدون نصب OpenVPN): اگر پوشه‌ای به نام openvpn کنار برنامه باشد شامل:",
+    "       - openvpn.exe و همه DLLهای کنارش",
+    "       - زیرپوشه driver شامل فایل‌های درایور ovpn-dco",
+    "     آن‌وقت هیچ نصبی لازم نیست — برنامه بار اول خودش درایور را بی‌صدا نصب می‌کند.",
+    "",
+    "   - WireGuard / AmneziaWG: نصبی لازم نیست — فایل‌های لازم داخل پاکیج هستند.",
+    "     پوشه wireguard کنار برنامه شامل:",
+    "       - wireguard.exe / amneziawg.exe / wg.exe / awg.exe",
+    "       - wintun.dll (درایور شبکه — خودکار لود می‌شود، نصب جداگانه لازم نیست)",
+    "",
+    "۴) گواهی امنیتی (SSTP / IKEv2)",
+    "   بار اول که از SSTP یا IKEv2 استفاده کنید، برنامه با اجازه خودتان گواهی امنیتی را نصب می‌کند.",
+    "",
+    "۵) WiFi Hotspot (اشتراک VPN)",
+    "   از بخش «ابزارها و گزارش» می‌توانید VPN را از طریق WiFi با دستگاه‌های دیگر شِیر کنید.",
+    "   - SSID (نام شبکه) و PSK (رمز WPA2، حداقل ۸ کاراکتر) را وارد کنید.",
+    "   - محدودیت: کارت WiFi باید Hosted Network را پشتیبانی کند.",
+    "     برنامه این را بررسی می‌کند و در صورت عدم پشتیبانی پیام مناسب نشان می‌دهد.",
+    "   - نکته: VPN باید قبل از روشن‌کردن Hotspot وصل باشد.",
+    "",
+    "۶) شخصی‌سازی (Data\app-config.json)",
+    "   فایل Data\app-config.json را می‌توانید با Notepad باز کنید و اینها را تغییر دهید:",
+    "   - AppName: نام نمایشی برنامه (عنوان پنجره‌ها، تری و میانبر)",
+    "   - AppVersion: نسخه نمایشی در پنجره درباره (خالی = خودکار)",
+    "   - TelegramUrl / PanelUrl / SupportUrl: لینک کانال، پنل کاربری و پشتیبانی",
+    "",
+    "۷) پشتیبانی"
 )
-if ($TelegramUrl.Trim().Length -gt 0) { $readmeLines += "   Telegram Channel: $TelegramUrl" }
-if ($SupportUrl.Trim().Length -gt 0) { $readmeLines += "   Support: $SupportUrl" }
+if ($TelegramUrl.Trim().Length -gt 0) { $readmeLines += "   تلگرام: $TelegramUrl" }
+if ($SupportUrl.Trim().Length -gt 0) { $readmeLines += "   پشتیبانی: $SupportUrl" }
+if ($PanelUrl.Trim().Length -gt 0) { $readmeLines += "   پنل کاربری: $PanelUrl" }
+$readmeLines += @(
+    "",
+    "======================================================",
+    " اگر آنتی‌ویروس یا ویندوز دیفندر برنامه را حذف کرد",
+    "======================================================",
+    "",
+    "بعضی از آنتی‌ویروس‌ها (به‌خصوص ویندوز دیفندر) به‌خاطر اینکه $BrandName یک برنامه",
+    "پورتابل و کم‌شناخته است، ممکن است آن را به‌اشتباه به‌عنوان تهدید تشخیص بدهند",
+    "(False Positive) و فایلش را حذف/قرنطینه کنند. برنامه هیچ کد مخربی ندارد.",
+    "",
+    "روش ۱: از تنظیمات ویندوز دیفندر (ساده‌ترین روش)",
+    "   1. کلید Windows را بزنید و Windows Security را باز کنید.",
+    "   2. به بخش Virus & threat protection بروید.",
+    "   3. روی Manage settings (زیر Virus & threat protection settings) کلیک کنید.",
+    "   4. پایین صفحه، روی Add or remove exclusions کلیک کنید.",
+    "   5. روی Add an exclusion بزنید و Folder را انتخاب کنید.",
+    "   6. پوشه $BrandName (همان پوشه‌ای که $BrandName.exe داخلش هست) را انتخاب کنید.",
+    "",
+    "روش ۲: با PowerShell (کاربران پیشرفته)",
+    "   PowerShell را به‌صورت Admin باز کنید و این دستور را بزنید:",
+    "   Add-MpPreference -ExclusionPath `"C:\Path\To\$BrandName`"",
+    "",
+    "اگر از آنتی‌ویروس دیگری (غیر از دیفندر) استفاده می‌کنید:",
+    "   در تنظیمات آنتی‌ویروستان بخشی به اسم Exclusions / Whitelist / Trusted Files",
+    "   پیدا کنید و پوشه $BrandName یا فایل $BrandName.exe را به آن اضافه کنید.",
+    ""
+)
 $readmeContent = $readmeLines -join "`r`n"
-Set-Content -Path $readmePath -Value $readmeContent -Encoding ASCII
+Set-Content -Path $readmePath -Value $readmeContent -Encoding UTF8
 Copy-Item -Path $readmePath -Destination (Join-Path $stageApp "README.txt") -Force
 
 # 8. Create ZIP archive
